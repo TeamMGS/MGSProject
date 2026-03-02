@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-01
+ * 수정일 : 2026-03-02
  */
 
 #pragma once
@@ -23,6 +23,8 @@ class MGSPROJECT_API AMGSPlayerState : public APlayerState, public IAbilitySyste
 	
 public:
 	AMGSPlayerState();
+	
+	void InitASC(AActor* Avatar);
 	
 protected:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;

@@ -50,6 +50,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (TitleProperty = "InputTag"))
 	TArray<FInputActionConfig> AbilityInputActions;
 	
+	// 태그로 입력 액션 반환
 	UInputAction* FindNativeInputActionByTag(const FGameplayTag& InInputTag) const;
 	
 };

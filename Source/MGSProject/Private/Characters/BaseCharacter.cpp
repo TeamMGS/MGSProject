@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-01
+ * 수정일 : 2026-03-02
  */
 
 #include "Characters/BaseCharacter.h"
@@ -18,6 +18,12 @@ ABaseCharacter::ABaseCharacter()
 	
 	// VFX 지상 데칼 투영 영향을 주지 않도록 처리
 	GetMesh()->bReceivesDecals = false;
+}
+
+UPawnCombatComponent* ABaseCharacter::GetPawnCombatComponent() const
+{
+	// 부모 클래스에선 재구현 사용안함.
+	return nullptr;
 }
 
 void ABaseCharacter::BeginPlay()

@@ -3,13 +3,14 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-01
+ * 수정일 : 2026-03-02
  */
 
 #include "Characters/Player/PlayerCharacter.h"
 
 #include "Camera/CameraComponent.h"
 #include "Characters/Player/MGSPlayerState.h"
+#include "Components/Combat/PlayerCombatComponent.h"
 #include "DataAssets/Startup/DA_StartupBase.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -17,6 +18,9 @@
 
 APlayerCharacter::APlayerCharacter()
 {
+	// 캡슐 컴포넌트 초기 사이즈 세팅
+	//GetCapsuleComponent()->InitCapsuleSize();
+	
 	// 회전 사용 비활성화
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationRoll = false;
@@ -26,6 +30,8 @@ APlayerCharacter::APlayerCharacter()
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(GetRootComponent());
 	CameraBoom->bUsePawnControlRotation = true;
+	//CameraBoom->TargetArmLength = ;
+	//CameraBoom->SocketOffset = FVector();	
 	
 	// 카메라 초기 세팅
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
@@ -34,11 +40,32 @@ APlayerCharacter::APlayerCharacter()
 	
 	// 캐릭터 움직임 초기 세팅
 	GetCharacterMovement()->bOrientRotationToMovement = true;
+	//GetCharacterMovement()->RotationRate = FRotator();
+	//GetCharacterMovement()->MaxWalkSpeed = ;
+	//GetCharacterMovement()->BrakingDecelerationWalking = ;
+	
+	// 메시 세팅
+	//static ConstructorHelpers::FObjectFinder<USkeletalMesh> MeshAsset(TEXT(""));
+	//if (MeshAsset.Succeeded())
+	//{
+	//	GetMesh()->SetSkeletalMesh(MeshAsset.Object);
+	//}
+	//GetMesh()->SetRelativeLocationAndRotation(FVector(), FRotator());
+	
+	// CombatComponent 세팅
+	PlayerCombatComponent = CreateDefaultSubobject<UPlayerCombatComponent>(TEXT("PlayerCombatComponent"));
+}
+
+UPawnCombatComponent* APlayerCharacter::GetPawnCombatComponent() const
+{
+	return PlayerCombatComponent;
 }
 
 void APlayerCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
+	
+	GetController()->GetPlayerState<AMGSPlayerState>()->InitASC(this);
 	
 	if (!StartupData.IsNull())
 	{
@@ -55,15 +82,23 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 	
-	
+	checkf(InputConfigDataAsset, TEXT("Forgot to assign a valid data asset as input config"));
 }
 
-void APlayerCharacter::OnAbilityInputPressed(const FGameplayTag& InputTag)
+void APlayerCharacter::Input_Move(const FInputActionValue& InputActionValue)
+{
+}
+
+void APlayerCharacter::Input_Look(const FInputActionValue& InputActionValue)
+{
+}
+
+void APlayerCharacter::INPUT_AbilityInputPressed(FGameplayTag InputTag)
 {
 	GetMGSAbilitySystemComponent()->OnAbilityInputPressed(InputTag);
 }
 
-void APlayerCharacter::OnAbilityInputReleased(const FGameplayTag& InputTag)
+void APlayerCharacter::INPUT_AbilityInputReleased(FGameplayTag InputTag)
 {
 	GetMGSAbilitySystemComponent()->OnAbilityInputReleased(InputTag);
 }

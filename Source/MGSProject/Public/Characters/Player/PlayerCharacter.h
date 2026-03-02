@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-01
+ * 수정일 : 2026-03-02
  */
 
 #pragma once
@@ -13,6 +13,9 @@
 #include "Characters/BaseCharacter.h"
 #include "PlayerCharacter.generated.h"
 
+class UPlayerCombatComponent;
+struct FInputActionValue;
+class UDA_InputConfig;
 class UCameraComponent;
 class USpringArmComponent;
 
@@ -24,10 +27,10 @@ class MGSPROJECT_API APlayerCharacter : public ABaseCharacter
 public:
 	APlayerCharacter();
 	
+	virtual UPawnCombatComponent* GetPawnCombatComponent() const override;
+	
 protected:
 	virtual void PossessedBy(AController* NewController) override;
-	
-public:
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 	
 private:
@@ -36,10 +39,24 @@ private:
 	TObjectPtr<USpringArmComponent> CameraBoom;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCameraComponent> FollowCamera;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UPlayerCombatComponent> PlayerCombatComponent;
+	
+public:
+	FORCEINLINE UPlayerCombatComponent* GetPlayerCombatComponent() const { return PlayerCombatComponent; }
+	
 #pragma endregion
 #pragma region Input
-	void OnAbilityInputPressed(const FGameplayTag& InputTag);
-	void OnAbilityInputReleased(const FGameplayTag& InputTag);
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "CharacterData", meta = (AllowPrivateAccess = "true"))
+	UDA_InputConfig* InputConfigDataAsset;
+	
+protected:
+	void Input_Move(const FInputActionValue& InputActionValue);
+	void Input_Look(const FInputActionValue& InputActionValue);
+	
+	void INPUT_AbilityInputPressed(FGameplayTag InputTag);
+	void INPUT_AbilityInputReleased(FGameplayTag InputTag);
 #pragma endregion 
 	
 };

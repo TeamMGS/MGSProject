@@ -3,13 +3,14 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-01
+ * 수정일 : 2026-03-02
  */
 
 #include "GAS/GA/BaseGameplayAbility.h"
 
 #include "AbilitySystemComponent.h"
 #include "GAS/ASC/MGSAbilitySystemComponent.h"
+#include "Components/Combat/PawnCombatComponent.h"
 
 void UBaseGameplayAbility::OnGiveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
 {
@@ -41,6 +42,11 @@ void UBaseGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,
 	}
 	
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
+}
+
+UPawnCombatComponent* UBaseGameplayAbility::GetPawnCombatComponentFromActorInfo() const
+{
+	return GetAvatarActorFromActorInfo()->FindComponentByClass<UPawnCombatComponent>();
 }
 
 UMGSAbilitySystemComponent* UBaseGameplayAbility::GetMGSAbilitySystemComponentFromActorInfo() const

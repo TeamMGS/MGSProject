@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-01
+ * 수정일 : 2026-03-02
  */
 
 #include "DataAssets/Startup/DA_StartupBase.h"
@@ -19,6 +19,21 @@ void UDA_StartupBase::GiveToAbilitySystemComponent(UMGSAbilitySystemComponent* A
 	// 두 종류 모드 부여
 	GrantAbilities(ActivateOnGivenAbilities, ASC, Level);
 	GrantAbilities(ReactiveAbilities, ASC, Level);
+	
+	if (!StartupGameplayEffects.IsEmpty())
+	{
+		for (const TSubclassOf<UGameplayEffect>& BP_Effect : StartupGameplayEffects)
+		{
+			if (!BP_Effect)
+			{
+				continue;
+			}
+			
+			// BP 클래스에서 순수 C++ 클래스를 추출해서 사용
+			UGameplayEffect* EffectCDO = BP_Effect->GetDefaultObject<UGameplayEffect>();
+			ASC->ApplyGameplayEffectToSelf(EffectCDO, Level, ASC->MakeEffectContext());
+		}
+	}
 }
 
 void UDA_StartupBase::GrantAbilities(const TArray<TSubclassOf<UBaseGameplayAbility>> GAs,

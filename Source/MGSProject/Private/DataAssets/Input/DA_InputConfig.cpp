@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-01
+ * 수정일 : 2026-03-02
  */
 
 #include "DataAssets/Input/DA_InputConfig.h"
@@ -12,7 +12,10 @@ UInputAction* UDA_InputConfig::FindNativeInputActionByTag(const FGameplayTag& In
 {
 	for (const FInputActionConfig& InputActionConfig : NativeInputActions)
 	{
-		return InputActionConfig.InputAction;
+		if (InputActionConfig.InputTag == InInputTag && InputActionConfig.InputAction)
+		{
+			return InputActionConfig.InputAction;
+		}
 	}
 	
 	return nullptr;

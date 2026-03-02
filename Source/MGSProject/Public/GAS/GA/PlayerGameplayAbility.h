@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-01
+ * 수정일 : 2026-03-02
  */
 
 #pragma once
@@ -12,6 +12,7 @@
 #include "GAS/GA/BaseGameplayAbility.h"
 #include "PlayerGameplayAbility.generated.h"
 
+class UPlayerCombatComponent;
 class AMGSPlayerController;
 class APlayerCharacter;
 
@@ -26,6 +27,9 @@ public:
 	
 	UFUNCTION(BlueprintPure, Category = "Ability")
 	AMGSPlayerController* GetMGSPlayerControllerFromActorInfo();
+	
+	UFUNCTION(BlueprintPure, Category = "Ability")
+	UPlayerCombatComponent* GetPlayerCombatComponentFromActorInfo();
 	
 private:
 	// 플레이어 캐릭터의 정보를 가지고 있다면 캐시 TWeakObjectPtr는 공유 참조가 존재하지 않을 때 

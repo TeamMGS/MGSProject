@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-01
+ * 수정일 : 2026-03-02
  */
 
 #include "GAS/GA/PlayerGameplayAbility.h"
@@ -29,4 +29,9 @@ AMGSPlayerController* UPlayerGameplayAbility::GetMGSPlayerControllerFromActorInf
 	}
 	
 	return CachedMGSPlayerController.IsValid() ? CachedMGSPlayerController.Get() : nullptr;
+}
+
+UPlayerCombatComponent* UPlayerGameplayAbility::GetPlayerCombatComponentFromActorInfo()
+{
+	return GetPlayerCharacterFromActorInfo()->GetPlayerCombatComponent();
 }
