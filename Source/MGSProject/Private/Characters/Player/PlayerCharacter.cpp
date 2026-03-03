@@ -15,9 +15,11 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GAS/ASC/MGSAbilitySystemComponent.h"
+#include "GAS/MGSGameplayTags.h"
 #include "InputActionValue.h"
 #include "Components/CapsuleComponent.h"
 #include "Math/RotationMatrix.h"
+#include "TimerManager.h"
 
 APlayerCharacter::APlayerCharacter()
 {
@@ -39,6 +41,8 @@ APlayerCharacter::APlayerCharacter()
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
 	GetCharacterMovement()->MaxWalkSpeed = 500.0f;
+	GetCharacterMovement()->GetNavAgentPropertiesRef().bCanCrouch = true;
+	GetCharacterMovement()->MaxWalkSpeedCrouched = 220.0f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.0f;
 
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> MeshAsset(TEXT("/Game/Characters/Mannequins/Meshes/SKM_Quinn_Simple.SKM_Quinn_Simple"));
@@ -81,6 +85,13 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
+void APlayerCharacter::Landed(const FHitResult& Hit)
+{
+	Super::Landed(Hit);
+
+	RequestRestoreHeldMovementAbilityInputNextTick();
+}
+
 void APlayerCharacter::Input_Move(const FInputActionValue& InputActionValue)
 {
 	const FVector2D MovementVector = InputActionValue.Get<FVector2D>();
@@ -119,5 +130,32 @@ void APlayerCharacter::Input_AbilityInputReleased(FGameplayTag InputTag)
 	if (UMGSAbilitySystemComponent* ASC = GetMGSAbilitySystemComponent())
 	{
 		ASC->OnAbilityInputReleased(InputTag);
+	}
+}
+
+void APlayerCharacter::RequestRestoreHeldMovementAbilityInputNextTick()
+{
+	// Re-evaluate held movement inputs after character movement state settles.
+	GetWorldTimerManager().SetTimerForNextTick(this, &ThisClass::TryRestoreHeldMovementAbilityInput);
+}
+
+void APlayerCharacter::TryRestoreHeldMovementAbilityInput()
+{
+	UMGSAbilitySystemComponent* ASC = GetMGSAbilitySystemComponent();
+	const UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
+	if (!ASC || !MovementComponent || !MovementComponent->IsMovingOnGround())
+	{
+		return;
+	}
+
+	if (ASC->IsAbilityInputTagPressed(MGSGameplayTags::InputTag_Sprint))
+	{
+		ASC->OnAbilityInputPressed(MGSGameplayTags::InputTag_Sprint);
+		return;
+	}
+
+	if (ASC->IsAbilityInputTagPressed(MGSGameplayTags::InputTag_Walk))
+	{
+		ASC->OnAbilityInputPressed(MGSGameplayTags::InputTag_Walk);
 	}
 }

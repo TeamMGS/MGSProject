@@ -27,9 +27,11 @@ public:
 	APlayerCharacter();
 	
 	virtual UPawnCombatComponent* GetPawnCombatComponent() const override;
+	void RequestRestoreHeldMovementAbilityInputNextTick();
 	
 protected:
 	virtual void PossessedBy(AController* NewController) override;
+	virtual void Landed(const FHitResult& Hit) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 	
 private:
@@ -54,5 +56,8 @@ public:
 	void Input_AbilityInputPressed(FGameplayTag InputTag);
 	void Input_AbilityInputReleased(FGameplayTag InputTag);
 #pragma endregion 
+
+private:
+	void TryRestoreHeldMovementAbilityInput();
 	
 };

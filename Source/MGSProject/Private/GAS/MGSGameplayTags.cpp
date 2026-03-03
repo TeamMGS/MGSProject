@@ -14,6 +14,8 @@ namespace MGSGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_Move, "InputTag.Move")
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_Look, "InputTag.Look")
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_Jump, "InputTag.Jump")
+	UE_DEFINE_GAMEPLAY_TAG(InputTag_Sprint, "InputTag.Sprint")
+	UE_DEFINE_GAMEPLAY_TAG(InputTag_Walk, "InputTag.Walk")
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_Crouch, "InputTag.Crouch")
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_Aim, "InputTag.Aim")
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_Fire, "InputTag.Fire")
@@ -21,12 +23,16 @@ namespace MGSGameplayTags
 
 	// Ability
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Jump, "Ability.Player.Jump")
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Sprint, "Ability.Player.Sprint")
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Walk, "Ability.Player.Walk")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Crouch, "Ability.Player.Crouch")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Aim, "Ability.Player.Aim")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Fire, "Ability.Player.Fire")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Interact, "Ability.Player.Interact")
 
 	// State
+	UE_DEFINE_GAMEPLAY_TAG(State_Player_Movement_Sprint, "State.Player.Movement.Sprint")
+	UE_DEFINE_GAMEPLAY_TAG(State_Player_Movement_Walk, "State.Player.Movement.Walk")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Crouching, "State.Player.Crouching")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Aiming, "State.Player.Aiming")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_CombatReady, "State.Player.CombatReady")
