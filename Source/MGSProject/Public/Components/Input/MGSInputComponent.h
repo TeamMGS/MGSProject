@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-01
+ * 수정일 : 2026-03-03
  */
 
 #pragma once
@@ -32,6 +32,11 @@ void UMGSInputComponent::BindNativeInputAction(const UDA_InputConfig* InInputCon
 	ETriggerEvent TriggerEvent, UserObject* ContextObject, CallbackFunc Func)
 {
 	checkf(InInputConfig, TEXT("Input config data asset is null can not proceed with binding"));
+
+	if (!InInputTag.IsValid())
+	{
+		return;
+	}
 	
 	if (UInputAction* FoundAction = InInputConfig->FindNativeInputActionByTag(InInputTag))
 	{
@@ -48,6 +53,11 @@ void UMGSInputComponent::BindAbilityInputAction(const UDA_InputConfig* InInputCo
 	for (const FInputActionConfig& AbilityInputActionConfig : InInputConfig->AbilityInputActions)
 	{
 		if (!AbilityInputActionConfig.IsValid())
+		{
+			continue;
+		}
+
+		if (!AbilityInputActionConfig.InputTag.ToString().StartsWith(TEXT("InputTag.")))
 		{
 			continue;
 		}

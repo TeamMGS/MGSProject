@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-02
+ * 수정일 : 2026-03-03
  */
 
 #include "Characters/BaseCharacter.h"
@@ -47,11 +47,31 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 UMGSAbilitySystemComponent* ABaseCharacter::GetMGSAbilitySystemComponent() const
 {
-	return GetController()->GetPlayerState<AMGSPlayerState>()->GetMGSAbilitySystemComponent();
+	if (const AMGSPlayerState* MGSPlayerState = GetMGSPlayerState())
+	{
+		return MGSPlayerState->GetMGSAbilitySystemComponent();
+	}
+
+	return nullptr;
 }
 
 UCharacterAttributeSet* ABaseCharacter::GetCharacterAttributeSet() const
 {
-	return GetController()->GetPlayerState<AMGSPlayerState>()->GetCharacterAttributeSet();
+	if (const AMGSPlayerState* MGSPlayerState = GetMGSPlayerState())
+	{
+		return MGSPlayerState->GetCharacterAttributeSet();
+	}
+
+	return nullptr;
+}
+
+AMGSPlayerState* ABaseCharacter::GetMGSPlayerState() const
+{
+	if (const AController* CharacterController = GetController())
+	{
+		return CharacterController->GetPlayerState<AMGSPlayerState>();
+	}
+
+	return nullptr;
 }
 
