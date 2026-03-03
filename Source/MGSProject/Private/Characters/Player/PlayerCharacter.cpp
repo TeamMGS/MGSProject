@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-02
+ * 수정일 : 2026-03-03
  */
 
 #include "Characters/Player/PlayerCharacter.h"
@@ -15,44 +15,45 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GAS/ASC/MGSAbilitySystemComponent.h"
+#include "GAS/MGSGameplayTags.h"
+#include "InputActionValue.h"
+#include "Components/CapsuleComponent.h"
+#include "Math/RotationMatrix.h"
+#include "TimerManager.h"
 
 APlayerCharacter::APlayerCharacter()
 {
-	// 캡슐 컴포넌트 초기 사이즈 세팅
-	//GetCapsuleComponent()->InitCapsuleSize();
+	GetCapsuleComponent()->InitCapsuleSize(35.0f, 90.0f);
 	
-	// 회전 사용 비활성화
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationRoll = false;
 	bUseControllerRotationYaw = false;
-	
-	// 스프링 암 초기 세팅
+
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(GetRootComponent());
+	CameraBoom->TargetArmLength = 300.0f;
 	CameraBoom->bUsePawnControlRotation = true;
-	//CameraBoom->TargetArmLength = ;
-	//CameraBoom->SocketOffset = FVector();	
-	
-	// 카메라 초기 세팅
+
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
-	
-	// 캐릭터 움직임 초기 세팅
+
 	GetCharacterMovement()->bOrientRotationToMovement = true;
-	//GetCharacterMovement()->RotationRate = FRotator();
-	//GetCharacterMovement()->MaxWalkSpeed = ;
-	//GetCharacterMovement()->BrakingDecelerationWalking = ;
+	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
+	GetCharacterMovement()->MaxWalkSpeed = 500.0f;
+	GetCharacterMovement()->GetNavAgentPropertiesRef().bCanCrouch = true;
+	GetCharacterMovement()->MaxWalkSpeedCrouched = 220.0f;
+	GetCharacterMovement()->BrakingDecelerationWalking = 2000.0f;
+
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> MeshAsset(TEXT("/Game/Characters/Mannequins/Meshes/SKM_Quinn_Simple.SKM_Quinn_Simple"));
 	
-	// 메시 세팅
-	//static ConstructorHelpers::FObjectFinder<USkeletalMesh> MeshAsset(TEXT(""));
-	//if (MeshAsset.Succeeded())
-	//{
-	//	GetMesh()->SetSkeletalMesh(MeshAsset.Object);
-	//}
-	//GetMesh()->SetRelativeLocationAndRotation(FVector(), FRotator());
+	if (MeshAsset.Succeeded())
+	{
+		GetMesh()->SetSkeletalMesh(MeshAsset.Object);
+	}
 	
-	// CombatComponent 세팅
+	GetMesh()->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, -88.0f), FRotator(0.0f, -90.0f, 0.0f));
+	
 	PlayerCombatComponent = CreateDefaultSubobject<UPlayerCombatComponent>(TEXT("PlayerCombatComponent"));
 }
 
@@ -64,41 +65,97 @@ UPawnCombatComponent* APlayerCharacter::GetPawnCombatComponent() const
 void APlayerCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
-	
-	GetController()->GetPlayerState<AMGSPlayerState>()->InitASC(this);
-	
-	if (!StartupData.IsNull())
+
+	if (AMGSPlayerState* MGSPlayerState = GetPlayerState<AMGSPlayerState>())
+	{
+		MGSPlayerState->InitASC(this);
+	}
+
+	if (UMGSAbilitySystemComponent* ASC = GetMGSAbilitySystemComponent(); ASC && !StartupData.IsNull())
 	{
 		if (UDA_StartupBase* LoadedData = StartupData.LoadSynchronous())
 		{
-			// Startup 데이터가 Null인 아닌경우 Startup 데이터는 동기화로드를 거쳐서 최종적으로 게임 어빌리티 시스템이 발동된다.
-			LoadedData->GiveToAbilitySystemComponent(GetMGSAbilitySystemComponent());
+			LoadedData->GiveToAbilitySystemComponent(ASC);
 		}
 	}
-	
 }
 
 void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-	
-	checkf(InputConfigDataAsset, TEXT("Forgot to assign a valid data asset as input config"));
+}
+
+void APlayerCharacter::Landed(const FHitResult& Hit)
+{
+	Super::Landed(Hit);
+
+	RequestRestoreHeldMovementAbilityInputNextTick();
 }
 
 void APlayerCharacter::Input_Move(const FInputActionValue& InputActionValue)
 {
+	const FVector2D MovementVector = InputActionValue.Get<FVector2D>();
+
+	if (!Controller)
+	{
+		return;
+	}
+
+	const FRotator YawRotation(0.f, Controller->GetControlRotation().Yaw, 0.f);
+	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+
+	AddMovementInput(ForwardDirection, MovementVector.Y);
+	AddMovementInput(RightDirection, MovementVector.X);
 }
 
 void APlayerCharacter::Input_Look(const FInputActionValue& InputActionValue)
 {
+	const FVector2D LookAxisVector = InputActionValue.Get<FVector2D>();
+
+	AddControllerYawInput(LookAxisVector.X);
+	AddControllerPitchInput(LookAxisVector.Y);
 }
 
-void APlayerCharacter::INPUT_AbilityInputPressed(FGameplayTag InputTag)
+void APlayerCharacter::Input_AbilityInputPressed(FGameplayTag InputTag)
 {
-	GetMGSAbilitySystemComponent()->OnAbilityInputPressed(InputTag);
+	if (UMGSAbilitySystemComponent* ASC = GetMGSAbilitySystemComponent())
+	{
+		ASC->OnAbilityInputPressed(InputTag);
+	}
 }
 
-void APlayerCharacter::INPUT_AbilityInputReleased(FGameplayTag InputTag)
+void APlayerCharacter::Input_AbilityInputReleased(FGameplayTag InputTag)
 {
-	GetMGSAbilitySystemComponent()->OnAbilityInputReleased(InputTag);
+	if (UMGSAbilitySystemComponent* ASC = GetMGSAbilitySystemComponent())
+	{
+		ASC->OnAbilityInputReleased(InputTag);
+	}
+}
+
+void APlayerCharacter::RequestRestoreHeldMovementAbilityInputNextTick()
+{
+	// Re-evaluate held movement inputs after character movement state settles.
+	GetWorldTimerManager().SetTimerForNextTick(this, &ThisClass::TryRestoreHeldMovementAbilityInput);
+}
+
+void APlayerCharacter::TryRestoreHeldMovementAbilityInput()
+{
+	UMGSAbilitySystemComponent* ASC = GetMGSAbilitySystemComponent();
+	const UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
+	if (!ASC || !MovementComponent || !MovementComponent->IsMovingOnGround())
+	{
+		return;
+	}
+
+	if (ASC->IsAbilityInputTagPressed(MGSGameplayTags::InputTag_Sprint))
+	{
+		ASC->OnAbilityInputPressed(MGSGameplayTags::InputTag_Sprint);
+		return;
+	}
+
+	if (ASC->IsAbilityInputTagPressed(MGSGameplayTags::InputTag_Walk))
+	{
+		ASC->OnAbilityInputPressed(MGSGameplayTags::InputTag_Walk);
+	}
 }

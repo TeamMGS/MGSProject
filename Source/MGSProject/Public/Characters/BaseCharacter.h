@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-02
+ * 수정일 : 2026-03-03
  */
 
 #pragma once
@@ -16,6 +16,7 @@
 class UCharacterAttributeSet;
 class UMGSAbilitySystemComponent;
 class UDA_StartupBase;
+class AMGSPlayerState;
 
 UCLASS()
 class MGSPROJECT_API ABaseCharacter : public ACharacter, public IPawnCombatInterface
@@ -33,8 +34,11 @@ protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 public:	
-	UMGSAbilitySystemComponent* GetMGSAbilitySystemComponent() const;
-	UCharacterAttributeSet* GetCharacterAttributeSet() const;
+	virtual UMGSAbilitySystemComponent* GetMGSAbilitySystemComponent() const;
+	virtual UCharacterAttributeSet* GetCharacterAttributeSet() const;
+
+protected:
+	AMGSPlayerState* GetMGSPlayerState() const;
 	
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "StartupData")
