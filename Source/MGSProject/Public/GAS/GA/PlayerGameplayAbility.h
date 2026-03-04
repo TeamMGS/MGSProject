@@ -1,4 +1,4 @@
-/*
+﻿/*
  * 파일명 : PlayerGameplayAbility.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
@@ -37,3 +37,5 @@ private:
 	TWeakObjectPtr<APlayerCharacter> CachedPlayerCharacter;
 	TWeakObjectPtr<AMGSPlayerController> CachedMGSPlayerController;
 };
+
+

@@ -1,9 +1,9 @@
-/*
+﻿/*
  * 파일명 : DA_StartupPlayer.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-02
+ * 수정일 : 2026-03-04
  */
 
 #include "DataAssets/Startup/DA_StartupPlayer.h"
@@ -26,7 +26,7 @@ void UDA_StartupPlayer::GiveToAbilitySystemComponent(UMGSAbilitySystemComponent*
 		FGameplayAbilitySpec Spec(AbilitySet.AbilityToGrant);
 		Spec.SourceObject = ASC->GetAvatarActor();
 		Spec.Level = Level;
-		// 동적태그 생성
+		// InputTag를 동적 스펙 태그로 기록해 입력과 능력 매핑에 사용
 		Spec.GetDynamicSpecSourceTags().AddTag(AbilitySet.InputTag);
 		
 		ASC->GiveAbility(Spec);

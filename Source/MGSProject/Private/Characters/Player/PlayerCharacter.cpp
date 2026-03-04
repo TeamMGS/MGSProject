@@ -1,4 +1,4 @@
-/*
+﻿/*
  * 파일명 : PlayerCharacter.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
@@ -33,6 +33,7 @@ APlayerCharacter::APlayerCharacter()
 	CameraBoom->SetupAttachment(GetRootComponent());
 	CameraBoom->TargetArmLength = 300.0f;
 	CameraBoom->bUsePawnControlRotation = true;
+	CameraBoom->SocketOffset = FVector(0.f, 55.f, 25.f);
 
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
@@ -42,6 +43,7 @@ APlayerCharacter::APlayerCharacter()
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
 	GetCharacterMovement()->MaxWalkSpeed = 500.0f;
 	GetCharacterMovement()->GetNavAgentPropertiesRef().bCanCrouch = true;
+	GetCharacterMovement()->bCanWalkOffLedgesWhenCrouching = true;
 	GetCharacterMovement()->MaxWalkSpeedCrouched = 220.0f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.0f;
 
@@ -66,11 +68,13 @@ void APlayerCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 
+	// ASC 초기화
 	if (AMGSPlayerState* MGSPlayerState = GetPlayerState<AMGSPlayerState>())
 	{
 		MGSPlayerState->InitASC(this);
 	}
 
+	// DA_StartupPlayer의 어빌리티들을 동기 로드하여 ASC에 부여
 	if (UMGSAbilitySystemComponent* ASC = GetMGSAbilitySystemComponent(); ASC && !StartupData.IsNull())
 	{
 		if (UDA_StartupBase* LoadedData = StartupData.LoadSynchronous())
@@ -78,6 +82,8 @@ void APlayerCharacter::PossessedBy(AController* NewController)
 			LoadedData->GiveToAbilitySystemComponent(ASC);
 		}
 	}
+
+	UpdateFallingStateTag();
 }
 
 void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -90,6 +96,12 @@ void APlayerCharacter::Landed(const FHitResult& Hit)
 	Super::Landed(Hit);
 
 	RequestRestoreHeldMovementAbilityInputNextTick();
+}
+
+void APlayerCharacter::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode)
+{
+	Super::OnMovementModeChanged(PrevMovementMode, PreviousCustomMode);
+	UpdateFallingStateTag();
 }
 
 void APlayerCharacter::Input_Move(const FInputActionValue& InputActionValue)
@@ -139,6 +151,24 @@ void APlayerCharacter::RequestRestoreHeldMovementAbilityInputNextTick()
 	GetWorldTimerManager().SetTimerForNextTick(this, &ThisClass::TryRestoreHeldMovementAbilityInput);
 }
 
+void APlayerCharacter::UpdateFallingStateTag()
+{
+	UMGSAbilitySystemComponent* ASC = GetMGSAbilitySystemComponent();
+	const UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
+	if (!ASC || !MovementComponent)
+	{
+		return;
+	}
+
+	if (MovementComponent->IsFalling())
+	{
+		ASC->AddLooseGameplayTag(MGSGameplayTags::State_Player_Movement_Falling);
+		return;
+	}
+
+	ASC->RemoveLooseGameplayTag(MGSGameplayTags::State_Player_Movement_Falling);
+}
+
 void APlayerCharacter::TryRestoreHeldMovementAbilityInput()
 {
 	UMGSAbilitySystemComponent* ASC = GetMGSAbilitySystemComponent();
@@ -159,3 +189,5 @@ void APlayerCharacter::TryRestoreHeldMovementAbilityInput()
 		ASC->OnAbilityInputPressed(MGSGameplayTags::InputTag_Walk);
 	}
 }
+
+
