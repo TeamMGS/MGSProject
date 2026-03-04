@@ -1,9 +1,9 @@
-/*
+﻿/*
  * 파일명 : EnemyCharacter.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
  * 수정자 : 장대한
- * 수정일 : 2026-03-03
+ * 수정일 : 2026-03-04
  */
 
 #include "Characters/Enemies/EnemyCharacter.h"
@@ -69,7 +69,7 @@ void AEnemyCharacter::InitEnemyStartupData()
 		return;
 	}
 	
-	// Startup Data를 비동기 로딩으로 불러온다.
+	// StartupData 에셋을 비동기 로드로 불러온다.
 	UAssetManager::GetStreamableManager().RequestAsyncLoad(
 		StartupData.ToSoftObjectPath(),
 		FStreamableDelegate::CreateLambda(
@@ -86,3 +86,5 @@ void AEnemyCharacter::InitEnemyStartupData()
 		)
 	);
 }
+
+

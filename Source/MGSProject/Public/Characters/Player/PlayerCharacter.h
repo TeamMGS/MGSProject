@@ -1,4 +1,4 @@
-/*
+﻿/*
  * 파일명 : PlayerCharacter.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
@@ -32,6 +32,7 @@ public:
 protected:
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void Landed(const FHitResult& Hit) override;
+	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 	
 private:
@@ -58,6 +59,9 @@ public:
 #pragma endregion 
 
 private:
+	void UpdateFallingStateTag();
 	void TryRestoreHeldMovementAbilityInput();
 	
 };
+
+

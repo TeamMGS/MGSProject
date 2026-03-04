@@ -1,4 +1,4 @@
-/*
+﻿/*
  * 파일명 : BaseGameplayAbility.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
@@ -69,3 +69,5 @@ UMGSAbilitySystemComponent* UBaseGameplayAbility::GetMGSAbilitySystemComponentFr
 
 	return Cast<UMGSAbilitySystemComponent>(CurrentActorInfo->AbilitySystemComponent.Get());
 }
+
+

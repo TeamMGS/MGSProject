@@ -1,4 +1,4 @@
-/*
+﻿/*
  * 파일명 : PlayerCrouchGameplayAbility.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-03
@@ -98,3 +98,5 @@ void UPlayerCrouchGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle H
 
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
+
+

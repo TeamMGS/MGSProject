@@ -1,4 +1,4 @@
-/*
+﻿/*
  * 파일명 : BaseCharacter.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
@@ -14,6 +14,7 @@
 #include "BaseCharacter.generated.h"
 
 class UCharacterAttributeSet;
+class UWeaponAttributeSet;
 class UMGSAbilitySystemComponent;
 class UDA_StartupBase;
 class AMGSPlayerState;
@@ -29,19 +30,21 @@ public:
 	virtual UPawnCombatComponent* GetPawnCombatComponent() const override;
 
 protected:
-	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 public:	
 	virtual UMGSAbilitySystemComponent* GetMGSAbilitySystemComponent() const;
 	virtual UCharacterAttributeSet* GetCharacterAttributeSet() const;
+	virtual UWeaponAttributeSet* GetWeaponAttributeSet() const;
 
 protected:
 	AMGSPlayerState* GetMGSPlayerState() const;
 	
 protected:
+	// DA_StartupBase : 초기 부여 어빌리티 데이터 에셋
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "StartupData")
 	TSoftObjectPtr<UDA_StartupBase> StartupData;
 
 };
+
+

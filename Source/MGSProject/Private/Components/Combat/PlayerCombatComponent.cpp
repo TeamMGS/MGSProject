@@ -1,4 +1,4 @@
-/*
+﻿/*
  * 파일명 : PlayerCombatComponent.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
@@ -8,48 +8,22 @@
 
 #include "Components/Combat/PlayerCombatComponent.h"
 
-#include "Weapon/BaseWeapon.h"
+#include "GAS/MGSGameplayTags.h"
 
-void UPlayerCombatComponent::RegisterSpawnedWeapon(FGameplayTag WeaponTag, ABaseWeapon* Weapon,
-                                                   bool bRegisterAsEquippedWeapon)
+UPlayerCombatComponent::UPlayerCombatComponent()
 {
-	checkf(!CharacterCarriedWeaponMap.Contains(WeaponTag), TEXT("%s has already been as carried weapon"), *WeaponTag.ToString());
-	check(Weapon);
-	
-	CharacterCarriedWeaponMap.Emplace(WeaponTag, Weapon);
-	
-	// 장착한 무기로 등록이 되면 현재 장착무기를 변경
-	if (bRegisterAsEquippedWeapon)
-	{
-		CurrentEquippedWeaponTag = WeaponTag;
-	}
+	PrimaryWeaponTag = MGSGameplayTags::Weapon_Player_Primary;
+	SecondaryWeaponTag = MGSGameplayTags::Weapon_Player_Secondary;
 }
 
-ABaseWeapon* UPlayerCombatComponent::GetCharacterCarriedWeaponByTag(FGameplayTag WeaponTag) const
+bool UPlayerCombatComponent::EquipPrimaryWeapon()
 {
-	// Map 컨테이너에 WeaponTag의 데이터가 있으면 ABaseWeapon 반환
-	if (CharacterCarriedWeaponMap.Contains(WeaponTag))
-	{
-		if (ABaseWeapon* const* FoundWeapon = CharacterCarriedWeaponMap.Find(WeaponTag))
-		{
-			return *FoundWeapon;
-		}
-	}
-	
-	return nullptr;
+	return EquipWeaponByTag(PrimaryWeaponTag);
 }
 
-ABaseWeapon* UPlayerCombatComponent::GetCharacterCurrentEquippedWeapon() const
+bool UPlayerCombatComponent::EquipSecondaryWeapon()
 {
-	if (!CurrentEquippedWeaponTag.IsValid())
-	{
-		return nullptr;
-	}
-	
-	return GetCharacterCarriedWeaponByTag(CurrentEquippedWeaponTag);
+	return EquipWeaponByTag(SecondaryWeaponTag);
 }
 
-ABaseWeapon* UPlayerCombatComponent::GetPlayerCarriedWeaponByTag(FGameplayTag Tag) const
-{
-	return Cast<ABaseWeapon>(GetCharacterCarriedWeaponByTag(Tag));
-}
+
