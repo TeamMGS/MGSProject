@@ -1,4 +1,4 @@
-/*
+﻿/*
  * 파일명 : PlayerSprintGameplayAbility.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-03
@@ -49,3 +49,5 @@ private:
 	float CachedMoveSpeed = 0.f;
 	bool bHasCachedMoveSpeed = false;
 };
+
+

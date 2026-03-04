@@ -1,4 +1,4 @@
-/*
+﻿/*
  * 파일명 : BaseWeapon.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
@@ -9,20 +9,20 @@
 #include "Weapon/BaseWeapon.h"
 
 #include "Components/BoxComponent.h"
+#include "Components/StaticMeshComponent.h"
 
 ABaseWeapon::ABaseWeapon()
 {
-	// 틱관련 기능 비활성화
+	// 성능을 위해 Tick을 사용하지 않습니다.
 	PrimaryActorTick.bCanEverTick = false;
 	PrimaryActorTick.bStartWithTickEnabled = false;
-	
+
 	WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh"));
 	SetRootComponent(WeaponMesh);
-	
+
 	WeaponCollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("WeaponCollisionBox"));
 	WeaponCollisionBox->SetupAttachment(GetRootComponent());
 	WeaponCollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	//WeaponCollisionBox->InitBoxExtent(FVector());
 }
 
 void ABaseWeapon::AssignGrantedAbilitySpecHandles(const TArray<FGameplayAbilitySpecHandle>& SpecHandles)
@@ -34,3 +34,5 @@ TArray<FGameplayAbilitySpecHandle> ABaseWeapon::GetGrantedAbilitySpecHandles()
 {
 	return GrantedAbilitySpecHandles;
 }
+
+

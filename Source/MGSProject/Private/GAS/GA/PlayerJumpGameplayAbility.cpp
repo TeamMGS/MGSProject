@@ -1,4 +1,4 @@
-/*
+﻿/*
  * 파일명 : PlayerJumpGameplayAbility.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-03
@@ -90,3 +90,5 @@ void UPlayerJumpGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Han
 
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
+
+

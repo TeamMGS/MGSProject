@@ -1,4 +1,4 @@
-/*
+﻿/*
  * 파일명 : EnemyGameplayAbility.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
@@ -24,3 +24,5 @@ UEnemyCombatComponent* UEnemyGameplayAbility::GetEnemyCombatComponentFromActorIn
 {
 	return GetEnemyCharacterFromActorInfo()->GetEnemyCombatComponent();
 }
+
+

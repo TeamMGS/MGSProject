@@ -1,4 +1,4 @@
-/*
+﻿/*
  * 파일명 : EnemyCombatComponent.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
@@ -18,3 +18,5 @@ class MGSPROJECT_API UEnemyCombatComponent : public UPawnCombatComponent
 	GENERATED_BODY()
 	
 };
+
+

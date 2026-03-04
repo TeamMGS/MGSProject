@@ -1,4 +1,4 @@
-/*
+﻿/*
  * 파일명 : MGSGameMode.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
@@ -19,4 +19,5 @@ class MGSPROJECT_API AMGSGameMode : public AGameModeBase
 
 public:
 	AMGSGameMode();
+	
 };

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * 파일명 : MGSAbilitySystemComponent.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
@@ -8,6 +8,7 @@
 
 #include "GAS/ASC/MGSAbilitySystemComponent.h"
 
+#include "Components/Combat/PawnCombatComponent.h"
 #include "GAS/GA/PlayerGameplayAbility.h"
 #include "GAS/MGSGameplayTags.h"
 #include "MGSStructType.h"
@@ -48,22 +49,38 @@ void UMGSAbilitySystemComponent::OnAbilityInputPressed(const FGameplayTag& Input
 		}
 	}
 
-	for (FGameplayAbilitySpec& Spec : GetActivatableAbilities())
+	TArray<FGameplayAbilitySpecHandle> MatchingSpecHandles;
+	for (const FGameplayAbilitySpec& Spec : GetActivatableAbilities())
 	{
-		if (!Spec.GetDynamicSpecSourceTags().HasTagExact(InputTag))
+		if (Spec.GetDynamicSpecSourceTags().HasTagExact(InputTag))
+		{
+			MatchingSpecHandles.Add(Spec.Handle);
+		}
+	}
+
+	TArray<FGameplayAbilitySpecHandle> PendingActivateHandles;
+	for (const FGameplayAbilitySpecHandle& SpecHandle : MatchingSpecHandles)
+	{
+		FGameplayAbilitySpec* Spec = FindAbilitySpecFromHandle(SpecHandle);
+		if (!Spec)
 		{
 			continue;
 		}
 
-		AbilitySpecInputPressed(Spec);
+		AbilitySpecInputPressed(*Spec);
 
-		if (Spec.IsActive())
+		if (Spec->IsActive())
 		{
-			InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputPressed, Spec.Handle, Spec.ActivationInfo.GetActivationPredictionKey());
+			InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputPressed, Spec->Handle, Spec->ActivationInfo.GetActivationPredictionKey());
 			continue;
 		}
 
-		TryActivateAbility(Spec.Handle);
+		PendingActivateHandles.Add(Spec->Handle);
+	}
+
+	for (const FGameplayAbilitySpecHandle& PendingHandle : PendingActivateHandles)
+	{
+		TryActivateAbility(PendingHandle);
 	}
 }
 
@@ -76,18 +93,28 @@ void UMGSAbilitySystemComponent::OnAbilityInputReleased(const FGameplayTag& Inpu
 
 	PressedAbilityInputTags.RemoveTag(InputTag);
 
-	for (FGameplayAbilitySpec& Spec : GetActivatableAbilities())
+	TArray<FGameplayAbilitySpecHandle> MatchingSpecHandles;
+	for (const FGameplayAbilitySpec& Spec : GetActivatableAbilities())
 	{
-		if (!Spec.GetDynamicSpecSourceTags().HasTagExact(InputTag))
+		if (Spec.GetDynamicSpecSourceTags().HasTagExact(InputTag))
+		{
+			MatchingSpecHandles.Add(Spec.Handle);
+		}
+	}
+
+	for (const FGameplayAbilitySpecHandle& SpecHandle : MatchingSpecHandles)
+	{
+		FGameplayAbilitySpec* Spec = FindAbilitySpecFromHandle(SpecHandle);
+		if (!Spec)
 		{
 			continue;
 		}
 
-		AbilitySpecInputReleased(Spec);
+		AbilitySpecInputReleased(*Spec);
 
-		if (Spec.IsActive())
+		if (Spec->IsActive())
 		{
-			InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputReleased, Spec.Handle, Spec.ActivationInfo.GetActivationPredictionKey());
+			InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputReleased, Spec->Handle, Spec->ActivationInfo.GetActivationPredictionKey());
 		}
 	}
 }

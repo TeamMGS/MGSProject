@@ -1,4 +1,4 @@
-/*
+﻿/*
  * 파일명 : MGSInputComponent.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
@@ -66,3 +66,5 @@ void UMGSInputComponent::BindAbilityInputAction(const UDA_InputConfig* InInputCo
 		BindAction(AbilityInputActionConfig.InputAction, ETriggerEvent::Completed, ContextObject, InputReleasedFunc, AbilityInputActionConfig.InputTag);
 	}
 }
+
+

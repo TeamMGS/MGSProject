@@ -1,4 +1,4 @@
-/*
+﻿/*
  * 파일명 : EnemyCharacter.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
@@ -47,3 +47,5 @@ public:
 	FORCEINLINE UEnemyCombatComponent* GetEnemyCombatComponent() const { return EnemyCombatComponent; }
 	
 };
+
+
