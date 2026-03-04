@@ -1,29 +1,32 @@
-/*
+﻿/*
  * 파일명 : MGSPlayerState.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-02
+ * 수정일 : 2026-03-03
  */
 
 #include "Characters/Player/MGSPlayerState.h"
 
 #include "GAS/ASC/MGSAbilitySystemComponent.h"
 #include "GAS/AttributeSets/CharacterAttributeSet.h"
+#include "GAS/AttributeSets/WeaponAttributeSet.h"
 
 AMGSPlayerState::AMGSPlayerState()
 {
 	MGSAbilitySystemComponent = CreateDefaultSubobject<UMGSAbilitySystemComponent>(TEXT("MGSAbilitySystemComponent"));
 	CharacterAttributeSet = CreateDefaultSubobject<UCharacterAttributeSet>(TEXT("CharacterAttributeSet"));
+	WeaponAttributeSet = CreateDefaultSubobject<UWeaponAttributeSet>(TEXT("WeaponAttributeSet"));
 }
 
 void AMGSPlayerState::InitASC(AActor* Avatar)
 {
-	if (MGSAbilitySystemComponent)
+	if (!Avatar || !MGSAbilitySystemComponent)
 	{
-		// AbilitySystemComponent에 접근 어빌리티 정보 초기값 부여
-		MGSAbilitySystemComponent->InitAbilityActorInfo(this, Avatar);
+		return;
 	}
+
+	MGSAbilitySystemComponent->InitAbilityActorInfo(this, Avatar);
 }
 
 UAbilitySystemComponent* AMGSPlayerState::GetAbilitySystemComponent() const

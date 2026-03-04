@@ -1,9 +1,9 @@
-/*
+﻿/*
  * 파일명 : PlayerCharacter.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-02
+ * 수정일 : 2026-03-03
  */
 
 #pragma once
@@ -15,7 +15,6 @@
 
 class UPlayerCombatComponent;
 struct FInputActionValue;
-class UDA_InputConfig;
 class UCameraComponent;
 class USpringArmComponent;
 
@@ -28,9 +27,12 @@ public:
 	APlayerCharacter();
 	
 	virtual UPawnCombatComponent* GetPawnCombatComponent() const override;
+	void RequestRestoreHeldMovementAbilityInputNextTick();
 	
 protected:
 	virtual void PossessedBy(AController* NewController) override;
+	virtual void Landed(const FHitResult& Hit) override;
+	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 	
 private:
@@ -48,15 +50,18 @@ public:
 	
 #pragma endregion
 #pragma region Input
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "CharacterData", meta = (AllowPrivateAccess = "true"))
-	UDA_InputConfig* InputConfigDataAsset;
-	
-protected:
+public:
 	void Input_Move(const FInputActionValue& InputActionValue);
 	void Input_Look(const FInputActionValue& InputActionValue);
 	
-	void INPUT_AbilityInputPressed(FGameplayTag InputTag);
-	void INPUT_AbilityInputReleased(FGameplayTag InputTag);
+	void Input_AbilityInputPressed(FGameplayTag InputTag);
+	void Input_AbilityInputReleased(FGameplayTag InputTag);
 #pragma endregion 
+
+private:
+	void UpdateFallingStateTag();
+	void TryRestoreHeldMovementAbilityInput();
 	
 };
+
+

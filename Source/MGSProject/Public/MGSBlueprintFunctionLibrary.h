@@ -1,4 +1,4 @@
-/*
+﻿/*
  * 파일명 : MGSBlueprintFunctionLibrary.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
@@ -34,3 +34,5 @@ public:
 	
 	static UPawnCombatComponent* NativeGetPawnCombatComponentFromActor(AActor* Actor);
 };
+
+

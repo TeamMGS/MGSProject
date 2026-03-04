@@ -1,4 +1,4 @@
-/*
+﻿/*
  * 파일명 : PawnCombatInterface.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
@@ -29,3 +29,5 @@ public:
 	virtual UPawnCombatComponent* GetPawnCombatComponent() const = 0;
 	
 };
+
+

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * 파일명 : MGSBlueprintFunctionLibrary.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
@@ -57,3 +57,5 @@ UPawnCombatComponent* UMGSBlueprintFunctionLibrary::NativeGetPawnCombatComponent
 	
 	return nullptr;
 }
+
+

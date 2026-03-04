@@ -1,4 +1,4 @@
-/*
+﻿/*
  * 파일명 : CharacterAttributeSet.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
@@ -36,3 +36,5 @@ public:
 	ATTRIBUTE_ACCESSORS(UCharacterAttributeSet, MaxHp)
 		
 };
+
+

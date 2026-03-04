@@ -1,4 +1,4 @@
-/*
+﻿/*
  * 파일명 : MGSGameInstance.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
@@ -18,3 +18,5 @@ class MGSPROJECT_API UMGSGameInstance : public UGameInstance
 	GENERATED_BODY()
 	
 };
+
+
