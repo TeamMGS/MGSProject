@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-03
+ * 수정일 : 2026-03-05
  */
 
 #pragma once
@@ -15,6 +15,8 @@
 struct FInputActionValue;
 struct FGameplayTag;
 class UDA_InputConfig;
+class UPlayerHUDPresenterComponent;
+class UMGSPlayerStatusWidget;
 
 UCLASS()
 class MGSPROJECT_API AMGSPlayerController : public APlayerController
@@ -22,24 +24,32 @@ class MGSPROJECT_API AMGSPlayerController : public APlayerController
 	GENERATED_BODY()
 
 public:
+	AMGSPlayerController();
+
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
+	virtual void OnPossess(APawn* InPawn) override;
+	virtual void AcknowledgePossession(APawn* InPawn) override;
+	virtual void OnUnPossess() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
-	void SetupInputMappingContext() const; // 기본 IMC 추가
-	void BindInputActions(); // 네이티브 입력과 어빌리티 입력 바인딩
+	void SetupInputMappingContext() const;
+	void BindInputActions();
 
-	// 네이티브 입력
-	void Input_Move(const FInputActionValue& InputActionValue); // 이동
-	void Input_Look(const FInputActionValue& InputActionValue); // 시점
-
-	// 어빌리티 입력
-	void Input_AbilityInputPressed(FGameplayTag InputTag); // 눌렀을 때
-	void Input_AbilityInputReleased(FGameplayTag InputTag); // 땠을 때
+	void Input_Move(const FInputActionValue& InputActionValue);
+	void Input_Look(const FInputActionValue& InputActionValue);
+	void Input_AbilityInputPressed(FGameplayTag InputTag);
+	void Input_AbilityInputReleased(FGameplayTag InputTag);
 
 private:
-	// DA_InputConfig : 태그-AI 연결 데이터 에셋 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = true))
 	TObjectPtr<UDA_InputConfig> InputConfigDataAsset;
-	
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "HUD", meta = (AllowPrivateAccess = true))
+	TObjectPtr<UPlayerHUDPresenterComponent> PlayerHUDPresenterComponent;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "HUD", meta = (AllowPrivateAccess = true))
+	TSubclassOf<UMGSPlayerStatusWidget> PlayerStatusWidgetClass;
 };
+

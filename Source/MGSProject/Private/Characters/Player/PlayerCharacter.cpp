@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-03
+ * 수정일 : 2026-03-05
  */
 
 #include "Characters/Player/PlayerCharacter.h"
@@ -33,7 +33,8 @@ APlayerCharacter::APlayerCharacter()
 	CameraBoom->SetupAttachment(GetRootComponent());
 	CameraBoom->TargetArmLength = 300.0f;
 	CameraBoom->bUsePawnControlRotation = true;
-	CameraBoom->SocketOffset = FVector(0.f, 55.f, 25.f);
+	// 카메라 높이를 올려 정면 사격 시 과도한 상향 조준을 줄입니다.
+	CameraBoom->SocketOffset = FVector(0.f, 55.f, 90.f);
 
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
