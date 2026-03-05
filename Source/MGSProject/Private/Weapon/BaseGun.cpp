@@ -2,8 +2,8 @@
  * 파일명: BaseGun.cpp
  * 생성자: 장대한
  * 생성일: 2026-03-04
- * 수정자: 장대한
- * 수정일: 2026-03-04
+ * 수정자:  장대한
+ * 수정일:  2026-03-05
  */
 
 #include "Weapon/BaseGun.h"
@@ -13,29 +13,36 @@
 #include "GAS/AttributeSets/WeaponAttributeSet.h"
 #include "MGSStructType.h"
 
+namespace
+{
+	constexpr int32 DefaultMaxMagazineAmmo = 30;
+	constexpr int32 DefaultStartMagazineAmmo = 30;
+	constexpr int32 DefaultMaxCarriedAmmo = 120;
+	constexpr int32 DefaultStartCarriedAmmo = 120;
+	constexpr float DefaultFireRange = 12000.f;
+	constexpr float DefaultBaseDamage = 20.f;
+	constexpr float DefaultFireInterval = 0.12f;
+	constexpr float DefaultBaseSpreadRadius = 0.f;
+	constexpr float DefaultMaxSpreadRadius = 120.f;
+	constexpr float DefaultSpreadRadiusIncreasePerShot = 6.f;
+	constexpr float DefaultAimFOV = 65.f;
+	const FVector DefaultAimCameraSocketOffset = FVector(0.f, 55.f, 12.f);
+}
 
 void ABaseGun::BeginPlay()
 {
 	Super::BeginPlay();
 
-	MaxMagazineAmmo = GetDefinitionMaxMagazineAmmo();
-	CurrentMagazineAmmo = FMath::Clamp(GetDefinitionStartMagazineAmmo(), 0, MaxMagazineAmmo);
-	CarriedAmmo = FMath::Clamp(GetDefinitionStartCarriedAmmo(), 0, GetDefinitionMaxCarriedAmmo());
-	FireRange = GetDefinitionFireRange();
-	BaseDamage = GetDefinitionBaseDamage();
-	FireInterval = GetDefinitionFireInterval();
-	BaseSpreadRadius = GetDefinitionBaseSpreadRadius();
-	MaxSpreadRadius = GetDefinitionMaxSpreadRadius();
-	SpreadRadiusIncreasePerShot = GetDefinitionSpreadRadiusIncreasePerShot();
-	AimFOV = GetDefinitionAimFOV();
-	AimCameraSocketOffset = GetDefinitionAimCameraSocketOffset();
-
-	CurrentMagazineAmmo = FMath::Clamp(CurrentMagazineAmmo, 0, MaxMagazineAmmo);
-	CarriedAmmo = FMath::Max(CarriedAmmo, 0);
+	ensureMsgf(WeaponDefinition, TEXT("%s has no WeaponDefinition assigned."), *GetName());
 }
 
 bool ABaseGun::CanFire() const
 {
+	if (!ensureMsgf(GetWeaponAttributeSet(), TEXT("WeaponAttributeSet is missing for %s (owner: %s)."), *GetName(), *GetNameSafe(GetOwner())))
+	{
+		return false;
+	}
+
 	return GetCurrentMagazineAmmo() > 0;
 }
 
@@ -46,29 +53,29 @@ bool ABaseGun::ConsumeAmmo(int32 AmmoToConsume)
 		return false;
 	}
 
-	if (UWeaponAttributeSet* WeaponAttributeSet = GetWeaponAttributeSetMutable())
-	{
-		const int32 CurrentAmmo = GetCurrentMagazineAmmo();
-		if (CurrentAmmo < AmmoToConsume)
-		{
-			return false;
-		}
-
-		WeaponAttributeSet->SetCurrentMagazineAmmo(static_cast<float>(CurrentAmmo - AmmoToConsume));
-		return true;
-	}
-
-	if (CurrentMagazineAmmo < AmmoToConsume)
+	UWeaponAttributeSet* WeaponAttributeSet = GetWeaponAttributeSetMutable();
+	if (!ensureMsgf(WeaponAttributeSet, TEXT("ConsumeAmmo failed because WeaponAttributeSet is missing for %s (owner: %s)."), *GetName(), *GetNameSafe(GetOwner())))
 	{
 		return false;
 	}
 
-	CurrentMagazineAmmo -= AmmoToConsume;
+	const int32 CurrentAmmo = GetCurrentMagazineAmmo();
+	if (CurrentAmmo < AmmoToConsume)
+	{
+		return false;
+	}
+
+	WeaponAttributeSet->SetCurrentMagazineAmmo(static_cast<float>(CurrentAmmo - AmmoToConsume));
 	return true;
 }
 
 bool ABaseGun::CanReload() const
 {
+	if (!ensureMsgf(GetWeaponAttributeSet(), TEXT("WeaponAttributeSet is missing for %s (owner: %s)."), *GetName(), *GetNameSafe(GetOwner())))
+	{
+		return false;
+	}
+
 	if (GetCurrentMagazineAmmo() >= GetMaxMagazineAmmo())
 	{
 		return false;
@@ -87,15 +94,14 @@ int32 ABaseGun::ReloadAmmo()
 	const int32 NeedAmmo = GetMaxMagazineAmmo() - GetCurrentMagazineAmmo();
 	const int32 ReloadedAmmo = FMath::Min(NeedAmmo, GetCarriedAmmo());
 
-	if (UWeaponAttributeSet* WeaponAttributeSet = GetWeaponAttributeSetMutable())
+	UWeaponAttributeSet* WeaponAttributeSet = GetWeaponAttributeSetMutable();
+	if (!ensureMsgf(WeaponAttributeSet, TEXT("ReloadAmmo failed because WeaponAttributeSet is missing for %s (owner: %s)."), *GetName(), *GetNameSafe(GetOwner())))
 	{
-		WeaponAttributeSet->SetCurrentMagazineAmmo(static_cast<float>(GetCurrentMagazineAmmo() + ReloadedAmmo));
-		WeaponAttributeSet->SetCurrentCarriedAmmo(static_cast<float>(GetCarriedAmmo() - ReloadedAmmo));
-		return ReloadedAmmo;
+		return 0;
 	}
 
-	CurrentMagazineAmmo += ReloadedAmmo;
-	CarriedAmmo -= ReloadedAmmo;
+	WeaponAttributeSet->SetCurrentMagazineAmmo(static_cast<float>(GetCurrentMagazineAmmo() + ReloadedAmmo));
+	WeaponAttributeSet->SetCurrentCarriedAmmo(static_cast<float>(GetCarriedAmmo() - ReloadedAmmo));
 	return ReloadedAmmo;
 }
 
@@ -107,7 +113,8 @@ int32 ABaseGun::GetCurrentMagazineAmmo() const
 		return FMath::Clamp(FMath::RoundToInt(WeaponAttributeSet->GetCurrentMagazineAmmo()), 0, MaxAmmo);
 	}
 
-	return FMath::Clamp(CurrentMagazineAmmo, 0, GetMaxMagazineAmmo());
+	ensureMsgf(false, TEXT("GetCurrentMagazineAmmo is reading definition fallback because WeaponAttributeSet is missing for %s (owner: %s)."), *GetName(), *GetNameSafe(GetOwner()));
+	return FMath::Clamp(GetDefinitionStartMagazineAmmo(), 0, GetDefinitionMaxMagazineAmmo());
 }
 
 int32 ABaseGun::GetMaxMagazineAmmo() const
@@ -128,7 +135,8 @@ int32 ABaseGun::GetCarriedAmmo() const
 		return FMath::Clamp(FMath::RoundToInt(WeaponAttributeSet->GetCurrentCarriedAmmo()), 0, MaxCarried);
 	}
 
-	return FMath::Max(0, CarriedAmmo);
+	ensureMsgf(false, TEXT("GetCarriedAmmo is reading definition fallback because WeaponAttributeSet is missing for %s (owner: %s)."), *GetName(), *GetNameSafe(GetOwner()));
+	return FMath::Clamp(GetDefinitionStartCarriedAmmo(), 0, GetDefinitionMaxCarriedAmmo());
 }
 
 float ABaseGun::GetFireRange() const
@@ -226,6 +234,7 @@ bool ABaseGun::InitializeWeaponAttributes(UWeaponAttributeSet* WeaponAttributeSe
 	WeaponAttributeSet->SetBaseDamage(GetDefinitionBaseDamage());
 	WeaponAttributeSet->SetFireInterval(GetDefinitionFireInterval());
 	WeaponAttributeSet->SetBaseSpreadRadius(GetDefinitionBaseSpreadRadius());
+	WeaponAttributeSet->SetCurrentSpreadRadius(GetDefinitionBaseSpreadRadius());
 	WeaponAttributeSet->SetMaxSpreadRadius(GetDefinitionMaxSpreadRadius());
 	WeaponAttributeSet->SetSpreadRadiusIncreasePerShot(GetDefinitionSpreadRadiusIncreasePerShot());
 	WeaponAttributeSet->SetAimFOV(GetDefinitionAimFOV());
@@ -292,7 +301,8 @@ int32 ABaseGun::GetDefinitionMaxMagazineAmmo() const
 		return FMath::Max(1, WeaponDefinition->MaxMagazineAmmo);
 	}
 
-	return FMath::Max(1, MaxMagazineAmmo);
+	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded MaxMagazineAmmo fallback."), *GetName());
+	return DefaultMaxMagazineAmmo;
 }
 
 int32 ABaseGun::GetDefinitionStartMagazineAmmo() const
@@ -302,7 +312,8 @@ int32 ABaseGun::GetDefinitionStartMagazineAmmo() const
 		return FMath::Max(0, WeaponDefinition->StartMagazineAmmo);
 	}
 
-	return FMath::Max(0, CurrentMagazineAmmo);
+	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded StartMagazineAmmo fallback."), *GetName());
+	return DefaultStartMagazineAmmo;
 }
 
 int32 ABaseGun::GetDefinitionMaxCarriedAmmo() const
@@ -312,7 +323,8 @@ int32 ABaseGun::GetDefinitionMaxCarriedAmmo() const
 		return FMath::Max(0, WeaponDefinition->MaxCarriedAmmo);
 	}
 
-	return FMath::Max(0, CarriedAmmo);
+	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded MaxCarriedAmmo fallback."), *GetName());
+	return DefaultMaxCarriedAmmo;
 }
 
 int32 ABaseGun::GetDefinitionStartCarriedAmmo() const
@@ -322,7 +334,8 @@ int32 ABaseGun::GetDefinitionStartCarriedAmmo() const
 		return FMath::Max(0, WeaponDefinition->StartCarriedAmmo);
 	}
 
-	return FMath::Max(0, CarriedAmmo);
+	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded StartCarriedAmmo fallback."), *GetName());
+	return DefaultStartCarriedAmmo;
 }
 
 float ABaseGun::GetDefinitionFireRange() const
@@ -332,7 +345,8 @@ float ABaseGun::GetDefinitionFireRange() const
 		return FMath::Max(100.f, WeaponDefinition->FireRange);
 	}
 
-	return FMath::Max(100.f, FireRange);
+	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded FireRange fallback."), *GetName());
+	return DefaultFireRange;
 }
 
 float ABaseGun::GetDefinitionBaseDamage() const
@@ -342,7 +356,8 @@ float ABaseGun::GetDefinitionBaseDamage() const
 		return FMath::Max(0.f, WeaponDefinition->BaseDamage);
 	}
 
-	return FMath::Max(0.f, BaseDamage);
+	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded BaseDamage fallback."), *GetName());
+	return DefaultBaseDamage;
 }
 
 float ABaseGun::GetDefinitionFireInterval() const
@@ -352,7 +367,8 @@ float ABaseGun::GetDefinitionFireInterval() const
 		return FMath::Max(0.01f, WeaponDefinition->FireInterval);
 	}
 
-	return FMath::Max(0.01f, FireInterval);
+	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded FireInterval fallback."), *GetName());
+	return DefaultFireInterval;
 }
 
 float ABaseGun::GetDefinitionBaseSpreadRadius() const
@@ -362,7 +378,8 @@ float ABaseGun::GetDefinitionBaseSpreadRadius() const
 		return FMath::Max(0.f, WeaponDefinition->BaseSpreadRadius);
 	}
 
-	return FMath::Max(0.f, BaseSpreadRadius);
+	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded BaseSpreadRadius fallback."), *GetName());
+	return DefaultBaseSpreadRadius;
 }
 
 float ABaseGun::GetDefinitionMaxSpreadRadius() const
@@ -372,7 +389,8 @@ float ABaseGun::GetDefinitionMaxSpreadRadius() const
 		return FMath::Max(0.f, WeaponDefinition->MaxSpreadRadius);
 	}
 
-	return FMath::Max(0.f, MaxSpreadRadius);
+	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded MaxSpreadRadius fallback."), *GetName());
+	return DefaultMaxSpreadRadius;
 }
 
 float ABaseGun::GetDefinitionSpreadRadiusIncreasePerShot() const
@@ -382,7 +400,8 @@ float ABaseGun::GetDefinitionSpreadRadiusIncreasePerShot() const
 		return FMath::Max(0.f, WeaponDefinition->SpreadRadiusIncreasePerShot);
 	}
 
-	return FMath::Max(0.f, SpreadRadiusIncreasePerShot);
+	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded SpreadRadiusIncreasePerShot fallback."), *GetName());
+	return DefaultSpreadRadiusIncreasePerShot;
 }
 
 float ABaseGun::GetDefinitionAimFOV() const
@@ -392,7 +411,8 @@ float ABaseGun::GetDefinitionAimFOV() const
 		return FMath::Clamp(WeaponDefinition->AimFOV, 10.f, 170.f);
 	}
 
-	return FMath::Clamp(AimFOV, 10.f, 170.f);
+	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded AimFOV fallback."), *GetName());
+	return DefaultAimFOV;
 }
 
 FVector ABaseGun::GetDefinitionAimCameraSocketOffset() const
@@ -402,7 +422,6 @@ FVector ABaseGun::GetDefinitionAimCameraSocketOffset() const
 		return WeaponDefinition->AimCameraSocketOffset;
 	}
 
-	return AimCameraSocketOffset;
+	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded AimCameraSocketOffset fallback."), *GetName());
+	return DefaultAimCameraSocketOffset;
 }
-
-

@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
  * 수정자 : 장대한
- * 수정일 : 2026-03-02
+ * 수정일 : 2026-03-05
  */
 
 #pragma once
@@ -13,6 +13,7 @@
 
 class UPlayerGameplayAbility;
 class UInputMappingContext;
+class UTexture2D;
 
 USTRUCT(BlueprintType)
 struct FPlayerAbilitySet
@@ -37,6 +38,10 @@ struct FPlayerWeaponData
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UInputMappingContext> WeaponInputMappingContext;
+
+	// HUD 무기 정보 패널에서 사용할 아이콘
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
+	TObjectPtr<UTexture2D> WeaponInfoImage = nullptr;
 	
 	// 무기 장착 시 부여할 어빌리티 목록
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (TitleProperty = "InputTag"))
