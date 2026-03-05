@@ -60,5 +60,3 @@ struct FWeaponRuntimeState
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Ammo")
 	int32 CurrentCarriedAmmo = 0;
 };
-
-
