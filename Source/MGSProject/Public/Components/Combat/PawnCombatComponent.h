@@ -2,8 +2,8 @@
  * 파일명 : PawnCombatComponent.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
- * 수정자 : 장대한
- * 수정일 : 2026-03-02
+ * 수정자 :  장대한
+ * 수정일 :  2026-03-05
  */
 
 #pragma once
@@ -15,6 +15,7 @@
 #include "PawnCombatComponent.generated.h"
 
 class ABaseWeapon;
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnEquippedWeaponChangedSignature, FGameplayTag /*PreviousWeaponTag*/, FGameplayTag /*CurrentWeaponTag*/);
 
 UCLASS()
 class MGSPROJECT_API UPawnCombatComponent : public UPawnExtensionComponent
@@ -38,6 +39,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Player")
 	ABaseWeapon* GetCharacterCurrentEquippedWeapon() const;
 
+	FOnEquippedWeaponChangedSignature& GetOnEquippedWeaponChangedDelegate() { return OnEquippedWeaponChanged; }
+
 	// 태그로 들고 있는 장비 조회
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	ABaseWeapon* GetPlayerCarriedWeaponByTag(FGameplayTag Tag) const;
@@ -51,14 +54,15 @@ public:
 	bool UnequipCurrentWeapon();
 
 private:
-	bool AttachWeaponToSocket(ABaseWeapon* Weapon, FName SocketName) const;
-	void AddWeaponInputMappingContext(ABaseWeapon* Weapon) const;
-	void RemoveWeaponInputMappingContext(ABaseWeapon* Weapon) const;
-	void ApplyWeaponAbilities(ABaseWeapon* Weapon) const;
-	void RemoveWeaponAbilities(ABaseWeapon* Weapon) const;
-	void SaveCurrentWeaponRuntimeState();
-	void ApplyWeaponRuntimeState(FGameplayTag WeaponTag, ABaseWeapon* Weapon);
+	bool AttachWeaponToSocket(ABaseWeapon* Weapon, FName SocketName) const; // 소켓에 무기 장착
+	void AddWeaponInputMappingContext(ABaseWeapon* Weapon) const; // 무기 입력 매핑
+	void RemoveWeaponInputMappingContext(ABaseWeapon* Weapon) const; // 무기 입력 매핑 제거
+	void ApplyWeaponAbilities(ABaseWeapon* Weapon) const; // 무기 능력 제거
+	void RemoveWeaponAbilities(ABaseWeapon* Weapon) const; // 무기 능력 추가
+	void SaveCurrentWeaponRuntimeState(); // 무기 런타임 탄약값 저장
+	void ApplyWeaponRuntimeState(FGameplayTag WeaponTag, ABaseWeapon* Weapon); // 무기 런타임 탄약값 적용
 
-	TMap<FGameplayTag, ABaseWeapon*> CharacterCarriedWeaponMap;
-	TMap<FGameplayTag, FWeaponRuntimeState> CharacterCarriedWeaponRuntimeStateMap;
+	TMap<FGameplayTag, ABaseWeapon*> CharacterCarriedWeaponMap; // 소유 무기 맵
+	TMap<FGameplayTag, FWeaponRuntimeState> CharacterCarriedWeaponRuntimeStateMap; // 무기별 런타임 탄약 상태 맵 
+	FOnEquippedWeaponChangedSignature OnEquippedWeaponChanged; // 장착 변경 델리게이트
 };

@@ -2,12 +2,11 @@
  * 파일명: BaseGun.h
  * 생성자: 장대한
  * 생성일: 2026-03-04
- * 수정자: 장대한
- * 수정일: 2026-03-04
+ * 수정자:  장대한
+ * 수정일:  2026-03-05
  */
 
 #pragma once
-
 
 #include "CoreMinimal.h"
 #include "Weapon/BaseWeapon.h"
@@ -23,48 +22,63 @@ class MGSPROJECT_API ABaseGun : public ABaseWeapon
 	GENERATED_BODY()
 
 public:
+	// 발사 가능 조회
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Ammo")
 	bool CanFire() const;
 
+	// 탄약 소모
 	UFUNCTION(BlueprintCallable, Category = "Weapon|Gun|Ammo")
 	bool ConsumeAmmo(int32 AmmoToConsume = 1);
 
+	// 장전 가능 조회
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Ammo")
 	bool CanReload() const;
 
+	// 장전
 	UFUNCTION(BlueprintCallable, Category = "Weapon|Gun|Ammo")
 	int32 ReloadAmmo();
 
+	// 현재 탄약
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Ammo")
 	int32 GetCurrentMagazineAmmo() const;
 
+	// 최대 탄약
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Ammo")
 	int32 GetMaxMagazineAmmo() const;
 
+	// 현재 탄창
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Ammo")
 	int32 GetCarriedAmmo() const;
 
+	// 사거리
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Fire")
 	float GetFireRange() const;
 
+	// 기본 데미지
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Fire")
 	float GetBaseDamage() const;
 
+	// 연사 간격
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Fire")
 	float GetFireInterval() const;
 
+	// 기본 탄착군
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Fire")
 	float GetBaseSpreadRadius() const;
 
+	// 최대 탄착군
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Fire")
 	float GetMaxSpreadRadius() const;
 
+	// 탄착군 증가율
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Fire")
 	float GetSpreadRadiusIncreasePerShot() const;
 
+	// 조준 줌 FOV
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Aim")
 	float GetAimFOV() const;
 
+	// 조준 줌 카메라 오프셋
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Aim")
 	FVector GetAimCameraSocketOffset() const;
 
@@ -80,7 +94,7 @@ public:
 	// 현재 WeaponAttributeSet 값을 런타임 상태로 추출합니다.
 	FWeaponRuntimeState MakeRuntimeState(const UWeaponAttributeSet* WeaponAttributeSet) const;
 
-	// DA(또는 폴백 값) 기준 기본 런타임 상태를 생성합니다.
+	// DA 기준 기본 런타임 상태를 생성합니다.
 	FWeaponRuntimeState MakeDefaultRuntimeState() const;
 
 protected:
@@ -90,6 +104,7 @@ private:
 	const UWeaponAttributeSet* GetWeaponAttributeSet() const;
 	UWeaponAttributeSet* GetWeaponAttributeSetMutable() const;
 
+	// DA_WeaponDefinition에 정의된 값 Getter
 	int32 GetDefinitionMaxMagazineAmmo() const;
 	int32 GetDefinitionStartMagazineAmmo() const;
 	int32 GetDefinitionMaxCarriedAmmo() const;
@@ -104,52 +119,9 @@ private:
 	FVector GetDefinitionAimCameraSocketOffset() const;
 
 protected:
+	// DA_WeaponDefinition
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|Data")
 	TObjectPtr<UDA_WeaponDefinition> WeaponDefinition;
-
-	// 폴백 탄창 최대 탄약 수(WeaponDefinition 미할당 시 사용)
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|Gun|Ammo", meta = (ClampMin = "1"))
-	int32 MaxMagazineAmmo = 30;
-
-	// 폴백 시작 탄창 탄약 수(WeaponDefinition 미할당 시 사용)
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon|Gun|Ammo", meta = (ClampMin = "0"))
-	int32 CurrentMagazineAmmo = 30;
-
-	// 폴백 예비 탄약 수(WeaponDefinition 미할당 시 사용)
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon|Gun|Ammo", meta = (ClampMin = "0"))
-	int32 CarriedAmmo = 120;
-
-	// 폴백 발사 최대 사거리(WeaponDefinition 미할당 시 사용)
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|Gun|Fire", meta = (ClampMin = "100.0"))
-	float FireRange = 12000.f;
-
-	// 폴백 기본 데미지(WeaponDefinition 미할당 시 사용)
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|Gun|Fire", meta = (ClampMin = "0.0"))
-	float BaseDamage = 20.f;
-
-	// 폴백 연사 간격(WeaponDefinition 미할당 시 사용)
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|Gun|Fire", meta = (ClampMin = "0.01"))
-	float FireInterval = 0.12f;
-
-	// 폴백 탄착군 기본 반경(WeaponDefinition 미할당 시 사용)
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|Gun|Fire|Spread", meta = (ClampMin = "0.0"))
-	float BaseSpreadRadius = 0.f;
-
-	// 폴백 탄착군 최대 반경(WeaponDefinition 미할당 시 사용)
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|Gun|Fire|Spread", meta = (ClampMin = "0.0"))
-	float MaxSpreadRadius = 120.f;
-
-	// 폴백 발사 1회당 탄착군 증가량(WeaponDefinition 미할당 시 사용)
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|Gun|Fire|Spread", meta = (ClampMin = "0.0"))
-	float SpreadRadiusIncreasePerShot = 6.f;
-
-	// 폴백 에임 FOV(WeaponDefinition 미할당 시 사용)
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|Gun|Aim", meta = (ClampMin = "10.0", ClampMax = "170.0"))
-	float AimFOV = 65.f;
-
-	// 폴백 에임 카메라 오프셋(WeaponDefinition 미할당 시 사용)
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|Gun|Aim")
-	FVector AimCameraSocketOffset = FVector(0.f, 55.f, 12.f);
 };
 
 
