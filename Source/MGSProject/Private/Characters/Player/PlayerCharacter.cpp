@@ -2,8 +2,8 @@
  * 파일명 : PlayerCharacter.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
- * 수정자 : 장대한
- * 수정일 : 2026-03-03
+ * 수정자 : 김동석
+ * 수정일 : 2026-03-05
  */
 
 #include "Characters/Player/PlayerCharacter.h"
@@ -20,6 +20,8 @@
 #include "Components/CapsuleComponent.h"
 #include "Math/RotationMatrix.h"
 #include "TimerManager.h"
+#include "MotionWarpingComponent.h"
+
 
 APlayerCharacter::APlayerCharacter()
 {
@@ -57,6 +59,9 @@ APlayerCharacter::APlayerCharacter()
 	GetMesh()->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, -88.0f), FRotator(0.0f, -90.0f, 0.0f));
 	
 	PlayerCombatComponent = CreateDefaultSubobject<UPlayerCombatComponent>(TEXT("PlayerCombatComponent"));
+	
+	// 모션워핑
+	MotionWarpingComponent = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("MotionWarpingComponent"));
 }
 
 UPawnCombatComponent* APlayerCharacter::GetPawnCombatComponent() const

@@ -21,7 +21,11 @@ public class MGSProject : ModuleRules
 			"Slate",
 			"GameplayAbilities",
 			"GameplayTags",
-			"GameplayTasks"
+			"GameplayTasks",
+			"PoseSearch",
+			"Chooser",
+			"AnimationWarpingRuntime",
+			"MotionWarping"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });
