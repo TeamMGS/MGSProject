@@ -2,8 +2,8 @@
  * 파일명 : EnemyCharacter.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
- * 수정자 : 장대한
- * 수정일 : 2026-03-04
+ * 수정자 : 김사윤
+ * 수정일 : 2026-03-05
  */
 
 #include "Characters/Enemies/EnemyCharacter.h"
@@ -24,10 +24,10 @@ AEnemyCharacter::AEnemyCharacter()
 	bUseControllerRotationYaw = false;
 	
 	GetCharacterMovement()->bUseControllerDesiredRotation = false;
-	GetCharacterMovement()->bOrientRotationToMovement = false;
-	//GetCharacterMovement()->RotationRate = FRotator();
-	//GetCharacterMovement()->MaxWalkSpeed = ;
-	//GetCharacterMovement()->BrakingDecelerationWalking = ;
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
+	GetCharacterMovement()->MaxWalkSpeed = 450.0f;
+	GetCharacterMovement()->BrakingDecelerationWalking = 2000.0f;
 
 	MGSAbilitySystemComponent = CreateDefaultSubobject<UMGSAbilitySystemComponent>(TEXT("MGSAbilitySystemComponent"));
 	CharacterAttributeSet = CreateDefaultSubobject<UCharacterAttributeSet>(TEXT("CharacterAttributeSet"));
