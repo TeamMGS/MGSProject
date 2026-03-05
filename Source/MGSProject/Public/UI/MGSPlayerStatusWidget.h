@@ -12,6 +12,8 @@
 #include "Blueprint/UserWidget.h"
 #include "MGSPlayerStatusWidget.generated.h"
 
+class UTexture2D;
+
 UCLASS(Abstract, BlueprintType)
 class MGSPROJECT_API UMGSPlayerStatusWidget : public UUserWidget
 {
@@ -30,11 +32,17 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "HUD")
 	void SetWeaponInfoVisible(bool bInVisible);
 
+	UFUNCTION(BlueprintCallable, Category = "HUD")
+	void UpdateWeaponInfo(bool bInVisible, UTexture2D* InWeaponInfoImage);
+
 	UFUNCTION(BlueprintPure, Category = "HUD")
 	float GetHealthPercent() const;
 
 	UFUNCTION(BlueprintPure, Category = "HUD")
 	float GetSpreadPercent() const;
+
+	UFUNCTION(BlueprintPure, Category = "HUD")
+	UTexture2D* GetCurrentWeaponInfoImage() const;
 
 protected:
 	UFUNCTION(BlueprintImplementableEvent, Category = "HUD")
@@ -73,4 +81,7 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "HUD", meta = (AllowPrivateAccess = "true"))
 	bool bWeaponInfoVisible = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "HUD", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UTexture2D> CurrentWeaponInfoImage = nullptr;
 };

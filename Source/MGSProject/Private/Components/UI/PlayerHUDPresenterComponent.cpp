@@ -16,6 +16,7 @@
 #include "GAS/AttributeSets/CharacterAttributeSet.h"
 #include "GAS/AttributeSets/WeaponAttributeSet.h"
 #include "UI/MGSPlayerStatusWidget.h"
+#include "Weapon/BaseWeapon.h"
 
 UPlayerHUDPresenterComponent::UPlayerHUDPresenterComponent()
 {
@@ -168,8 +169,15 @@ void UPlayerHUDPresenterComponent::UpdateWeaponInfoVisibility() const
 		return;
 	}
 
-	const bool bHasEquippedWeapon = CachedPlayerCombatComponent && CachedPlayerCombatComponent->GetCharacterCurrentEquippedWeapon();
-	PlayerStatusWidget->SetWeaponInfoVisible(bHasEquippedWeapon);
+	const ABaseWeapon* EquippedWeapon = CachedPlayerCombatComponent ? CachedPlayerCombatComponent->GetCharacterCurrentEquippedWeapon() : nullptr;
+	const bool bHasEquippedWeapon = EquippedWeapon != nullptr;
+	UTexture2D* WeaponInfoImage = nullptr;
+	if (EquippedWeapon)
+	{
+		WeaponInfoImage = EquippedWeapon->GetWeaponData().WeaponInfoImage;
+	}
+
+	PlayerStatusWidget->UpdateWeaponInfo(bHasEquippedWeapon, WeaponInfoImage);
 }
 
 void UPlayerHUDPresenterComponent::UpdateAmmoOnHUD() const

@@ -32,7 +32,13 @@ void UMGSPlayerStatusWidget::UpdateSpread(float InCurrentSpreadRadius, float InM
 
 void UMGSPlayerStatusWidget::SetWeaponInfoVisible(bool bInVisible)
 {
+	UpdateWeaponInfo(bInVisible, CurrentWeaponInfoImage.Get());
+}
+
+void UMGSPlayerStatusWidget::UpdateWeaponInfo(bool bInVisible, UTexture2D* InWeaponInfoImage)
+{
 	bWeaponInfoVisible = bInVisible;
+	CurrentWeaponInfoImage = InWeaponInfoImage;
 	BP_OnWeaponInfoVisibilityChanged(bWeaponInfoVisible);
 }
 
@@ -54,4 +60,9 @@ float UMGSPlayerStatusWidget::GetSpreadPercent() const
 	}
 
 	return FMath::Clamp(CurrentSpreadRadius / MaxSpreadRadius, 0.f, 1.f);
+}
+
+UTexture2D* UMGSPlayerStatusWidget::GetCurrentWeaponInfoImage() const
+{
+	return CurrentWeaponInfoImage.Get();
 }
