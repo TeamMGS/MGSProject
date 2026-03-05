@@ -2,8 +2,8 @@
  * 파일명 : PlayerCrouchGameplayAbility.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-03
- * 수정자 : 장대한
- * 수정일 : 2026-03-03
+ * 수정자 :  장대한
+ * 수정일 :  2026-03-05
  */
 
 #include "GAS/GA/PlayerCrouchGameplayAbility.h"
@@ -81,7 +81,7 @@ void UPlayerCrouchGameplayAbility::InputPressed(const FGameplayAbilitySpecHandle
 	const FGameplayAbilityActivationInfo ActivationInfo)
 {
 	Super::InputPressed(Handle, ActorInfo, ActivationInfo);
-	EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
+	CancelAbility(Handle, ActorInfo, ActivationInfo, true);
 }
 
 void UPlayerCrouchGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,
@@ -98,5 +98,3 @@ void UPlayerCrouchGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle H
 
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
-
-

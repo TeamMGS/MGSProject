@@ -2,8 +2,8 @@
  * 파일명 : PawnCombatComponent.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
- * 수정자 : 장대한
- * 수정일 : 2026-03-02
+ * 수정자 :  장대한
+ * 수정일 :  2026-03-05
  */
 
 #include "Components/Combat/PawnCombatComponent.h"
@@ -31,6 +31,7 @@ void UPawnCombatComponent::RegisterSpawnedWeapon(FGameplayTag WeaponTag, ABaseWe
 
 	if (ABaseGun* SpawnedGun = Cast<ABaseGun>(Weapon))
 	{
+		// 총기면 기본 탄약 상태를 런타임 맵에 초기 저장
 		CharacterCarriedWeaponRuntimeStateMap.FindOrAdd(WeaponTag) = SpawnedGun->MakeDefaultRuntimeState();
 	}
 
@@ -38,8 +39,8 @@ void UPawnCombatComponent::RegisterSpawnedWeapon(FGameplayTag WeaponTag, ABaseWe
 	if (!bRegisterAsEquippedWeapon)
 	{
 		AttachWeaponToSocket(Weapon, Weapon->GetHolsterSocketName());
-		Weapon->SetActorHiddenInGame(Weapon->GetHolsterSocketName().IsNone());
-		Weapon->SetActorEnableCollision(false);
+		Weapon->SetActorHiddenInGame(Weapon->GetHolsterSocketName().IsNone()); // 숨김 
+		Weapon->SetActorEnableCollision(false); // 충돌 Off
 		return;
 	}
 
@@ -92,16 +93,19 @@ bool UPawnCombatComponent::EquipWeaponByTag(FGameplayTag WeaponTag)
 		// 같은 무기를 다시 장착하려는 경우는 성공으로 처리합니다.
 		return true;
 	}
-
+	
+	// 새 무기 런타임 상태를 AttributeSet에 적용
+	const FGameplayTag PreviousEquippedWeaponTag = CurrentEquippedWeaponTag;
 	UnequipCurrentWeapon();
 	ApplyWeaponRuntimeState(WeaponTag, TargetWeapon);
 
-	AttachWeaponToSocket(TargetWeapon, TargetWeapon->GetEquippedSocketName());
-	TargetWeapon->SetActorHiddenInGame(false);
-	TargetWeapon->SetActorEnableCollision(false);
+	AttachWeaponToSocket(TargetWeapon, TargetWeapon->GetEquippedSocketName()); // 장착 소켓 부착
+	TargetWeapon->SetActorHiddenInGame(false); // 숨김 Off
+	TargetWeapon->SetActorEnableCollision(false); // 충돌 Off
 
-	ApplyWeaponAbilities(TargetWeapon);
+	ApplyWeaponAbilities(TargetWeapon); // 무기 어빌리티 부여 및 무기 입력 매핑 컨택스트 추가
 	CurrentEquippedWeaponTag = WeaponTag;
+	OnEquippedWeaponChanged.Broadcast(PreviousEquippedWeaponTag, CurrentEquippedWeaponTag);
 	return true;
 }
 
@@ -113,12 +117,14 @@ bool UPawnCombatComponent::UnequipCurrentWeapon()
 		return false;
 	}
 
-	SaveCurrentWeaponRuntimeState();
-	RemoveWeaponAbilities(CurrentWeapon);
-	AttachWeaponToSocket(CurrentWeapon, CurrentWeapon->GetHolsterSocketName());
-	CurrentWeapon->SetActorHiddenInGame(CurrentWeapon->GetHolsterSocketName().IsNone());
-	CurrentWeapon->SetActorEnableCollision(false);
+	SaveCurrentWeaponRuntimeState(); // 현재 무기 런타임 탄약 저장
+	RemoveWeaponAbilities(CurrentWeapon); // 무기 어빌리티 제거 및 무기 입력 매핑 제거
+	AttachWeaponToSocket(CurrentWeapon, CurrentWeapon->GetHolsterSocketName()); // 홀스터 소켓을 이동
+	CurrentWeapon->SetActorHiddenInGame(CurrentWeapon->GetHolsterSocketName().IsNone()); // 숨김
+	CurrentWeapon->SetActorEnableCollision(false); // 충돌 Off
+	const FGameplayTag PreviousEquippedWeaponTag = CurrentEquippedWeaponTag;
 	CurrentEquippedWeaponTag = FGameplayTag();
+	OnEquippedWeaponChanged.Broadcast(PreviousEquippedWeaponTag, CurrentEquippedWeaponTag);
 	return true;
 }
 

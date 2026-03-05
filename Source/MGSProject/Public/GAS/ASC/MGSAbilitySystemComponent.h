@@ -2,8 +2,8 @@
  * 파일명 : MGSAbilitySystemComponent.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
- * 수정자 : 장대한
- * 수정일 : 2026-03-03
+ * 수정자 :  장대한
+ * 수정일 :  2026-03-05
  */
 
 #pragma once
@@ -22,17 +22,19 @@ class MGSPROJECT_API UMGSAbilitySystemComponent : public UAbilitySystemComponent
 	GENERATED_BODY()
 
 public:
-	void OnAbilityInputPressed(const FGameplayTag& InputTag);
-	void OnAbilityInputReleased(const FGameplayTag& InputTag);
-	bool IsAbilityInputTagPressed(const FGameplayTag& InputTag) const;
+	void OnAbilityInputPressed(const FGameplayTag& InputTag); // 태그 입력 시작 처리
+	void OnAbilityInputReleased(const FGameplayTag& InputTag); // 태그 입력 해제 처리
+	bool IsAbilityInputTagPressed(const FGameplayTag& InputTag) const; // 현재 눌림 상태 조회
 	
+	// 무기 장착 시 Ability 추가
 	UFUNCTION(BlueprintCallable, Category = "Ability", meta = (Level = "1"))
 	void GrantWeaponAbilities(const TArray<FPlayerAbilitySet>& WeaponAbilities, int32 Level, TArray<FGameplayAbilitySpecHandle>& OutGrantedAbilitySpecHandles);
-
+	
+	// 무기 해제 시 정리
 	UFUNCTION(BlueprintCallable, Category = "Ability")
 	void RemoveGrantedWeaponAbilities(UPARAM(ref) TArray<FGameplayAbilitySpecHandle>& SpecHandlesToRemove);
 
 private:
-	FGameplayTagContainer PressedAbilityInputTags;
+	FGameplayTagContainer PressedAbilityInputTags; // 현재 눌려 있는 Ability 입력 태그 집합
 	
 };

@@ -2,8 +2,8 @@
  * 파일명 : PlayerSprintGameplayAbility.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-03
- * 수정자 : 장대한
- * 수정일 : 2026-03-03
+ * 수정자 :  장대한
+ * 수정일 :  2026-03-05
  */
 
 #include "GAS/GA/PlayerSprintGameplayAbility.h"
@@ -21,6 +21,7 @@ UPlayerSprintGameplayAbility::UPlayerSprintGameplayAbility()
 	ActivationOwnedTags.AddTag(MGSGameplayTags::State_Player_Movement_Sprint);
 	ActivationBlockedTags.AddTag(MGSGameplayTags::State_Player_Movement_Walk);
 	ActivationBlockedTags.AddTag(MGSGameplayTags::State_Player_Crouching);
+	
 	BlockAbilitiesWithTag.AddTag(MGSGameplayTags::Ability_Player_Walk);
 	BlockAbilitiesWithTag.AddTag(MGSGameplayTags::Ability_Player_Crouch);
 }
@@ -106,5 +107,3 @@ void UPlayerSprintGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle H
 
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
-
-

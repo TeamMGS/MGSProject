@@ -2,12 +2,11 @@
  * 파일명: PlayerFireGameplayAbility.h
  * 생성자: 장대한
  * 생성일: 2026-03-04
- * 수정자: 장대한
- * 수정일: 2026-03-04
+ * 수정자:  장대한
+ * 수정일:  2026-03-05
  */
 
 #pragma once
-
 
 #include "CoreMinimal.h"
 #include "TimerManager.h"
@@ -50,11 +49,13 @@ protected:
 		bool bWasCancelled) override;
 
 private:
-	void HandleAutomaticFire();
-	bool FireSingleShot();
-	void EnableCombatFacing();
-	void RestoreMovementFacing();
+	void HandleAutomaticFire(); // 자동 연사 
+	bool FireSingleShot(); // 실제 한 발 처리
+	void EnableCombatFacing(); // 사격 중 캐릭터가 정면을 보도록 회전 설정
+	void RestoreMovementFacing(); // 캐릭터 회전 설정 복원
+	float CalculateStateSpreadMultiplier(const APlayerCharacter* PlayerCharacter) const;
 
+	// 총구->화면 시점 라인 트레이스로 히트 스캔
 	bool FireTraceAndApplyDamage(APlayerCharacter* PlayerCharacter, AMGSPlayerController* PlayerController,
 		ABaseGun* EquippedGun, AActor* DamageCauser, AController* InstigatorController, float FireRange, float Damage,
 		float SpreadRadius) const;
@@ -80,15 +81,42 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Fire")
 	FName MuzzleSocketName = TEXT("Muzzle");
 
-	float CurrentSpreadRadius = 0.f;
-	float CurrentFireInterval = 0.12f;
-	FTimerHandle AutoFireTimerHandle;
+	// 점프/낙하 중 스프레드 배율
+	UPROPERTY(EditDefaultsOnly, Category = "Fire|Spread|State", meta = (ClampMin = "0.0"))
+	float JumpSpreadMultiplier = 2.4f;
 
+	// 뛰기(스프린트) 중 스프레드 배율
+	UPROPERTY(EditDefaultsOnly, Category = "Fire|Spread|State", meta = (ClampMin = "0.0"))
+	float SprintSpreadMultiplier = 1.6f;
+
+	// 일반 이동 중 스프레드 배율
+	UPROPERTY(EditDefaultsOnly, Category = "Fire|Spread|State", meta = (ClampMin = "0.0"))
+	float MovingSpreadMultiplier = 1.3f;
+
+	// 걷기(워크) 중 스프레드 배율
+	UPROPERTY(EditDefaultsOnly, Category = "Fire|Spread|State", meta = (ClampMin = "0.0"))
+	float WalkSpreadMultiplier = 1.1f;
+
+	// 웅크린 상태 스프레드 배율(1.0 미만이면 감소)
+	UPROPERTY(EditDefaultsOnly, Category = "Fire|Spread|State", meta = (ClampMin = "0.0"))
+	float CrouchSpreadMultiplier = 0.7f;
+
+	// 조준(ADS) 상태 스프레드 배율(1.0 미만이면 감소)
+	UPROPERTY(EditDefaultsOnly, Category = "Fire|Spread|State", meta = (ClampMin = "0.0"))
+	float AimSpreadMultiplier = 0.65f;
+
+	// 이동 상태 판정을 위한 최소 수평 속도
+	UPROPERTY(EditDefaultsOnly, Category = "Fire|Spread|State", meta = (ClampMin = "0.0"))
+	float MinMovingSpeedForSpread = 10.f;
+
+	float CurrentSpreadRadius = 0.f; // 현재 탄착군 반경
+	float CurrentFireInterval = 0.12f; // 현재 연사 간격
+	FTimerHandle AutoFireTimerHandle; // 자동연사 타이머
+
+	// 캐릭터 회전 모드 복구용 캐시
 	bool bCachedUseControllerRotationYaw = false;
 	bool bCachedOrientRotationToMovement = true;
 	bool bCachedUseControllerDesiredRotation = false;
 	bool bHasCachedMovementFacing = false;
+	
 };
-
-
-
