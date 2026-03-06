@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 김동석
- * 수정일 : 2026-03-05
+ * 수정일 : 2026-03-06
  */
 
 #pragma once
@@ -25,7 +25,7 @@ class MGSPROJECT_API APlayerCharacter : public ABaseCharacter
 	GENERATED_BODY()
 	
 public:
-	APlayerCharacter();
+	APlayerCharacter(const FObjectInitializer& ObjectInitializer);
 	
 	virtual UPawnCombatComponent* GetPawnCombatComponent() const override;
 	void RequestRestoreHeldMovementAbilityInputNextTick();

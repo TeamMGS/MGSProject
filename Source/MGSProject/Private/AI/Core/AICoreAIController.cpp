@@ -6,11 +6,11 @@
 
 AAICoreAIController::AAICoreAIController()
 {
-	UAIPerceptionComponent* PerceptionComponent = GetPerceptionComponent();
-	if (!PerceptionComponent)
+	UAIPerceptionComponent* LocalPerceptionComponent = GetPerceptionComponent();
+	if (!LocalPerceptionComponent)
 	{
-		PerceptionComponent = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("PerceptionComponent"));
-		SetPerceptionComponent(*PerceptionComponent);
+		LocalPerceptionComponent = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("PerceptionComponent"));
+		SetPerceptionComponent(*LocalPerceptionComponent);
 	}
 	SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("SightConfig"));
 	HearingConfig = CreateDefaultSubobject<UAISenseConfig_Hearing>(TEXT("HearingConfig"));
@@ -20,8 +20,8 @@ AAICoreAIController::AAICoreAIController()
 
 void AAICoreAIController::ConfigurePerception()
 {
-	UAIPerceptionComponent* PerceptionComponent = GetPerceptionComponent();
-	if (!PerceptionComponent || !SightConfig || !HearingConfig)
+	UAIPerceptionComponent* LocalPerceptionComponent = GetPerceptionComponent();
+	if (!LocalPerceptionComponent || !SightConfig || !HearingConfig)
 	{
 		return;
 	}
@@ -38,7 +38,7 @@ void AAICoreAIController::ConfigurePerception()
 	HearingConfig->DetectionByAffiliation.bDetectFriendlies = true;
 	HearingConfig->DetectionByAffiliation.bDetectNeutrals = true;
 
-	PerceptionComponent->ConfigureSense(*SightConfig);
-	PerceptionComponent->ConfigureSense(*HearingConfig);
-	PerceptionComponent->SetDominantSense(SightConfig->GetSenseImplementation());
+	LocalPerceptionComponent->ConfigureSense(*SightConfig);
+	LocalPerceptionComponent->ConfigureSense(*HearingConfig);
+	LocalPerceptionComponent->SetDominantSense(SightConfig->GetSenseImplementation());
 }

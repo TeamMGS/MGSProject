@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 김동석
- * 수정일 : 2026-03-05
+ * 수정일 : 2026-03-06
  */
 
 #pragma once
@@ -13,6 +13,8 @@
 #include "Interfaces/PawnCombatInterface.h"
 #include "BaseCharacter.generated.h"
 
+class UMGSLocomotionComponent;
+class UMGSCharacterMovementComponent;
 class UCharacterAttributeSet;
 class UWeaponAttributeSet;
 class UMGSAbilitySystemComponent;
@@ -25,7 +27,7 @@ class MGSPROJECT_API ABaseCharacter : public ACharacter, public IPawnCombatInter
 	GENERATED_BODY()
 
 public:
-	ABaseCharacter();
+	ABaseCharacter(const FObjectInitializer& ObjectInitializer);
 	
 	virtual UPawnCombatComponent* GetPawnCombatComponent() const override;
 
@@ -40,10 +42,22 @@ public:
 protected:
 	AMGSPlayerState* GetMGSPlayerState() const;
 	
+	virtual void OnJumped_Implementation() override;
+	
+	virtual void Landed(const FHitResult& Hit) override;
+	
 protected:
 	// DA_StartupBase : 초기 부여 어빌리티 데이터 에셋
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "StartupData")
 	TSoftObjectPtr<UDA_StartupBase> StartupData;
+	
+	// 현재의 상태(state)를 정의하는 TAG를 붙이기 위한 Components
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UMGSLocomotionComponent> LocomotionComponent;
+
+	// 캐싱된 커스텀 무브먼트 컴포넌트 포인터 (캐스팅 오버헤드 방지)
+	UPROPERTY()
+	TObjectPtr<UMGSCharacterMovementComponent> MGSMovementComponent;
 };
 
 

@@ -2,8 +2,8 @@
  * 파일명 : EnemyCharacter.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
- * 수정자 : 김사윤
- * 수정일 : 2026-03-05
+ * 수정자 : 김동석
+ * 수정일 : 2026-03-06
  */
 
 #include "Characters/Enemies/EnemyCharacter.h"
@@ -15,7 +15,8 @@
 #include "GAS/ASC/MGSAbilitySystemComponent.h"
 #include "GAS/AttributeSets/CharacterAttributeSet.h"
 
-AEnemyCharacter::AEnemyCharacter()
+AEnemyCharacter::AEnemyCharacter(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 	

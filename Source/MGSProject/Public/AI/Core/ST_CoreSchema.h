@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "StateTreeAIComponentSchema.h"
+#include "Components/StateTreeAIComponentSchema.h"
 #include "ST_CoreSchema.generated.h"
 
 UCLASS()

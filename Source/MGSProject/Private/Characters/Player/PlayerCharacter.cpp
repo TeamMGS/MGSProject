@@ -2,8 +2,8 @@
  * 파일명 : PlayerCharacter.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
- * 수정자 : 장대한
- * 수정일 : 2026-03-05
+ * 수정자 : 김동석
+ * 수정일 : 2026-03-06
  */
 
 #include "Characters/Player/PlayerCharacter.h"
@@ -23,7 +23,8 @@
 #include "MotionWarpingComponent.h"
 
 
-APlayerCharacter::APlayerCharacter()
+APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
 	GetCapsuleComponent()->InitCapsuleSize(35.0f, 90.0f);
 	

@@ -2,14 +2,15 @@
  * 파일명 : EnemyCharacter.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
- * 수정자 : 김사윤
- * 수정일 : 2026-03-05
+ * 수정자 : 김동석
+ * 수정일 : 2026-03-06
  */
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Characters/BaseCharacter.h"
+#include "GAS/AttributeSets/CharacterAttributeSet.h"
 #include "EnemyCharacter.generated.h"
 
 class UEnemyCombatComponent;
@@ -22,7 +23,7 @@ class MGSPROJECT_API AEnemyCharacter : public ABaseCharacter
 	GENERATED_BODY()
 	
 public:
-	AEnemyCharacter();
+	AEnemyCharacter(const FObjectInitializer& ObjectInitializer);
 
 	virtual UPawnCombatComponent* GetPawnCombatComponent() const override;
 	virtual UMGSAbilitySystemComponent* GetMGSAbilitySystemComponent() const override;

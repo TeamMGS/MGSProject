@@ -25,7 +25,8 @@ public class MGSProject : ModuleRules
 			"PoseSearch",
 			"Chooser",
 			"AnimationWarpingRuntime",
-			"MotionWarping"
+			"MotionWarping",
+			"AnimGraphRuntime"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });
