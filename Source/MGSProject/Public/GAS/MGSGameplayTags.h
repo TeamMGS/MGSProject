@@ -2,8 +2,8 @@
  * 파일명 : MGSGameplayTags.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
- * 수정자 :  장대한
- * 수정일 :  2026-03-05
+ * 수정자 : 김사윤
+ * 수정일 : 2026-03-06
  */
 
 #pragma once
@@ -52,6 +52,11 @@ namespace MGSGameplayTags
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Player_Crouching)
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Player_Aiming)
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Player_CombatReady)
+
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Enemy_Clear)
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Enemy_Suspicious)
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Enemy_Investigation)
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Enemy_Combat)
 
 	// Event tags: gameplay event payload trigger
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Player_Interact)

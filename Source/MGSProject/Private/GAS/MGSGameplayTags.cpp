@@ -2,8 +2,8 @@
  * 파일명 : MGSGameplayTags.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
- * 수정자 :  장대한
- * 수정일 :  2026-03-05
+ * 수정자 : 김사윤
+ * 수정일 : 2026-03-06
  */
 
 #include "GAS/MGSGameplayTags.h"
@@ -50,6 +50,11 @@ namespace MGSGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Crouching, "State.Player.Crouching")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Aiming, "State.Player.Aiming")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_CombatReady, "State.Player.CombatReady")
+
+	UE_DEFINE_GAMEPLAY_TAG(State_Enemy_Clear, "State.Enemy.Clear")
+	UE_DEFINE_GAMEPLAY_TAG(State_Enemy_Suspicious, "State.Enemy.Suspicious")
+	UE_DEFINE_GAMEPLAY_TAG(State_Enemy_Investigation, "State.Enemy.Investigation")
+	UE_DEFINE_GAMEPLAY_TAG(State_Enemy_Combat, "State.Enemy.Combat")
 
 	// Event
 	UE_DEFINE_GAMEPLAY_TAG(Event_Player_Interact, "Event.Player.Interact")
