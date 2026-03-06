@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
  * 수정자 : 김사윤
- * 수정일 : 2026-03-06
+ * 수정일 : 2026-03-05
  */
 
 #include "Characters/Enemies/EnemyCharacter.h"

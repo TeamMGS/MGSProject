@@ -15,7 +15,7 @@ UWeaponAttributeSet::UWeaponAttributeSet()
 	InitMaxMagazineAmmo(30.f);
 	InitCurrentCarriedAmmo(120.f);
 	InitMaxCarriedAmmo(120.f);
-	InitFireRange(12000.f);
+	InitAimReferenceDistance(12000.f);
 	InitBaseDamage(20.f);
 	InitFireInterval(0.12f);
 	InitBaseSpreadRadius(0.f);
@@ -24,5 +24,3 @@ UWeaponAttributeSet::UWeaponAttributeSet()
 	InitSpreadRadiusIncreasePerShot(6.f);
 	InitAimFOV(65.f);
 }
-
-
