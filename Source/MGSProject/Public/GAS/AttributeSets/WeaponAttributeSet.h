@@ -47,10 +47,10 @@ public:
 	FGameplayAttributeData MaxCarriedAmmo;
 	WEAPON_ATTRIBUTE_ACCESSORS(UWeaponAttributeSet, MaxCarriedAmmo)
 
-	// 사거리
+	// 에임 목표점 계산 기준 거리
 	UPROPERTY(BlueprintReadOnly, Category = "Weapon|Fire")
-	FGameplayAttributeData FireRange;
-	WEAPON_ATTRIBUTE_ACCESSORS(UWeaponAttributeSet, FireRange)
+	FGameplayAttributeData AimReferenceDistance;
+	WEAPON_ATTRIBUTE_ACCESSORS(UWeaponAttributeSet, AimReferenceDistance)
 
 	// 기본 데미지
 	UPROPERTY(BlueprintReadOnly, Category = "Weapon|Fire")
@@ -86,5 +86,5 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Weapon|Aim")
 	FGameplayAttributeData AimFOV;
 	WEAPON_ATTRIBUTE_ACCESSORS(UWeaponAttributeSet, AimFOV)
-	
 };
+

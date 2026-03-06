@@ -2,25 +2,27 @@
  * 파일명: PlayerFireGameplayAbility.cpp
  * 생성자: 장대한
  * 생성일: 2026-03-04
- * 수정자:  장대한
- * 수정일:  2026-03-05
+ * 수정자: 장대한
+ * 수정일: 2026-03-06
  */
 
 #include "GAS/GA/PlayerFireGameplayAbility.h"
 
 #include "AbilitySystemComponent.h"
+#include "Camera/CameraShakeBase.h"
+#include "Camera/PlayerCameraManager.h"
 #include "Characters/Player/MGSPlayerController.h"
 #include "Characters/Player/PlayerCharacter.h"
 #include "Components/Combat/PlayerCombatComponent.h"
-#include "Components/PrimitiveComponent.h"
 #include "Components/SceneComponent.h"
+#include "Components/SphereComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Pawn.h"
 #include "GAS/AttributeSets/WeaponAttributeSet.h"
 #include "GAS/MGSGameplayTags.h"
-#include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/World.h"
+#include "Projectiles/BaseProjectile.h"
 #include "TimerManager.h"
 #include "Weapon/BaseGun.h"
 
@@ -44,19 +46,23 @@ bool UPlayerFireGameplayAbility::CanActivateAbility(const FGameplayAbilitySpecHa
 		return false;
 	}
 
+	// ActorInfo의 아바타 액터를 플레이어 캐릭터로 캐스팅
 	const APlayerCharacter* PlayerCharacter = ActorInfo ? Cast<APlayerCharacter>(ActorInfo->AvatarActor.Get()) : nullptr;
+	// 플레이어 캐릭터에서 플레이어 컴뱃 컴포넌트 가져옴
 	const UPlayerCombatComponent* PlayerCombatComponent = PlayerCharacter ? PlayerCharacter->GetPlayerCombatComponent() : nullptr;
 	if (!PlayerCombatComponent)
 	{
 		return false;
 	}
 
+	// 컴뱃 컴포넌트에서 장착한 총기를 가져옴
 	const ABaseGun* EquippedGun = Cast<ABaseGun>(PlayerCombatComponent->GetCharacterCurrentEquippedWeapon());
 	if (!EquippedGun)
 	{
 		return false;
 	}
 
+	// 장착한 총기가 발사 가능한 상태인지 확인
 	const bool bCanFire = EquippedGun->CanFire();
 	if (!bCanFire && bEnableAmmoLog)
 	{
@@ -82,7 +88,7 @@ void UPlayerFireGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandl
 		return;
 	}
 
-	// 장착 장비 재확인
+	// 컴뱃 컴포넌트에서 장착 총기 얻기
 	UPlayerCombatComponent* PlayerCombatComponent = GetPlayerCombatComponentFromActorInfo();
 	ABaseGun* EquippedGun = PlayerCombatComponent ? Cast<ABaseGun>(PlayerCombatComponent->GetCharacterCurrentEquippedWeapon()) : nullptr;
 	if (!EquippedGun)
@@ -91,13 +97,15 @@ void UPlayerFireGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandl
 		return;
 	}
 
-	// 현재 탄착군 초기화
+	// 스프레드 초기화
 	CurrentSpreadRadius = FMath::Clamp(EquippedGun->GetBaseSpreadRadius(), 0.f, EquippedGun->GetMaxSpreadRadius());
 	if (APlayerCharacter* PlayerCharacter = GetPlayerCharacterFromActorInfo())
 	{
 		if (UWeaponAttributeSet* WeaponAttributeSet = PlayerCharacter->GetWeaponAttributeSet())
 		{
+			// 스프레드 보정값 계산
 			const float StateSpreadMultiplier = CalculateStateSpreadMultiplier(PlayerCharacter);
+			// 최종 스프레드 = 총기 스프레드 초기값 * 스프레드 보정값
 			const float EffectiveSpreadRadius = FMath::Clamp(
 				CurrentSpreadRadius * StateSpreadMultiplier,
 				0.f,
@@ -106,9 +114,11 @@ void UPlayerFireGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandl
 		}
 	}
 
+	// 총기 연사 간격값으로 연사 간격 설정
 	CurrentFireInterval = FMath::Max(0.01f, EquippedGun->GetFireInterval());
-	EnableCombatFacing(); // 사격 시 캐릭터 회전 설정
-	if (!FireSingleShot()) // 실제 한 발 처리
+
+	// 실제 한 발 처리
+	if (!FireSingleShot())
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
@@ -154,8 +164,7 @@ void UPlayerFireGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Han
 		}
 	}
 
-	// 캐릭터 회전 설정 복원
-	RestoreMovementFacing();
+	// 회전 모드 복원은 PlayerCharacter에서 상시 처리
 
 	// 탄착군 초기화
 	if (APlayerCharacter* PlayerCharacter = GetPlayerCharacterFromActorInfo())
@@ -204,12 +213,15 @@ bool UPlayerFireGameplayAbility::FireSingleShot()
 		return false;
 	}
 
+	// 스프레드 보정값 계산
 	const float StateSpreadMultiplier = CalculateStateSpreadMultiplier(PlayerCharacter);
+	// 최종 스프레드 = 총기 스프레드 초기값 * 스프레드 보정값
 	const float EffectiveSpreadRadius = FMath::Clamp(
 		CurrentSpreadRadius * StateSpreadMultiplier,
 		0.f,
 		EquippedGun->GetMaxSpreadRadius());
-	const float FireRange = EquippedGun->GetFireRange();
+	// 장착 총기 사거리값 가져옴
+	const float AimReferenceDistance = EquippedGun->GetAimReferenceDistance();
 
 	// 총알 한 발 소비
 	if (!EquippedGun->ConsumeAmmo(1))
@@ -236,30 +248,36 @@ bool UPlayerFireGameplayAbility::FireSingleShot()
 			StateSpreadMultiplier);
 	}
 
-	AActor* DamageCauser = GetAvatarActorFromActorInfo();
-	AController* InstigatorController = nullptr;
-	if (const APawn* AvatarPawn = Cast<APawn>(DamageCauser))
-	{
-		InstigatorController = AvatarPawn->GetController();
-	}
-
-	// 라인 트레이스
-	FireTraceAndApplyDamage(
+	// 발사체 스폰
+	if (!SpawnProjectileShot(
 		PlayerCharacter,
 		PlayerController,
 		EquippedGun,
-		DamageCauser,
-		InstigatorController,
-		FireRange,
+		AimReferenceDistance,
 		EquippedGun->GetBaseDamage(),
-		EffectiveSpreadRadius);
+		EffectiveSpreadRadius))
+	{
+		const bool bRefunded = EquippedGun->RefundAmmo(1);
+		if (bEnableAmmoLog)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[Ammo][ROLLBACK] SpawnFailed Refunded=%s Current=%d/%d Carried=%d"),
+				bRefunded ? TEXT("true") : TEXT("false"),
+				EquippedGun->GetCurrentMagazineAmmo(),
+				EquippedGun->GetMaxMagazineAmmo(),
+				EquippedGun->GetCarriedAmmo());
+		}
+		return false;
+	}
 
-	// 탄착군 넓어짐
+	// 총기 반동
+	ApplyWeaponRecoil(PlayerController, EquippedGun);
+
+	// 스프레드 증가
 	CurrentSpreadRadius = FMath::Min(
 		CurrentSpreadRadius + EquippedGun->GetSpreadRadiusIncreasePerShot(),
 		EquippedGun->GetMaxSpreadRadius());
 
-	// 무기 속성에 현재 탄착군 동기화
+	// 플레이어 WeaponAttribute에 스프레드 갱신
 	if (UWeaponAttributeSet* WeaponAttributeSet = PlayerCharacter->GetWeaponAttributeSet())
 	{
 		const float UpdatedStateSpreadMultiplier = CalculateStateSpreadMultiplier(PlayerCharacter);
@@ -273,49 +291,6 @@ bool UPlayerFireGameplayAbility::FireSingleShot()
 	return true;
 }
 
-void UPlayerFireGameplayAbility::EnableCombatFacing()
-{
-	APlayerCharacter* PlayerCharacter = GetPlayerCharacterFromActorInfo();
-	UCharacterMovementComponent* MovementComponent = PlayerCharacter ? PlayerCharacter->GetCharacterMovement() : nullptr;
-	if (!PlayerCharacter || !MovementComponent)
-	{
-		return;
-	}
-
-	// 회전 설정 캐싱
-	if (!bHasCachedMovementFacing)
-	{
-		bCachedUseControllerRotationYaw = PlayerCharacter->bUseControllerRotationYaw;
-		bCachedOrientRotationToMovement = MovementComponent->bOrientRotationToMovement;
-		bCachedUseControllerDesiredRotation = MovementComponent->bUseControllerDesiredRotation;
-		bHasCachedMovementFacing = true;
-	}
-
-	// 컨트롤러 Yaw를 즉시 고정하지 않고 RotationRate를 사용해 자연스럽게 회전합니다.
-	PlayerCharacter->bUseControllerRotationYaw = false;
-	MovementComponent->bOrientRotationToMovement = false;
-	MovementComponent->bUseControllerDesiredRotation = true;
-}
-
-void UPlayerFireGameplayAbility::RestoreMovementFacing()
-{
-	if (!bHasCachedMovementFacing)
-	{
-		return;
-	}
-
-	APlayerCharacter* PlayerCharacter = GetPlayerCharacterFromActorInfo();
-	UCharacterMovementComponent* MovementComponent = PlayerCharacter ? PlayerCharacter->GetCharacterMovement() : nullptr;
-	if (PlayerCharacter && MovementComponent)
-	{
-		PlayerCharacter->bUseControllerRotationYaw = bCachedUseControllerRotationYaw;
-		MovementComponent->bOrientRotationToMovement = bCachedOrientRotationToMovement;
-		MovementComponent->bUseControllerDesiredRotation = bCachedUseControllerDesiredRotation;
-	}
-
-	bHasCachedMovementFacing = false;
-}
-
 float UPlayerFireGameplayAbility::CalculateStateSpreadMultiplier(const APlayerCharacter* PlayerCharacter) const
 {
 	if (!PlayerCharacter)
@@ -325,11 +300,13 @@ float UPlayerFireGameplayAbility::CalculateStateSpreadMultiplier(const APlayerCh
 
 	const UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
 	const UCharacterMovementComponent* MovementComponent = PlayerCharacter->GetCharacterMovement();
+	// 공중인지 검사: MovementComponent 우선, 없으면 태그 검사
 	const bool bIsFalling = MovementComponent
 		? MovementComponent->IsFalling()
 		: (ASC && ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Movement_Falling));
 
 	float MovementSpreadMultiplier = 1.f;
+	// 공중인 경우
 	if (bIsFalling)
 	{
 		MovementSpreadMultiplier = JumpSpreadMultiplier;
@@ -339,14 +316,17 @@ float UPlayerFireGameplayAbility::CalculateStateSpreadMultiplier(const APlayerCh
 		const float HorizontalSpeed = FVector(MovementComponent->Velocity.X, MovementComponent->Velocity.Y, 0.f).Size();
 		if (HorizontalSpeed > MinMovingSpeedForSpread)
 		{
+			// 뛰는 경우
 			if (ASC && ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Movement_Sprint))
 			{
 				MovementSpreadMultiplier = SprintSpreadMultiplier;
 			}
+			// 걷는 경우
 			else if (ASC && ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Movement_Walk))
 			{
 				MovementSpreadMultiplier = WalkSpreadMultiplier;
 			}
+			// 일반 이동인 경우
 			else
 			{
 				MovementSpreadMultiplier = MovingSpreadMultiplier;
@@ -354,12 +334,14 @@ float UPlayerFireGameplayAbility::CalculateStateSpreadMultiplier(const APlayerCh
 		}
 	}
 
+	// 웅크리고 있는 경우
 	const bool bIsCrouching = PlayerCharacter->bIsCrouched;
 	if (bIsCrouching)
 	{
 		MovementSpreadMultiplier *= CrouchSpreadMultiplier;
 	}
 
+	// 조준중인 경우
 	const bool bIsAiming = ASC && ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Aiming);
 	if (bIsAiming)
 	{
@@ -369,144 +351,213 @@ float UPlayerFireGameplayAbility::CalculateStateSpreadMultiplier(const APlayerCh
 	return FMath::Max(0.f, MovementSpreadMultiplier);
 }
 
-bool UPlayerFireGameplayAbility::FireTraceAndApplyDamage(APlayerCharacter* PlayerCharacter, AMGSPlayerController* PlayerController,
-	ABaseGun* EquippedGun, AActor* DamageCauser, AController* InstigatorController, float FireRange, float Damage,
-	float SpreadRadius) const
+void UPlayerFireGameplayAbility::ApplyWeaponRecoil(AMGSPlayerController* PlayerController, ABaseGun* EquippedGun) const
+{
+	if (!PlayerController || !EquippedGun || !PlayerController->IsLocalController())
+	{
+		return;
+	}
+
+	const UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
+	float RecoilScale = 1.f;
+	// 조준 상태일 때 총기 반동 스케일 보정
+	if (ASC && ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Aiming))
+	{
+		RecoilScale *= EquippedGun->GetRecoilADSScale();
+	}
+
+	// 수직 반동
+	const float PitchRecoil = FMath::Max(0.f, EquippedGun->GetRecoilPitchPerShot() * RecoilScale);
+	// 수평 반동
+	float YawRecoilMin = EquippedGun->GetRecoilYawPerShotMin() * RecoilScale;
+	float YawRecoilMax = EquippedGun->GetRecoilYawPerShotMax() * RecoilScale;
+	if (YawRecoilMax < YawRecoilMin)
+	{
+		Swap(YawRecoilMin, YawRecoilMax);
+	}
+	const float YawRecoil = FMath::FRandRange(YawRecoilMin, YawRecoilMax);
+
+	// 플레이어 컨트롤러 반동 적용
+	FRotator ControlRotation = PlayerController->GetControlRotation();
+	ControlRotation.Pitch = FRotator::NormalizeAxis(ControlRotation.Pitch - PitchRecoil);
+	ControlRotation.Yaw = FRotator::NormalizeAxis(ControlRotation.Yaw + YawRecoil);
+	PlayerController->SetControlRotation(ControlRotation);
+
+	if (!PlayerController->PlayerCameraManager)
+	{
+		return;
+	}
+
+	// 총기에 적용된 카메라 셰이크 클래스 가져옴
+	const TSubclassOf<UCameraShakeBase> FireCameraShakeClass = EquippedGun->GetFireCameraShakeClass();
+	if (!FireCameraShakeClass)
+	{
+		return;
+	}
+
+	// 카메라 셰이크 스케일값 설정
+	const float RecoilMagnitude = FMath::Abs(PitchRecoil) + FMath::Abs(YawRecoil);
+	const float FireCameraShakeScale = EquippedGun->GetFireCameraShakeScale() * RecoilMagnitude;
+	if (FireCameraShakeScale <= KINDA_SMALL_NUMBER)
+	{
+		return;
+	}
+
+	// 카메라 셰이크 적용(연출)
+	PlayerController->PlayerCameraManager->StartCameraShake(FireCameraShakeClass, FireCameraShakeScale);
+}
+
+bool UPlayerFireGameplayAbility::SpawnProjectileShot(APlayerCharacter* PlayerCharacter, AMGSPlayerController* PlayerController,
+	ABaseGun* EquippedGun, float AimReferenceDistance, float Damage, float SpreadRadius) const
 {
 	if (!PlayerCharacter || !EquippedGun)
 	{
 		return false;
 	}
 
-	FVector ViewLocation = FVector::ZeroVector;
-	FRotator ViewRotation = FRotator::ZeroRotator;
-
-	if (PlayerController)
+	const TSubclassOf<ABaseProjectile> ProjectileClassToSpawn = EquippedGun->GetProjectileClass();
+	if (!ProjectileClassToSpawn)
 	{
-		PlayerController->GetPlayerViewPoint(ViewLocation, ViewRotation);
-	}
-	else
-	{
-		PlayerCharacter->GetActorEyesViewPoint(ViewLocation, ViewRotation);
+		UE_LOG(LogTemp, Warning, TEXT("[FireProjectile][FAILED] ProjectileClass is not set in weapon definition. Weapon=%s"),
+			*GetNameSafe(EquippedGun));
+		return false;
 	}
 
-	const FVector CameraTraceStart = ViewLocation;
-	const FVector CameraTraceEnd = CameraTraceStart + (ViewRotation.Vector() * FireRange);
+	AActor* DamageCauser = GetAvatarActorFromActorInfo();
+	APawn* InstigatorPawn = Cast<APawn>(DamageCauser);
+	
 	UWorld* World = PlayerCharacter->GetWorld();
 	if (!World)
 	{
 		return false;
 	}
 
-	FCollisionQueryParams AimQueryParams(SCENE_QUERY_STAT(PlayerWeaponAimTrace), false);
-	AimQueryParams.AddIgnoredActor(PlayerCharacter);
-	if (DamageCauser)
-	{
-		AimQueryParams.AddIgnoredActor(DamageCauser);
-	}
-	AimQueryParams.AddIgnoredActor(EquippedGun);
-
-	// 카메라 시점 기준 라인 트레이스해서 AimPoint 결정
-	FHitResult CameraHitResult;
-	const bool bCameraHit = World->LineTraceSingleByChannel(CameraHitResult, CameraTraceStart, CameraTraceEnd, ECC_Visibility, AimQueryParams);
-	const FVector AimPoint = bCameraHit ? CameraHitResult.ImpactPoint : CameraTraceEnd;
-
 	
-	// 총구 소켓(Muzzle) 위치를 시작점으로
+	// Muzzle(총구) 소켓으로 플레이어 캐릭터 총알 발사 지점 설정
 	FVector MuzzleTraceStart = EquippedGun->GetActorLocation();
+	FVector MuzzleForwardDirection = EquippedGun->GetActorForwardVector();
 	if (USceneComponent* WeaponRootComponent = EquippedGun->GetRootComponent())
 	{
+		// Muzzle 소켓이 없을 경우 장착 무기의 루트 컴포넌트로
 		if (MuzzleSocketName.IsNone())
 		{
 			MuzzleTraceStart = WeaponRootComponent->GetComponentLocation();
+			MuzzleForwardDirection = WeaponRootComponent->GetComponentRotation().Vector();
 		}
+		// Muzzle 소켓이 존재할 경우 소켓의 위치로
 		else if (WeaponRootComponent->DoesSocketExist(MuzzleSocketName))
 		{
 			MuzzleTraceStart = WeaponRootComponent->GetSocketLocation(MuzzleSocketName);
+			MuzzleForwardDirection = WeaponRootComponent->GetSocketRotation(MuzzleSocketName).Vector();
 		}
+		// 그 외의 경우 장착 무기의 루트 컴포넌트로
 		else
 		{
 			MuzzleTraceStart = WeaponRootComponent->GetComponentLocation();
+			MuzzleForwardDirection = WeaponRootComponent->GetComponentRotation().Vector();
 		}
 	}
 
-	const FVector AimDirectionNoSpread = (AimPoint - MuzzleTraceStart).GetSafeNormal();
-	const float AimDistance = FMath::Max(1.f, FVector::Distance(MuzzleTraceStart, AimPoint));
-	const float SpreadHalfAngleRad = FMath::Atan(SpreadRadius / AimDistance);
-	const float SpreadHalfAngleDeg = FMath::RadiansToDegrees(SpreadHalfAngleRad);
-	FVector MuzzleTraceDirection = AimDirectionNoSpread;
-	if (MuzzleTraceDirection.IsNearlyZero())
+	// 화면 중앙 시점(컨트롤러 에임 회전) 기준 목표 지점을 계산합니다.
+	FVector AimDirection = FVector::ZeroVector;
+	FVector AimTargetPoint = MuzzleTraceStart + (MuzzleForwardDirection.GetSafeNormal() * FMath::Max(1.f, AimReferenceDistance));
+	if (PlayerController)
 	{
-		MuzzleTraceDirection = ViewRotation.Vector();
+		FVector ViewLocation = FVector::ZeroVector;
+		FRotator ViewRotation = FRotator::ZeroRotator;
+		PlayerController->GetPlayerViewPoint(ViewLocation, ViewRotation);
+		AimTargetPoint = ViewLocation + (ViewRotation.Vector() * FMath::Max(1.f, AimReferenceDistance));
+	}
+	else
+	{
+		AimTargetPoint = MuzzleTraceStart + (PlayerCharacter->GetBaseAimRotation().Vector() * FMath::Max(1.f, AimReferenceDistance));
 	}
 
+	AimDirection = (AimTargetPoint - MuzzleTraceStart).GetSafeNormal();
+
+	if (AimDirection.IsNearlyZero())
+	{
+		AimDirection = MuzzleForwardDirection.GetSafeNormal();
+	}
+
+	// 스프레드 반지름/사거리로 반각(theta)을 계산합니다.
+	// tan θ = 높이(스프레드 반지름)/밑변(사거리) <=> atan(높이/밑변) = θ
+	const float SpreadHalfAngleRad = FMath::Atan(SpreadRadius / FMath::Max(1.f, AimReferenceDistance));
+	const float SpreadHalfAngleDeg = FMath::RadiansToDegrees(SpreadHalfAngleRad);
+	FVector MuzzleTraceDirection = AimDirection.GetSafeNormal();
+	if (MuzzleTraceDirection.IsNearlyZero())
+	{
+		MuzzleTraceDirection = PlayerCharacter->GetActorForwardVector();
+	}
 	if (SpreadHalfAngleRad > KINDA_SMALL_NUMBER)
 	{
+		// 중심 방향 기준 반각 내 랜덤 콘 방향 생성
 		MuzzleTraceDirection = FMath::VRandCone(MuzzleTraceDirection, SpreadHalfAngleRad);
 	}
 
-	const FVector MuzzleTraceEnd = MuzzleTraceStart + (MuzzleTraceDirection * FireRange);
-
-	FHitResult HitResult;
-	FCollisionQueryParams DamageQueryParams(SCENE_QUERY_STAT(PlayerWeaponDamageTrace), false);
-	DamageQueryParams.AddIgnoredActor(PlayerCharacter);
-	if (DamageCauser)
-	{
-		DamageQueryParams.AddIgnoredActor(DamageCauser);
-	}
-	DamageQueryParams.AddIgnoredActor(EquippedGun);
-
-	// 총구 기준 라인 트레이스로 실제 피격 판정
-	const bool bHit = World->LineTraceSingleByChannel(HitResult, MuzzleTraceStart, MuzzleTraceEnd, ECC_Visibility, DamageQueryParams);
-	if (!bHit)
-	{
-		if (bEnableFireTraceDebug)
-		{
-			DrawDebugLine(World, MuzzleTraceStart, MuzzleTraceEnd, FColor::Red, false, DebugTraceDuration, 0, 1.2f);
-		}
-
-		if (bEnableFireTraceLog)
-		{
-			UE_LOG(LogTemp, Log, TEXT("[FireTrace][MISS] CameraStart=%s AimPoint=%s SpreadHalfAngleDeg=%.3f MuzzleStart=%s MuzzleEnd=%s"),
-				*CameraTraceStart.ToString(), *AimPoint.ToString(), SpreadHalfAngleDeg, *MuzzleTraceStart.ToString(), *MuzzleTraceEnd.ToString());
-		}
-
-		return false;
-	}
+	// 총구/손 근처 캡슐 내부 스폰을 피하기 위해 전진 오프셋 적용
+	constexpr float ProjectileSpawnForwardOffset = 20.f;
+	const FVector ProjectileSpawnLocation = MuzzleTraceStart + (MuzzleTraceDirection * ProjectileSpawnForwardOffset);
 
 	if (bEnableFireTraceDebug)
 	{
-		DrawDebugLine(World, MuzzleTraceStart, HitResult.ImpactPoint, FColor::Green, false, DebugTraceDuration, 0, 1.6f);
-		DrawDebugPoint(World, HitResult.ImpactPoint, 12.0f, FColor::Yellow, false, DebugTraceDuration, 0);
+		const FVector DebugEnd = MuzzleTraceStart + (MuzzleTraceDirection * AimReferenceDistance);
+		DrawDebugLine(World, MuzzleTraceStart, DebugEnd, FColor::Green, false, DebugTraceDuration, 0, 1.2f);
+		DrawDebugLine(World, MuzzleTraceStart, MuzzleTraceStart + (MuzzleForwardDirection.GetSafeNormal() * 150.f), FColor::Cyan, false, DebugTraceDuration, 0, 1.0f);
 	}
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = DamageCauser;
+	SpawnParams.Instigator = InstigatorPawn;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	ABaseProjectile* SpawnedProjectile = World->SpawnActor<ABaseProjectile>(
+		ProjectileClassToSpawn,
+		ProjectileSpawnLocation,
+		MuzzleTraceDirection.Rotation(),
+		SpawnParams);
+	if (!SpawnedProjectile)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[FireProjectile][FAILED] Spawn failed. Class=%s Muzzle=%s"),
+			*GetNameSafe(ProjectileClassToSpawn.Get()),
+			*ProjectileSpawnLocation.ToString());
+		return false;
+	}
+
+	// Spawn 직후 Owner/Instigator/무기 충돌을 즉시 무시해 초기 프레임 자기 충돌 방지
+	if (USphereComponent* ProjectileCollision = SpawnedProjectile->GetCollisionComponent())
+	{
+		if (DamageCauser)
+		{
+			ProjectileCollision->IgnoreActorWhenMoving(DamageCauser, true);
+		}
+		if (InstigatorPawn)
+		{
+			ProjectileCollision->IgnoreActorWhenMoving(InstigatorPawn, true);
+		}
+		if (PlayerCharacter)
+		{
+			ProjectileCollision->IgnoreActorWhenMoving(PlayerCharacter, true);
+		}
+		if (EquippedGun)
+		{
+			ProjectileCollision->IgnoreActorWhenMoving(EquippedGun, true);
+		}
+	}
+
+	SpawnedProjectile->SetProjectileDamage(Damage);
+	SpawnedProjectile->InitializeProjectile(MuzzleTraceDirection);
 
 	if (bEnableFireTraceLog)
 	{
-		const UPrimitiveComponent* HitComponent = HitResult.GetComponent();
-		const FString CollisionProfile = HitComponent ? HitComponent->GetCollisionProfileName().ToString() : TEXT("None");
-		const int32 CollisionEnabled = HitComponent ? static_cast<int32>(HitComponent->GetCollisionEnabled()) : INDEX_NONE;
-
-		UE_LOG(LogTemp, Log,
-			TEXT("[FireTrace][HIT] Actor=%s Component=%s Profile=%s CollisionEnabled=%d Bone=%s Impact=%s Normal=%s Distance=%.1f"),
-			*GetNameSafe(HitResult.GetActor()),
-			*GetNameSafe(HitComponent),
-			*CollisionProfile,
-			CollisionEnabled,
-			*HitResult.BoneName.ToString(),
-			*HitResult.ImpactPoint.ToString(),
-			*HitResult.ImpactNormal.ToString(),
-			FVector::Distance(MuzzleTraceStart, HitResult.ImpactPoint));
+		UE_LOG(LogTemp, Log, TEXT("[FireProjectile][SPAWN] Class=%s SpreadHalfAngleDeg=%.3f MuzzleStart=%s Direction=%s Damage=%.1f"),
+			*GetNameSafe(ProjectileClassToSpawn.Get()),
+			SpreadHalfAngleDeg,
+			*ProjectileSpawnLocation.ToString(),
+			*MuzzleTraceDirection.ToString(),
+			Damage);
 	}
-
-	// 히트 시
-	UGameplayStatics::ApplyPointDamage(
-		HitResult.GetActor(),
-		Damage,
-		MuzzleTraceDirection,
-		HitResult,
-		InstigatorController,
-		DamageCauser,
-		nullptr);
 
 	return true;
 }
+

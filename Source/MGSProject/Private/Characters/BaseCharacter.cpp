@@ -72,5 +72,3 @@ AMGSPlayerState* ABaseCharacter::GetMGSPlayerState() const
 
 	return nullptr;
 }
-
-

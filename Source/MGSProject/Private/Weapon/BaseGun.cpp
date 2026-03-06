@@ -12,6 +12,7 @@
 #include "DataAssets/Weapon/DA_WeaponDefinition.h"
 #include "GAS/AttributeSets/WeaponAttributeSet.h"
 #include "MGSStructType.h"
+#include "Projectiles/BaseBullet.h"
 
 namespace
 {
@@ -19,7 +20,7 @@ namespace
 	constexpr int32 DefaultStartMagazineAmmo = 30;
 	constexpr int32 DefaultMaxCarriedAmmo = 120;
 	constexpr int32 DefaultStartCarriedAmmo = 120;
-	constexpr float DefaultFireRange = 12000.f;
+	constexpr float DefaultAimReferenceDistance = 12000.f;
 	constexpr float DefaultBaseDamage = 20.f;
 	constexpr float DefaultFireInterval = 0.12f;
 	constexpr float DefaultBaseSpreadRadius = 0.f;
@@ -27,6 +28,11 @@ namespace
 	constexpr float DefaultSpreadRadiusIncreasePerShot = 6.f;
 	constexpr float DefaultAimFOV = 65.f;
 	const FVector DefaultAimCameraSocketOffset = FVector(0.f, 55.f, 12.f);
+	constexpr float DefaultRecoilPitchPerShot = 0.8f;
+	constexpr float DefaultRecoilYawPerShotMin = -0.25f;
+	constexpr float DefaultRecoilYawPerShotMax = 0.25f;
+	constexpr float DefaultRecoilADSScale = 0.7f;
+	constexpr float DefaultFireCameraShakeScale = 1.0f;
 }
 
 void ABaseGun::BeginPlay()
@@ -43,6 +49,7 @@ bool ABaseGun::CanFire() const
 		return false;
 	}
 
+	// 현재 탄약이 있으면 발사 가능
 	return GetCurrentMagazineAmmo() > 0;
 }
 
@@ -67,6 +74,31 @@ bool ABaseGun::ConsumeAmmo(int32 AmmoToConsume)
 
 	WeaponAttributeSet->SetCurrentMagazineAmmo(static_cast<float>(CurrentAmmo - AmmoToConsume));
 	return true;
+}
+
+bool ABaseGun::RefundAmmo(int32 AmmoToRefund)
+{
+	if (AmmoToRefund <= 0)
+	{
+		return false;
+	}
+
+	UWeaponAttributeSet* WeaponAttributeSet = GetWeaponAttributeSetMutable();
+	if (!ensureMsgf(WeaponAttributeSet, TEXT("RefundAmmo failed because WeaponAttributeSet is missing for %s (owner: %s)."), *GetName(), *GetNameSafe(GetOwner())))
+	{
+		return false;
+	}
+
+	const int32 MaxAmmo = GetMaxMagazineAmmo();
+	const int32 CurrentAmmo = GetCurrentMagazineAmmo();
+	if (CurrentAmmo >= MaxAmmo)
+	{
+		return false;
+	}
+
+	const int32 RefundedAmmo = FMath::Min(AmmoToRefund, MaxAmmo - CurrentAmmo);
+	WeaponAttributeSet->SetCurrentMagazineAmmo(static_cast<float>(CurrentAmmo + RefundedAmmo));
+	return RefundedAmmo > 0;
 }
 
 bool ABaseGun::CanReload() const
@@ -139,14 +171,14 @@ int32 ABaseGun::GetCarriedAmmo() const
 	return FMath::Clamp(GetDefinitionStartCarriedAmmo(), 0, GetDefinitionMaxCarriedAmmo());
 }
 
-float ABaseGun::GetFireRange() const
+float ABaseGun::GetAimReferenceDistance() const
 {
 	if (const UWeaponAttributeSet* WeaponAttributeSet = GetWeaponAttributeSet())
 	{
-		return FMath::Max(100.f, WeaponAttributeSet->GetFireRange());
+		return FMath::Max(100.f, WeaponAttributeSet->GetAimReferenceDistance());
 	}
 
-	return GetDefinitionFireRange();
+	return GetDefinitionAimReferenceDistance();
 }
 
 float ABaseGun::GetBaseDamage() const
@@ -214,6 +246,41 @@ FVector ABaseGun::GetAimCameraSocketOffset() const
 	return GetDefinitionAimCameraSocketOffset();
 }
 
+float ABaseGun::GetRecoilPitchPerShot() const
+{
+	return GetDefinitionRecoilPitchPerShot();
+}
+
+float ABaseGun::GetRecoilYawPerShotMin() const
+{
+	return GetDefinitionRecoilYawPerShotMin();
+}
+
+float ABaseGun::GetRecoilYawPerShotMax() const
+{
+	return GetDefinitionRecoilYawPerShotMax();
+}
+
+float ABaseGun::GetRecoilADSScale() const
+{
+	return GetDefinitionRecoilADSScale();
+}
+
+TSubclassOf<UCameraShakeBase> ABaseGun::GetFireCameraShakeClass() const
+{
+	return GetDefinitionFireCameraShakeClass();
+}
+
+float ABaseGun::GetFireCameraShakeScale() const
+{
+	return GetDefinitionFireCameraShakeScale();
+}
+
+TSubclassOf<ABaseProjectile> ABaseGun::GetProjectileClass() const
+{
+	return GetDefinitionProjectileClass();
+}
+
 bool ABaseGun::InitializeWeaponAttributes(UWeaponAttributeSet* WeaponAttributeSet) const
 {
 	if (!WeaponAttributeSet)
@@ -230,7 +297,7 @@ bool ABaseGun::InitializeWeaponAttributes(UWeaponAttributeSet* WeaponAttributeSe
 	WeaponAttributeSet->SetCurrentMagazineAmmo(static_cast<float>(NewCurrentMagazineAmmo));
 	WeaponAttributeSet->SetMaxCarriedAmmo(static_cast<float>(NewMaxCarriedAmmo));
 	WeaponAttributeSet->SetCurrentCarriedAmmo(static_cast<float>(NewCurrentCarriedAmmo));
-	WeaponAttributeSet->SetFireRange(GetDefinitionFireRange());
+	WeaponAttributeSet->SetAimReferenceDistance(GetDefinitionAimReferenceDistance());
 	WeaponAttributeSet->SetBaseDamage(GetDefinitionBaseDamage());
 	WeaponAttributeSet->SetFireInterval(GetDefinitionFireInterval());
 	WeaponAttributeSet->SetBaseSpreadRadius(GetDefinitionBaseSpreadRadius());
@@ -338,15 +405,15 @@ int32 ABaseGun::GetDefinitionStartCarriedAmmo() const
 	return DefaultStartCarriedAmmo;
 }
 
-float ABaseGun::GetDefinitionFireRange() const
+float ABaseGun::GetDefinitionAimReferenceDistance() const
 {
 	if (WeaponDefinition)
 	{
-		return FMath::Max(100.f, WeaponDefinition->FireRange);
+		return FMath::Max(100.f, WeaponDefinition->AimReferenceDistance);
 	}
 
-	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded FireRange fallback."), *GetName());
-	return DefaultFireRange;
+	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded AimReferenceDistance fallback."), *GetName());
+	return DefaultAimReferenceDistance;
 }
 
 float ABaseGun::GetDefinitionBaseDamage() const
@@ -425,3 +492,81 @@ FVector ABaseGun::GetDefinitionAimCameraSocketOffset() const
 	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded AimCameraSocketOffset fallback."), *GetName());
 	return DefaultAimCameraSocketOffset;
 }
+
+float ABaseGun::GetDefinitionRecoilPitchPerShot() const
+{
+	if (WeaponDefinition)
+	{
+		return FMath::Max(0.f, WeaponDefinition->RecoilPitchPerShot);
+	}
+
+	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded RecoilPitchPerShot fallback."), *GetName());
+	return DefaultRecoilPitchPerShot;
+}
+
+float ABaseGun::GetDefinitionRecoilYawPerShotMin() const
+{
+	if (WeaponDefinition)
+	{
+		return WeaponDefinition->RecoilYawPerShotMin;
+	}
+
+	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded RecoilYawPerShotMin fallback."), *GetName());
+	return DefaultRecoilYawPerShotMin;
+}
+
+float ABaseGun::GetDefinitionRecoilYawPerShotMax() const
+{
+	if (WeaponDefinition)
+	{
+		return WeaponDefinition->RecoilYawPerShotMax;
+	}
+
+	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded RecoilYawPerShotMax fallback."), *GetName());
+	return DefaultRecoilYawPerShotMax;
+}
+
+float ABaseGun::GetDefinitionRecoilADSScale() const
+{
+	if (WeaponDefinition)
+	{
+		return FMath::Max(0.f, WeaponDefinition->RecoilADSScale);
+	}
+
+	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded RecoilADSScale fallback."), *GetName());
+	return DefaultRecoilADSScale;
+}
+
+TSubclassOf<UCameraShakeBase> ABaseGun::GetDefinitionFireCameraShakeClass() const
+{
+	if (WeaponDefinition)
+	{
+		return WeaponDefinition->FireCameraShakeClass;
+	}
+
+	ensureMsgf(false, TEXT("%s has no WeaponDefinition. CameraShakeClass is empty."), *GetName());
+	return nullptr;
+}
+
+float ABaseGun::GetDefinitionFireCameraShakeScale() const
+{
+	if (WeaponDefinition)
+	{
+		return FMath::Max(0.f, WeaponDefinition->FireCameraShakeScale);
+	}
+
+	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded FireCameraShakeScale fallback."), *GetName());
+	return DefaultFireCameraShakeScale;
+}
+
+TSubclassOf<ABaseProjectile> ABaseGun::GetDefinitionProjectileClass() const
+{
+	if (WeaponDefinition && WeaponDefinition->ProjectileClass)
+	{
+		return WeaponDefinition->ProjectileClass;
+	}
+
+	ensureMsgf(false, TEXT("%s has no ProjectileClass in WeaponDefinition. Using ABaseBullet fallback."), *GetName());
+	return ABaseBullet::StaticClass();
+}
+
