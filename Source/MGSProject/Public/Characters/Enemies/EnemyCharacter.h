@@ -2,8 +2,8 @@
  * 파일명 : EnemyCharacter.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
- * 수정자 : 장대한
- * 수정일 : 2026-03-03
+ * 수정자 : 김사윤
+ * 수정일 : 2026-03-05
  */
 
 #pragma once
@@ -45,5 +45,14 @@ protected:
 	
 public:
 	FORCEINLINE UEnemyCombatComponent* GetEnemyCombatComponent() const { return EnemyCombatComponent; }
+	FORCEINLINE float GetCurrentHp() const
+	{
+		return CharacterAttributeSet ? CharacterAttributeSet->GetCurrentHp() : 0.0f;
+	}
+
+	FORCEINLINE float GetMaxHp() const
+	{
+		return CharacterAttributeSet ? CharacterAttributeSet->GetMaxHp() : 0.0f;
+	}
 	
 };
