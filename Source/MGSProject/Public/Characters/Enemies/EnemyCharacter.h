@@ -47,5 +47,3 @@ public:
 	FORCEINLINE UEnemyCombatComponent* GetEnemyCombatComponent() const { return EnemyCombatComponent; }
 	
 };
-
-

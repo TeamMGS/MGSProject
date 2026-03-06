@@ -31,6 +31,7 @@ public:
 	void RequestRestoreHeldMovementAbilityInputNextTick();
 	
 protected:
+	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void Landed(const FHitResult& Hit) override;
 	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode) override;
@@ -64,9 +65,8 @@ public:
 #pragma endregion 
 
 private:
+	void ApplyAlwaysAimFacingMode();
 	void UpdateFallingStateTag();
 	void TryRestoreHeldMovementAbilityInput();
 	
 };
-
-

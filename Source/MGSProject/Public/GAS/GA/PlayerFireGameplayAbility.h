@@ -2,8 +2,8 @@
  * 파일명: PlayerFireGameplayAbility.h
  * 생성자: 장대한
  * 생성일: 2026-03-04
- * 수정자:  장대한
- * 수정일:  2026-03-05
+ * 수정자: 장대한
+ * 수정일: 2026-03-06
  */
 
 #pragma once
@@ -13,7 +13,6 @@
 #include "GAS/GA/PlayerGameplayAbility.h"
 #include "PlayerFireGameplayAbility.generated.h"
 
-struct FHitResult;
 class APlayerCharacter;
 class AMGSPlayerController;
 class ABaseGun;
@@ -49,16 +48,14 @@ protected:
 		bool bWasCancelled) override;
 
 private:
-	void HandleAutomaticFire(); // 자동 연사 
+	void HandleAutomaticFire(); // 자동 연사
 	bool FireSingleShot(); // 실제 한 발 처리
-	void EnableCombatFacing(); // 사격 중 캐릭터가 정면을 보도록 회전 설정
-	void RestoreMovementFacing(); // 캐릭터 회전 설정 복원
-	float CalculateStateSpreadMultiplier(const APlayerCharacter* PlayerCharacter) const;
+	float CalculateStateSpreadMultiplier(const APlayerCharacter* PlayerCharacter) const; // 스프레드 보정값 계산
+	void ApplyWeaponRecoil(AMGSPlayerController* PlayerController, ABaseGun* EquippedGun) const; // 반동 적용
 
-	// 총구->화면 시점 라인 트레이스로 히트 스캔
-	bool FireTraceAndApplyDamage(APlayerCharacter* PlayerCharacter, AMGSPlayerController* PlayerController,
-		ABaseGun* EquippedGun, AActor* DamageCauser, AController* InstigatorController, float FireRange, float Damage,
-		float SpreadRadius) const;
+	// 총구 위치 기준으로 발사체를 스폰하고 발사 방향을 적용합니다.
+	bool SpawnProjectileShot(APlayerCharacter* PlayerCharacter, AMGSPlayerController* PlayerController,
+		ABaseGun* EquippedGun, float AimReferenceDistance, float Damage, float SpreadRadius) const;
 
 private:
 	// 라인트레이스 디버그 시각화 활성화
@@ -112,11 +109,4 @@ private:
 	float CurrentSpreadRadius = 0.f; // 현재 탄착군 반경
 	float CurrentFireInterval = 0.12f; // 현재 연사 간격
 	FTimerHandle AutoFireTimerHandle; // 자동연사 타이머
-
-	// 캐릭터 회전 모드 복구용 캐시
-	bool bCachedUseControllerRotationYaw = false;
-	bool bCachedOrientRotationToMovement = true;
-	bool bCachedUseControllerDesiredRotation = false;
-	bool bHasCachedMovementFacing = false;
-	
 };

@@ -52,4 +52,3 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "HUD", meta = (AllowPrivateAccess = true))
 	TSubclassOf<UMGSPlayerStatusWidget> PlayerStatusWidgetClass;
 };
-

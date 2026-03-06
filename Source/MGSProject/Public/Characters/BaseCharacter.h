@@ -45,5 +45,3 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "StartupData")
 	TSoftObjectPtr<UDA_StartupBase> StartupData;
 };
-
-
