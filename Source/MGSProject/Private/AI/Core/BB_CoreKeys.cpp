@@ -1,3 +1,10 @@
+/*
+ * 파일명 : BB_CoreKeys.cpp
+ * 생성자 : 김사윤
+ * 생성일 : 2026-03-05
+ * 수정자 : 김사윤
+ * 수정일 : 2026-03-05
+ */
 #include "AI/Core/BB_CoreKeys.h"
 
 const FName FBB_CoreKeys::Target(TEXT("Target"));

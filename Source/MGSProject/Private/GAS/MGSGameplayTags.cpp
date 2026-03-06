@@ -55,6 +55,12 @@ namespace MGSGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Crouching, "State.Player.Crouching")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Aiming, "State.Player.Aiming")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_CombatReady, "State.Player.CombatReady")
+
+	UE_DEFINE_GAMEPLAY_TAG(State_Enemy_Clear, "State.Enemy.Clear")
+	UE_DEFINE_GAMEPLAY_TAG(State_Enemy_Suspicious, "State.Enemy.Suspicious")
+	UE_DEFINE_GAMEPLAY_TAG(State_Enemy_Investigation, "State.Enemy.Investigation")
+	UE_DEFINE_GAMEPLAY_TAG(State_Enemy_Combat, "State.Enemy.Combat")
+
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Gait_Walk, "State.Player.Gait.Walk")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Gait_Run, "State.Player.Gait.Run")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Gait_Sprint, "State.Player.Gait.Sprint")

@@ -9,6 +9,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "Characters/BaseCharacter.h"
 #include "GAS/AttributeSets/CharacterAttributeSet.h"
 #include "EnemyCharacter.generated.h"
@@ -29,6 +30,7 @@ public:
 	virtual UMGSAbilitySystemComponent* GetMGSAbilitySystemComponent() const override;
 	virtual UCharacterAttributeSet* GetCharacterAttributeSet() const override;
 protected:
+	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;
 	
 private:
@@ -43,6 +45,42 @@ protected:
 
 protected:
 	TObjectPtr<UEnemyCombatComponent> EnemyCombatComponent;
+
+private:
+	void SetEnemyStateTag(const FGameplayTag& NewStateTag);
+	void ApplyStateMaterial(const FGameplayTag& NewStateTag);
+	void BindDebugStateInputs();
+
+	void DebugSetStateClear();
+	void DebugSetStateSuspicious();
+	void DebugSetStateInvestigation();
+	void DebugSetStateCombat();
+
+	UPROPERTY(EditDefaultsOnly, Category = "AI|State")
+	FGameplayTag DefaultEnemyStateTag;
+
+	UPROPERTY(VisibleAnywhere, Category = "AI|State")
+	FGameplayTag CurrentEnemyStateTag;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AI|State")
+	bool bEnableDebugStateInput = false;
+
+	bool bDebugStateInputBound = false;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AI|State", meta = (ClampMin = 0))
+	int32 StateMaterialSlotIndex = 0;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AI|State")
+	TObjectPtr<UMaterialInterface> ClearStateMaterial;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AI|State")
+	TObjectPtr<UMaterialInterface> SuspiciousStateMaterial;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AI|State")
+	TObjectPtr<UMaterialInterface> InvestigationStateMaterial;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AI|State")
+	TObjectPtr<UMaterialInterface> CombatStateMaterial;
 	
 public:
 	FORCEINLINE UEnemyCombatComponent* GetEnemyCombatComponent() const { return EnemyCombatComponent; }
@@ -57,5 +95,3 @@ public:
 	}
 	
 };
-
-

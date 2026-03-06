@@ -30,7 +30,7 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 	
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationRoll = false;
-	bUseControllerRotationYaw = false;
+	bUseControllerRotationYaw = true;
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(GetRootComponent());
@@ -43,7 +43,8 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
 
-	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->bOrientRotationToMovement = false;
+	GetCharacterMovement()->bUseControllerDesiredRotation = false;
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
 	GetCharacterMovement()->MaxWalkSpeed = 500.0f;
 	GetCharacterMovement()->GetNavAgentPropertiesRef().bCanCrouch = true;
@@ -69,6 +70,12 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 UPawnCombatComponent* APlayerCharacter::GetPawnCombatComponent() const
 {
 	return PlayerCombatComponent;
+}
+
+void APlayerCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+	ApplyAlwaysAimFacingMode();
 }
 
 void APlayerCharacter::PossessedBy(AController* NewController)
@@ -158,6 +165,20 @@ void APlayerCharacter::RequestRestoreHeldMovementAbilityInputNextTick()
 	GetWorldTimerManager().SetTimerForNextTick(this, &ThisClass::TryRestoreHeldMovementAbilityInput);
 }
 
+void APlayerCharacter::ApplyAlwaysAimFacingMode()
+{
+	UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
+	if (!MovementComponent)
+	{
+		return;
+	}
+
+	// 조준(컨트롤러) 방향과 캐릭터 Yaw를 항상 일치시킵니다.
+	bUseControllerRotationYaw = true;
+	MovementComponent->bOrientRotationToMovement = false;
+	MovementComponent->bUseControllerDesiredRotation = false;
+}
+
 void APlayerCharacter::UpdateFallingStateTag()
 {
 	UMGSAbilitySystemComponent* ASC = GetMGSAbilitySystemComponent();
@@ -196,5 +217,3 @@ void APlayerCharacter::TryRestoreHeldMovementAbilityInput()
 		ASC->OnAbilityInputPressed(MGSGameplayTags::InputTag_Walk);
 	}
 }
-
-

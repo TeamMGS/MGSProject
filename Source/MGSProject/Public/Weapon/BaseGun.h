@@ -2,8 +2,8 @@
  * 파일명: BaseGun.h
  * 생성자: 장대한
  * 생성일: 2026-03-04
- * 수정자:  장대한
- * 수정일:  2026-03-05
+ * 수정자: 장대한
+ * 수정일: 2026-03-05
  */
 
 #pragma once
@@ -13,7 +13,9 @@
 #include "BaseGun.generated.h"
 
 class UDA_WeaponDefinition;
+class UCameraShakeBase;
 class UWeaponAttributeSet;
+class ABaseProjectile;
 struct FWeaponRuntimeState;
 
 UCLASS()
@@ -29,6 +31,10 @@ public:
 	// 탄약 소모
 	UFUNCTION(BlueprintCallable, Category = "Weapon|Gun|Ammo")
 	bool ConsumeAmmo(int32 AmmoToConsume = 1);
+
+	// 탄약 환급(롤백)
+	UFUNCTION(BlueprintCallable, Category = "Weapon|Gun|Ammo")
+	bool RefundAmmo(int32 AmmoToRefund = 1);
 
 	// 장전 가능 조회
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Ammo")
@@ -50,9 +56,14 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Ammo")
 	int32 GetCarriedAmmo() const;
 
-	// 사거리
+	// 에임 목표점 계산 기준 거리
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Fire")
-	float GetFireRange() const;
+	float GetAimReferenceDistance() const;
+
+	// 하위 호환용 구 이름(FireRange)
+	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Fire",
+		meta = (DeprecatedFunction, DeprecationMessage = "Use GetAimReferenceDistance instead."))
+	float GetFireRange() const { return GetAimReferenceDistance(); }
 
 	// 기본 데미지
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Fire")
@@ -82,6 +93,34 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Aim")
 	FVector GetAimCameraSocketOffset() const;
 
+	// 1발당 수직 반동(도)
+	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Recoil")
+	float GetRecoilPitchPerShot() const;
+
+	// 1발당 수평 반동 최소값(도)
+	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Recoil")
+	float GetRecoilYawPerShotMin() const;
+
+	// 1발당 수평 반동 최대값(도)
+	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Recoil")
+	float GetRecoilYawPerShotMax() const;
+
+	// ADS 상태 반동 배율
+	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Recoil")
+	float GetRecoilADSScale() const;
+
+	// 발사 카메라 쉐이크 클래스
+	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Recoil")
+	TSubclassOf<UCameraShakeBase> GetFireCameraShakeClass() const;
+
+	// 카메라 쉐이크 강도
+	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Recoil")
+	float GetFireCameraShakeScale() const;
+
+	// 발사할 프로젝타일 클래스
+	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Fire")
+	TSubclassOf<ABaseProjectile> GetProjectileClass() const;
+
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Data")
 	const UDA_WeaponDefinition* GetWeaponDefinition() const { return WeaponDefinition; }
 
@@ -109,7 +148,7 @@ private:
 	int32 GetDefinitionStartMagazineAmmo() const;
 	int32 GetDefinitionMaxCarriedAmmo() const;
 	int32 GetDefinitionStartCarriedAmmo() const;
-	float GetDefinitionFireRange() const;
+	float GetDefinitionAimReferenceDistance() const;
 	float GetDefinitionBaseDamage() const;
 	float GetDefinitionFireInterval() const;
 	float GetDefinitionBaseSpreadRadius() const;
@@ -117,11 +156,19 @@ private:
 	float GetDefinitionSpreadRadiusIncreasePerShot() const;
 	float GetDefinitionAimFOV() const;
 	FVector GetDefinitionAimCameraSocketOffset() const;
+	float GetDefinitionRecoilPitchPerShot() const;
+	float GetDefinitionRecoilYawPerShotMin() const;
+	float GetDefinitionRecoilYawPerShotMax() const;
+	float GetDefinitionRecoilADSScale() const;
+	TSubclassOf<UCameraShakeBase> GetDefinitionFireCameraShakeClass() const;
+	float GetDefinitionFireCameraShakeScale() const;
+	TSubclassOf<ABaseProjectile> GetDefinitionProjectileClass() const;
 
 protected:
 	// DA_WeaponDefinition
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|Data")
 	TObjectPtr<UDA_WeaponDefinition> WeaponDefinition;
 };
+
 
 

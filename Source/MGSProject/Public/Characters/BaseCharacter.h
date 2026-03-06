@@ -59,5 +59,3 @@ protected:
 	UPROPERTY()
 	TObjectPtr<UMGSCharacterMovementComponent> MGSMovementComponent;
 };
-
-
