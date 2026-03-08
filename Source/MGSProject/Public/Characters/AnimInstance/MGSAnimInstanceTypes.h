@@ -164,23 +164,18 @@ struct FMGSLocomotionState
 {
 	GENERATED_BODY()
 
-	// // 현재 프레임 상태
-	// UPROPERTY(VisibleAnywhere, BlueprintReadOnly) EMGSMovementMode MovementMode = EMGSMovementMode::OnGround;
-	// UPROPERTY(VisibleAnywhere, BlueprintReadOnly) EMGSStance Stance = EMGSStance::Stand;
-	// UPROPERTY(VisibleAnywhere, BlueprintReadOnly) EMGSGait Gait = EMGSGait::Run;
-	// UPROPERTY(VisibleAnywhere, BlueprintReadOnly) EMGSRotationMode RotationMode = EMGSRotationMode::VelocityDirection;
-	// UPROPERTY(VisibleAnywhere, BlueprintReadOnly) EMGSMovementState MovementState = EMGSMovementState::Idle;
-	//
-	// // 이전 프레임 상태 (Last Frame)
-	// EMGSMovementMode MovementMode_LastFrame = EMGSMovementMode::OnGround;
-	// EMGSStance Stance_LastFrame = EMGSStance::Stand;
-	// EMGSGait Gait_LastFrame = EMGSGait::Run;
-	// EMGSRotationMode RotationMode_LastFrame = EMGSRotationMode::VelocityDirection;
-	// EMGSMovementState MovementState_LastFrame = EMGSMovementState::Idle;
-
-	// 특수 상태
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) bool bIsMoving = false;
+	// 메인 이동 상태
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) FGameplayTag MovementStateTag;
+	
+	// 부가 액션 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) FGameplayTag LocomotionActionTag;
+	
+	// 마지막 프레임 검사
+	FGameplayTag LastFrameMovementTag;
 
 	// 핵심 업데이트 함수
-	void Update(const FMGSCharacterDataProxy& Data, const FMGSTrajectoryHandler& Trajectory);
+	void Update(const FMGSCharacterDataProxy& Data, const FMGSEssentialValues& Essential, const FMGSTrajectoryHandler& Trajectory);
+	
+	// 헬퍼 함수
+	bool CheckIsPivoting(const FMGSCharacterDataProxy& Data, const FMGSEssentialValues& Essential, const FMGSTrajectoryHandler& Trajectory);
 };

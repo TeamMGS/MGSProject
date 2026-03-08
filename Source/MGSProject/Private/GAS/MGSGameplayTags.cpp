@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 김동석
- * 수정일 : 2026-03-06
+ * 수정일 : 2026-03-09
  */
 
 #include "GAS/MGSGameplayTags.h"
@@ -50,6 +50,10 @@ namespace MGSGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Movement_Walk, "State.Player.Movement.Walk")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Movement_Falling, "State.Player.Movement.Falling")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Movement_WantsToSprint, "State.Player.Movement.WantsToSprint")
+	UE_DEFINE_GAMEPLAY_TAG(State_Player_Movement_Idle, "State.Player.Movement.Idle")
+	UE_DEFINE_GAMEPLAY_TAG(State_Player_Movement_Moving, "State.Player.Movement.Moving")
+	UE_DEFINE_GAMEPLAY_TAG(State_Player_Movement_TurningInPlace, "State.Player.Movement.TurningInPlace")
+	UE_DEFINE_GAMEPLAY_TAG(State_Player_Movement_Pivoting, "State.Player.Movement.Pivoting")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_JustLanded_Light, "State.Player.JustLanded.Light")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_JustLanded_Heavy, "State.Player.JustLanded.Heavy")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Crouching, "State.Player.Crouching")

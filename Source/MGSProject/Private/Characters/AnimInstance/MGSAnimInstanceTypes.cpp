@@ -248,7 +248,7 @@ void FMGSTrajectoryHandler::Update(class UAnimInstance* AnimInstance, const FMGS
 	);
 }
 
-void FMGSLocomotionState::Update(const FMGSCharacterDataProxy& Data, const FMGSTrajectoryHandler& Trajectory)
+void FMGSLocomotionState::Update(const FMGSCharacterDataProxy& Data, const FMGSEssentialValues& Essential, const FMGSTrajectoryHandler& Trajectory)
 {
 	// Movement State 판정 (GASP의 핵심 로직)
 	// 현재 속도가 있고, 미래의 예측 속도(Trajectory)도 있는 경우 '이동 중'으로 간주
@@ -256,5 +256,84 @@ void FMGSLocomotionState::Update(const FMGSCharacterDataProxy& Data, const FMGST
 	const bool bHasFutureVelocity = Trajectory.Trj_FutureVelocity.SizeSquared2D() > KINDA_SMALL_NUMBER;
 	const bool bHasAcceleration = Data.InputAcceleration.SizeSquared2D() > KINDA_SMALL_NUMBER;
 	
-	bIsMoving = bHasCurrentVelocity || bHasFutureVelocity || bHasAcceleration;
+	if (bHasCurrentVelocity || bHasFutureVelocity || bHasAcceleration)
+	{
+		MovementStateTag = MGSGameplayTags::State_Player_Movement_Moving;
+	}
+	else
+	{
+		MovementStateTag = MGSGameplayTags::State_Player_Movement_Idle;
+	}
+	
+	
+	// 제자리 회전
+	FRotator DeltaRot = (Data.OrientationIntent - Essential.RootTransform.GetRotation().Rotator()).GetNormalized();
+	const bool bOverThreshold = FMath::Abs(DeltaRot.Yaw) > 50.0f;
+	const bool bWantsToAim = Data.GameplayTags.HasTag(MGSGameplayTags::State_Player_Aiming);
+
+	const bool bIsIdle = (MovementStateTag == MGSGameplayTags::State_Player_Movement_Idle);
+	const bool bWasMoving = (LastFrameMovementTag == MGSGameplayTags::State_Player_Movement_Moving);
+	const bool bStickFlick = bIsIdle && bWasMoving;
+	
+	bool bIsPivoting = CheckIsPivoting(Data, Essential, Trajectory);
+	
+	if (bIsPivoting)
+	{
+		LocomotionActionTag = MGSGameplayTags::State_Player_Movement_Pivoting;
+	}
+	else if (bIsIdle && bOverThreshold && (bWantsToAim || bStickFlick))
+	{
+		LocomotionActionTag = MGSGameplayTags::State_Player_Movement_TurningInPlace;
+	}
+	else
+	{
+		LocomotionActionTag = FGameplayTag::EmptyTag;
+	}
+	
+	LastFrameMovementTag = MovementStateTag;
+}
+
+bool FMGSLocomotionState::CheckIsPivoting(const FMGSCharacterDataProxy& Data, const FMGSEssentialValues& Essential,
+	const FMGSTrajectoryHandler& Trajectory)
+{
+	// 기본 조건: 움직이고 있어야 함
+	if (MovementStateTag != MGSGameplayTags::State_Player_Movement_Moving) return false;
+
+	// 피벗 각도 계산 (현재 속도 방향 vs 미래 예측 궤적 방향)
+	FVector CurrentDir = Data.Velocity.GetSafeNormal2D();
+	FVector FutureDir = Trajectory.Trj_FutureVelocity.GetSafeNormal2D();
+
+	float Dot = FVector::DotProduct(CurrentDir, FutureDir);
+	float TurnAngle = FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(Dot, -1.0f, 1.0f)));
+	
+	float AngleThreshold = 0.0f;
+
+	// 가중치 계산 (Gait 및 Speed에 따른 동적 임계값)
+	if (Data.GameplayTags.HasTag(MGSGameplayTags::State_Player_Stance_Crouch))
+	{
+		AngleThreshold = 65.0f; // 앉은 상태 고정값
+	}
+	else
+	{
+		// 서 있는 상태: 속도와 Gait에 따라 MapRangeClamped 적용
+		if (Data.GameplayTags.HasTag(MGSGameplayTags::State_Player_Gait_Walk))
+		{
+			AngleThreshold = FMath::GetMappedRangeValueClamped(FVector2D(150.f, 200.f), FVector2D(70.f, 60.f), Essential.Speed2D);
+		}
+		else if (Data.GameplayTags.HasTag(MGSGameplayTags::State_Player_Gait_Run))
+		{
+			AngleThreshold = FMath::GetMappedRangeValueClamped(FVector2D(300.f, 500.f), FVector2D(70.f, 60.f), Essential.Speed2D);
+		}
+		else if (Data.GameplayTags.HasTag(MGSGameplayTags::State_Player_Gait_Sprint))
+		{
+			AngleThreshold = FMath::GetMappedRangeValueClamped(FVector2D(300.f, 700.f), FVector2D(60.f, 50.f), Essential.Speed2D);
+		}
+	}
+
+	// 회전 모드 보정 (MM Pivot conditions 부분)
+	if (Data.RotationMode == EMGSRotationMode::VelocityDirection) AngleThreshold += 45.0f;
+	else if (Data.RotationMode == EMGSRotationMode::LookingDirection) AngleThreshold += 30.0f;
+
+	// 최종 판정
+	return TurnAngle > AngleThreshold;
 }

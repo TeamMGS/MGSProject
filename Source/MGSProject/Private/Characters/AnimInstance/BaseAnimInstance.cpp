@@ -7,6 +7,7 @@
  */
 #include "Characters/AnimInstance/BaseAnimInstance.h"
 #include "Characters/BaseCharacter.h"
+#include "GAS/MGSGameplayTags.h"
 
 void UBaseAnimInstance::UpdateMotionMatchingNode(const FAnimUpdateContext& Context, const FAnimNodeReference& Node)
 {
@@ -37,7 +38,8 @@ bool UBaseAnimInstance::ShouldEnableAimOffset() const
 
 	// 카메라와의 각도 차이(Yaw) 임계값 확인
 	// LocomotionState의 bIsMoving 변수를 활용하여 임계값을 결정합니다.
-	const float AngleThreshold = LocomotionState.bIsMoving ? 180.0f : 115.0f;
+	const bool bIsMoving = (LocomotionState.MovementStateTag == MGSGameplayTags::State_Player_Movement_Moving);
+	const float AngleThreshold = bIsMoving ? 180.0f : 115.0f;
 
 	// 이전에 EssentialValues 구조체에서 계산해둔 AOValue.X (Yaw 각도 차이)를 사용합니다.
 	if (FMath::Abs(EssentialValues.AOValue.X) > AngleThreshold)
@@ -46,6 +48,17 @@ bool UBaseAnimInstance::ShouldEnableAimOffset() const
 	}
 	
 	return true;
+}
+
+bool UBaseAnimInstance::HasLocomotionTag(FGameplayTag TagToCheck) const
+{
+	if (CharacterData.GameplayTags.HasTag(TagToCheck)) return true;
+	
+	if (LocomotionState.MovementStateTag.MatchesTag(TagToCheck)) return true;
+	
+	if (LocomotionState.LocomotionActionTag.MatchesTag(TagToCheck)) return true;
+
+	return false;
 }
 
 void UBaseAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
@@ -62,5 +75,5 @@ void UBaseAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	
 	TrajectoryHandler.Update(this, EssentialValues, DeltaSeconds);
 	
-	LocomotionState.Update(CharacterData, TrajectoryHandler);
+	LocomotionState.Update(CharacterData, EssentialValues, TrajectoryHandler);
 }

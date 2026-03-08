@@ -30,6 +30,10 @@ public:
 	UFUNCTION(BlueprintPure, Category = "MGS|Animation", meta = (BlueprintThreadSafe))
 	bool ShouldEnableAimOffset() const;
 	
+	// 헬퍼함수
+	UFUNCTION(BlueprintPure, Category = "MGS|Animation", meta = (BlueprintThreadSafe))
+	bool HasLocomotionTag(FGameplayTag TagToCheck) const;
+	
 protected:
 	// 데이터 프록시 (데이터 복사용)
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MGS|Animation")
