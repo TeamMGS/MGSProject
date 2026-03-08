@@ -56,7 +56,7 @@ void UBaseAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	if (!Character || DeltaSeconds <= 0.f) return;
 	
 	CharacterData.Update(Character);
-
+	
 	// 나머지 모듈들도 같은 방식으로 호출
 	EssentialValues.Update(this, CharacterData, DeltaSeconds);
 	

@@ -3,14 +3,17 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 김동석
- * 수정일 : 2026-03-05
+ * 수정일 : 2026-03-06
  */
 
 #include "Characters/BaseCharacter.h"
 
 #include "Characters/Player/MGSPlayerState.h"
+#include "Components/MovementComponent/MGSCharacterMovementComponent.h"
+#include "Components/StateTag/MGSLocomotionComponent.h"
 
-ABaseCharacter::ABaseCharacter()
+ABaseCharacter::ABaseCharacter(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer.SetDefaultSubobjectClass<UMGSCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
 	// 성능을 위해 Tick을 사용하지 않습니다.
 	PrimaryActorTick.bCanEverTick = false;
@@ -18,6 +21,12 @@ ABaseCharacter::ABaseCharacter()
 	
 	// VFX Decal 영향이 필요 없는 캐릭터는 비활성화합니다.
 	GetMesh()->bReceivesDecals = false;
+	
+	// 1. 커스텀 CMC 캐싱
+	MGSMovementComponent = Cast<UMGSCharacterMovementComponent>(GetCharacterMovement());
+
+	// 2. 로코모션 컴포넌트 생성
+	LocomotionComponent = CreateDefaultSubobject<UMGSLocomotionComponent>(TEXT("LocomotionComponent"));
 }
 
 UPawnCombatComponent* ABaseCharacter::GetPawnCombatComponent() const
@@ -72,3 +81,27 @@ AMGSPlayerState* ABaseCharacter::GetMGSPlayerState() const
 
 	return nullptr;
 }
+
+void ABaseCharacter::OnJumped_Implementation()
+{
+	Super::OnJumped_Implementation();
+
+	// 로코모션 컴포넌트에게 점프 사실을 전달합니다.
+	if (LocomotionComponent)
+	{
+		LocomotionComponent->HandleOnJumped();
+	}
+}
+
+void ABaseCharacter::Landed(const FHitResult& Hit)
+{
+	Super::Landed(Hit);
+	
+	// 모든 캐릭터 공통: 로코모션 컴포넌트에게 착지 알림
+	if (LocomotionComponent)
+	{
+		LocomotionComponent->HandleOnLanded(GetVelocity());
+	}
+}
+
+

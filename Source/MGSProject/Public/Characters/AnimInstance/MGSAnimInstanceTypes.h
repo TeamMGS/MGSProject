@@ -3,11 +3,12 @@
  * 생성자 : 김동석
  * 생성일 : 2026-03-05
  * 수정자 : 김동석
- * 수정일 : 2026-03-05
+ * 수정일 : 2026-03-06
  */
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "MGSEnumType.h"
 #include "Animation/TrajectoryTypes.h"
 #include "PoseSearch/PoseSearchTrajectoryLibrary.h"
@@ -38,14 +39,10 @@ USTRUCT(BlueprintType)
 struct FMGSCharacterDataProxy
 {
 	GENERATED_BODY()
-
-	// 입력 상태 추가 (구조체 통합)
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) FMGSInputState InputState;
 	
-	// 상태 관련 (Enum 활용)
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) EMGSMovementMode MovementMode = EMGSMovementMode::None;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) EMGSStance Stance = EMGSStance::Stand;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) EMGSGait Gait = EMGSGait::Run;
+	// 캐릭터의 모든 상태를 담을 마스터 태그 컨테이너
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	FGameplayTagContainer GameplayTags;
 
 	// 물리 데이터 (GASP 노드 대응)
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) FTransform ActorTransform = FTransform::Identity;
@@ -167,17 +164,19 @@ struct FMGSLocomotionState
 {
 	GENERATED_BODY()
 
-	// 현재 프레임 상태
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) EMGSMovementMode MovementMode = EMGSMovementMode::None;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) EMGSStance Stance = EMGSStance::Stand;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) EMGSGait Gait = EMGSGait::Run;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) EMGSRotationMode RotationMode = EMGSRotationMode::VelocityDirection;
-
-	// 이전 프레임 상태 (Last Frame)
-	EMGSMovementMode MovementMode_LastFrame = EMGSMovementMode::None;
-	EMGSStance Stance_LastFrame = EMGSStance::Stand;
-	EMGSGait Gait_LastFrame = EMGSGait::Run;
-	EMGSRotationMode RotationMode_LastFrame = EMGSRotationMode::VelocityDirection;
+	// // 현재 프레임 상태
+	// UPROPERTY(VisibleAnywhere, BlueprintReadOnly) EMGSMovementMode MovementMode = EMGSMovementMode::OnGround;
+	// UPROPERTY(VisibleAnywhere, BlueprintReadOnly) EMGSStance Stance = EMGSStance::Stand;
+	// UPROPERTY(VisibleAnywhere, BlueprintReadOnly) EMGSGait Gait = EMGSGait::Run;
+	// UPROPERTY(VisibleAnywhere, BlueprintReadOnly) EMGSRotationMode RotationMode = EMGSRotationMode::VelocityDirection;
+	// UPROPERTY(VisibleAnywhere, BlueprintReadOnly) EMGSMovementState MovementState = EMGSMovementState::Idle;
+	//
+	// // 이전 프레임 상태 (Last Frame)
+	// EMGSMovementMode MovementMode_LastFrame = EMGSMovementMode::OnGround;
+	// EMGSStance Stance_LastFrame = EMGSStance::Stand;
+	// EMGSGait Gait_LastFrame = EMGSGait::Run;
+	// EMGSRotationMode RotationMode_LastFrame = EMGSRotationMode::VelocityDirection;
+	// EMGSMovementState MovementState_LastFrame = EMGSMovementState::Idle;
 
 	// 특수 상태
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) bool bIsMoving = false;

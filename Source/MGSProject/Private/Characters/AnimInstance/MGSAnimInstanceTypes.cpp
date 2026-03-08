@@ -3,7 +3,7 @@
  * 생성자 : 김동석
  * 생성일 : 2026-03-05
  * 수정자 : 김동석
- * 수정일 : 2026-03-05
+ * 수정일 : 2026-03-06
  */
 #include "Characters/AnimInstance/MGSAnimInstanceTypes.h"
 #include "Characters/BaseCharacter.h"
@@ -23,10 +23,13 @@ void FMGSCharacterDataProxy::Update(class ABaseCharacter* Character)
 	UCharacterMovementComponent* MoveComp = Character->GetCharacterMovement();
 	UMGSAbilitySystemComponent* ASC = Character->GetMGSAbilitySystemComponent();
 	if (!MoveComp) return;
-
+	if (ASC)
+	{
+		GameplayTags.Reset();
+		ASC->GetOwnedGameplayTags(GameplayTags);
+	}
 	// 물리 데이터 업데이트
 	Velocity = Character->GetVelocity();
-	MovementMode = static_cast<EMGSMovementMode>(MoveComp->MovementMode.GetValue());
 	ActorTransform = Character->GetActorTransform();
 	InputAcceleration = MoveComp->GetCurrentAcceleration();
 	MaxAcceleration = MoveComp->GetMaxAcceleration();
@@ -51,24 +54,24 @@ void FMGSCharacterDataProxy::Update(class ABaseCharacter* Character)
 		GroundNormal = FVector::UpVector;
 	}
 
-	// 상태 및 입력 (GAS 태그 연동)
-	if (ASC)
-	{
-		Stance = ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Crouching) ?
-				 EMGSStance::Crouch : EMGSStance::Stand;
-
-		if (ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Movement_Sprint))
-			Gait = EMGSGait::Sprint;
-		else if (ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Movement_Walk))
-			Gait = EMGSGait::Walk;
-		else
-			Gait = EMGSGait::Run;
-
-		InputState.bWantsToSprint = ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Movement_Sprint);
-		InputState.bWantsToWalk   = ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Movement_Walk);
-		InputState.bWantsToAim    = ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Aiming);
-		InputState.bWantsToCrouch = ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Crouching);
-	}
+	// // 상태 및 입력 (GAS 태그 연동)
+	// if (ASC)
+	// {
+	// 	Stance = ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Crouching) ?
+	// 			 EMGSStance::Crouch : EMGSStance::Stand;
+	//
+	// 	if (ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Movement_Sprint))
+	// 		Gait = EMGSGait::Sprint;
+	// 	else if (ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Movement_Walk))
+	// 		Gait = EMGSGait::Walk;
+	// 	else
+	// 		Gait = EMGSGait::Run;
+	//
+	// 	InputState.bWantsToSprint = ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Movement_Sprint);
+	// 	InputState.bWantsToWalk   = ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Movement_Walk);
+	// 	InputState.bWantsToAim    = ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Aiming);
+	// 	InputState.bWantsToCrouch = ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Crouching);
+	// }
 }
 
 void FMGSEssentialValues::Update(UAnimInstance* AnimInstance, const FMGSCharacterDataProxy& Data, float DeltaSeconds)
@@ -185,7 +188,6 @@ void FMGSMotionMatchingHandler::PostSelection(UAnimInstance* AnimInstance, const
 	{
 		CurrentSelectedAnim = SearchResult.SelectedAnim;
 		CurrentSelectedDatabase = SearchResult.SelectedDatabase;
-
 		// 데이터베이스 태그 가져오기
 		if (CurrentSelectedDatabase)
 		{
@@ -200,6 +202,22 @@ void FMGSTrajectoryHandler::Update(class UAnimInstance* AnimInstance, const FMGS
 {
 	if (!AnimInstance || DeltaSeconds <= 0.f) return;
 
+	// 현재 컨트롤러(카메라)의 Yaw 값을 가져옵니다.
+	APawn* Pawn = AnimInstance->TryGetPawnOwner();
+	if (!Pawn) return;
+	
+	const float CurrentControllerYaw = Pawn->GetControlRotation().Yaw;
+	
+	// 보간 로직 적용
+	// DesiredControllerYawLastUpdate가 컨트롤러의 실제 Yaw를 부드럽게 따라가도록 합니다.
+	// 속도는 20.0f 
+	DesiredControllerYawLastUpdate = FMath::FInterpTo(
+		DesiredControllerYawLastUpdate,
+		CurrentControllerYaw,
+		DeltaSeconds,
+		20.0f
+	);
+	
 	// 현재 상황에 맞는 설정 데이터 선택
 	const FPoseSearchTrajectoryData& SelectedSettings = (Values.Speed2D > 0.f) ?
 														TrajectorySettings_Moving :
@@ -232,18 +250,6 @@ void FMGSTrajectoryHandler::Update(class UAnimInstance* AnimInstance, const FMGS
 
 void FMGSLocomotionState::Update(const FMGSCharacterDataProxy& Data, const FMGSTrajectoryHandler& Trajectory)
 {
-	// 이전 프레임 데이터 백업 (GASP의 VariableSet_0, 10, 5, 6, 11 대응)
-	MovementMode_LastFrame = MovementMode;
-	RotationMode_LastFrame = RotationMode;
-	Gait_LastFrame = Gait;
-	Stance_LastFrame = Stance;
-
-	// 현재 데이터 최신화 (Proxy로부터 복사)
-	MovementMode = Data.MovementMode;
-	RotationMode = Data.RotationMode;
-	Gait = Data.Gait;
-	Stance = Data.Stance;
-
 	// Movement State 판정 (GASP의 핵심 로직)
 	// 현재 속도가 있고, 미래의 예측 속도(Trajectory)도 있는 경우 '이동 중'으로 간주
 	const bool bHasCurrentVelocity = Data.Velocity.SizeSquared2D() > KINDA_SMALL_NUMBER;

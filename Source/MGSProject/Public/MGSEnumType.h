@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
  * 수정자 : 김동석
- * 수정일 : 2026-03-05
+ * 수정일 : 2026-03-06
  */
 
 #pragma once
@@ -14,7 +14,7 @@
 UENUM(BlueprintType)
 enum class EMGSMovementMode : uint8
 {
-	None, Walking, NavWalking, Falling, Swimming, Flying, Custom
+	OnGround, InAir
 };
 
 // 자세 (서기/앉기)
@@ -36,4 +36,9 @@ UENUM(BlueprintType)
 enum class EMGSGait : uint8
 {
 	Walk, Run, Sprint
+};
+
+UENUM(BlueprintType)
+enum class EMGSMovementState : uint8 {
+	Idle, Moving
 };
