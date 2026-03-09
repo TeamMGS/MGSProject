@@ -3,13 +3,14 @@
  * 생성자 : 김동석
  * 생성일 : 2026-03-05
  * 수정자 : 김동석
- * 수정일 : 2026-03-05
+ * 수정일 : 2026-03-09
  */
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
 #include "MGSAnimInstanceTypes.h"
+#include "BoneControllers/AnimNode_OrientationWarping.h"
 #include "BaseAnimInstance.generated.h"
 
 /**
@@ -29,6 +30,25 @@ public:
 	// Aim Offset 활성화
 	UFUNCTION(BlueprintPure, Category = "MGS|Animation", meta = (BlueprintThreadSafe))
 	bool ShouldEnableAimOffset() const;
+	
+	// 헬퍼함수
+	UFUNCTION(BlueprintPure, Category = "MGS|Animation", meta = (BlueprintThreadSafe))
+	bool HasLocomotionTag(FGameplayTag TagToCheck) const;
+	
+	// Steering 노드가 작동할 방향을 제공
+	UFUNCTION(BlueprintPure, Category = "MGS|Steering", meta = (BlueprintThreadSafe))
+	FQuat GetDesiredFacing() const;
+	
+	// 제자리 회전용 Steering 활성화 여부
+	UFUNCTION(BlueprintPure, Category = "MGS|Steering", meta = (BlueprintThreadSafe))
+	bool IsTurnInPlaceSteeringEnabled(const FAnimNodeReference& Node) const;
+
+	// 일반 이동용 Steering 활성화 여부 (기존 EnableSteering 수정)
+	UFUNCTION(BlueprintPure, Category = "MGS|Steering", meta = (BlueprintThreadSafe))
+	bool IsNormalSteeringEnabled(const FAnimNodeReference& Node) const;
+	
+	UFUNCTION(BlueprintPure, Category = "MGS|Warping", meta = (BlueprintThreadSafe))
+	EOrientationWarpingSpace Get_OrientationWarpingWarpingSpace() const;
 	
 protected:
 	// 데이터 프록시 (데이터 복사용)

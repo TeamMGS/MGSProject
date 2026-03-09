@@ -16,6 +16,11 @@ UMGSLocomotionComponent::UMGSLocomotionComponent()
 {
 	// 델리게이트를 통한 movementcomponent로 상태변화 통신
 	PrimaryComponentTick.bCanEverTick = false;
+	
+	LastMovementStateTag = FGameplayTag::EmptyTag;
+	LastGaitTag = FGameplayTag::EmptyTag;
+	LastStanceTag = FGameplayTag::EmptyTag;
+	LastModeTag = FGameplayTag::EmptyTag;
 
 }
 
@@ -52,6 +57,21 @@ void UMGSLocomotionComponent::UpdateMovementTags(float DeltaSeconds)
 	if (!OwningCharacter || !MGSMovementComponent) return;
 	UMGSAbilitySystemComponent* ASC = OwningCharacter->GetMGSAbilitySystemComponent();
 	if (!ASC) return;
+	
+	// 1. Idle vs Moving 판정 (속도와 입력 기준)
+	const bool bIsMoving = MGSMovementComponent->Velocity.SizeSquared2D() > KINDA_SMALL_NUMBER ||
+						   MGSMovementComponent->GetCurrentAcceleration().SizeSquared2D() > KINDA_SMALL_NUMBER;
+
+	FGameplayTag NewMovementState = bIsMoving ? MGSGameplayTags::State_Player_Movement_Moving
+											  : MGSGameplayTags::State_Player_Movement_Idle;
+
+	// 2. 태그 업데이트 (LastMovementStateTag는 헤더에 추가 필요)
+	if (NewMovementState != LastMovementStateTag)
+	{
+		if (LastMovementStateTag.IsValid()) ASC->RemoveLooseGameplayTag(LastMovementStateTag);
+		ASC->AddLooseGameplayTag(NewMovementState);
+		LastMovementStateTag = NewMovementState;
+	}
 	
 	// Gait 최적화 업데이트
 	FGameplayTag NewGait = MGSMovementComponent->GetDesiredGait();
@@ -98,6 +118,15 @@ void UMGSLocomotionComponent::UpdateMovementTags(float DeltaSeconds)
 			ASC->RemoveLooseGameplayTag(MGSGameplayTags::State_Player_JustLanded_Heavy);
 		}
 	}
+	// 공중 체류 시간 계산
+	if (MGSMovementComponent->IsFalling())
+	{
+		CurrentAirTime += DeltaSeconds;
+	}
+	else
+	{
+		CurrentAirTime = 0.f;
+	}
 }
 
 void UMGSLocomotionComponent::HandleOnJumped()
@@ -118,6 +147,12 @@ void UMGSLocomotionComponent::HandleOnJumped()
 void UMGSLocomotionComponent::HandleOnLanded(const FVector& LandVelocity)
 {
 	if (!OwningCharacter) return;
+	// 공중체류시간 0.15초 미만
+	if (CurrentAirTime < 0.15f)
+	{
+		CurrentAirTime = 0.f;
+		return;
+	}
 	UMGSAbilitySystemComponent* ASC = OwningCharacter->GetMGSAbilitySystemComponent();
 	if (!ASC) return;
 

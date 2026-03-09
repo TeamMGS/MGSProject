@@ -26,7 +26,8 @@ public class MGSProject : ModuleRules
 			"Chooser",
 			"AnimationWarpingRuntime",
 			"MotionWarping",
-			"AnimGraphRuntime"
+			"AnimGraphRuntime",
+			"BlendStack"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });
