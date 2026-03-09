@@ -1,9 +1,9 @@
 ﻿/*
- * 파일명: PlayerAimGameplayAbility.cpp
- * 생성자: 장대한
- * 생성일: 2026-03-04
- * 수정자: 장대한
- * 수정일: 2026-03-04
+ * 파일명 : PlayerAimGameplayAbility.cpp
+ * 생성자 : 장대한
+ * 생성일 : 2026-03-04
+ * 수정자 : 장대한
+ * 수정일 : 2026-03-09
  */
 
 #include "GAS/GA/PlayerAimGameplayAbility.h"
@@ -14,7 +14,6 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "GAS/MGSGameplayTags.h"
 #include "Weapon/BaseGun.h"
-
 
 UPlayerAimGameplayAbility::UPlayerAimGameplayAbility()
 {
@@ -67,6 +66,7 @@ void UPlayerAimGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle
 		return;
 	}
 
+	// FOV 캐싱 및 조준 FOV 변경
 	CachedFOV = PlayerController->PlayerCameraManager->GetFOVAngle();
 	bHasCachedFOV = true;
 	PlayerController->PlayerCameraManager->SetFOV(EquippedGun->GetAimFOV());
@@ -75,6 +75,7 @@ void UPlayerAimGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle
 	{
 		if (USpringArmComponent* CameraBoom = PlayerCharacter->FindComponentByClass<USpringArmComponent>())
 		{
+			// 카메라 오프셋 캐싱 및 조준 오프셋 변경
 			CachedCameraSocketOffset = CameraBoom->SocketOffset;
 			bHasCachedCameraSocketOffset = true;
 			CameraBoom->SocketOffset = EquippedGun->GetAimCameraSocketOffset();
@@ -102,6 +103,7 @@ void UPlayerAimGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Hand
 		{
 			if (PlayerController->PlayerCameraManager)
 			{
+				// FOV 복원
 				PlayerController->PlayerCameraManager->SetFOV(CachedFOV);
 			}
 		}
@@ -115,6 +117,7 @@ void UPlayerAimGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Hand
 		{
 			if (USpringArmComponent* CameraBoom = PlayerCharacter->FindComponentByClass<USpringArmComponent>())
 			{
+				// 카메라 오프셋 복원
 				CameraBoom->SocketOffset = CachedCameraSocketOffset;
 			}
 		}
@@ -124,5 +127,3 @@ void UPlayerAimGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Hand
 
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
-
-

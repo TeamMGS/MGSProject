@@ -2,8 +2,8 @@
  * 파일명 : EnemyCharacter.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
- * 수정자 : 김동석
- * 수정일 : 2026-03-06
+ * 수정자 : 장대한
+ * 수정일 : 2026-03-09
  */
 
 #include "Characters/Enemies/EnemyCharacter.h"
@@ -17,9 +17,12 @@
 #include "GAS/ASC/MGSAbilitySystemComponent.h"
 #include "GAS/AttributeSets/CharacterAttributeSet.h"
 #include "GAS/MGSGameplayTags.h"
+#include "MGSDebugHelper.h"
+#include "AbilitySystemComponent.h"
 #include "Components/InputComponent.h"
 #include "InputCoreTypes.h"
 #include "Engine/Engine.h"
+#include "GameplayEffectTypes.h"
 
 AEnemyCharacter::AEnemyCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -38,6 +41,7 @@ AEnemyCharacter::AEnemyCharacter(const FObjectInitializer& ObjectInitializer)
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.0f;
 
 	MGSAbilitySystemComponent = CreateDefaultSubobject<UMGSAbilitySystemComponent>(TEXT("MGSAbilitySystemComponent"));
+	MGSAbilitySystemComponent->SetIsReplicated(true);
 	CharacterAttributeSet = CreateDefaultSubobject<UCharacterAttributeSet>(TEXT("CharacterAttributeSet"));
 	
 	EnemyCombatComponent = CreateDefaultSubobject<UEnemyCombatComponent>(TEXT("EnemyCombatComponent"));
@@ -48,6 +52,11 @@ AEnemyCharacter::AEnemyCharacter(const FObjectInitializer& ObjectInitializer)
 UPawnCombatComponent* AEnemyCharacter::GetPawnCombatComponent() const
 {
 	return EnemyCombatComponent;
+}
+
+UAbilitySystemComponent* AEnemyCharacter::GetAbilitySystemComponent() const
+{
+	return MGSAbilitySystemComponent;
 }
 
 UMGSAbilitySystemComponent* AEnemyCharacter::GetMGSAbilitySystemComponent() const
@@ -63,6 +72,8 @@ UCharacterAttributeSet* AEnemyCharacter::GetCharacterAttributeSet() const
 void AEnemyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	InitializeEnemyAttributes();
+	BindHpChangedDelegate();
 
 	SetEnemyStateTag(DefaultEnemyStateTag);
 
@@ -80,8 +91,73 @@ void AEnemyCharacter::PossessedBy(AController* NewController)
 	{
 		MGSAbilitySystemComponent->InitAbilityActorInfo(this, this);
 	}
+
+	InitializeEnemyAttributes();
+	BindHpChangedDelegate();
 	
 	InitEnemyStartupData();
+}
+
+void AEnemyCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (MGSAbilitySystemComponent && bHasBoundHpChangedDelegate)
+	{
+		MGSAbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UCharacterAttributeSet::GetCurrentHpAttribute())
+			.Remove(CurrentHpChangedDelegateHandle);
+		CurrentHpChangedDelegateHandle.Reset();
+		bHasBoundHpChangedDelegate = false;
+	}
+
+	Super::EndPlay(EndPlayReason);
+}
+
+void AEnemyCharacter::InitializeEnemyAttributes()
+{
+	if (!CharacterAttributeSet)
+	{
+		return;
+	}
+
+	const float MaxHp = FMath::Max(1.f, DefaultMaxHp);
+	const float CurrentHp = FMath::Clamp(DefaultCurrentHp, 0.f, MaxHp);
+	CharacterAttributeSet->SetMaxHp(MaxHp);
+	CharacterAttributeSet->SetCurrentHp(CurrentHp);
+}
+
+void AEnemyCharacter::BindHpChangedDelegate()
+{
+	if (bHasBoundHpChangedDelegate || !MGSAbilitySystemComponent)
+	{
+		return;
+	}
+
+	CurrentHpChangedDelegateHandle = MGSAbilitySystemComponent
+		->GetGameplayAttributeValueChangeDelegate(UCharacterAttributeSet::GetCurrentHpAttribute())
+		.AddUObject(this, &ThisClass::HandleCurrentHpChanged);
+	bHasBoundHpChangedDelegate = true;
+}
+
+void AEnemyCharacter::HandleCurrentHpChanged(const FOnAttributeChangeData& AttributeChangeData)
+{
+	if (AttributeChangeData.NewValue >= AttributeChangeData.OldValue - KINDA_SMALL_NUMBER)
+	{
+		return;
+	}
+
+	const FString DamageMsg = FString::Printf(TEXT("[EnemyHP][GE] %s HP=%.1f->%.1f / %.1f"),
+		*GetName(),
+		AttributeChangeData.OldValue,
+		AttributeChangeData.NewValue,
+		GetMaxHp());
+	UE_LOG(LogTemp, Log, TEXT("%s"), *DamageMsg);
+	Debug::Print(DamageMsg, FColor::Yellow);
+
+	if (AttributeChangeData.NewValue <= KINDA_SMALL_NUMBER)
+	{
+		const FString DefeatedMsg = FString::Printf(TEXT("[EnemyHP] %s defeated"), *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s"), *DefeatedMsg);
+		Debug::Print(DefeatedMsg, FColor::Red);
+	}
 }
 
 void AEnemyCharacter::InitEnemyStartupData()

@@ -2,8 +2,8 @@
  * 파일명 : PawnCombatComponent.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
- * 수정자 :  장대한
- * 수정일 :  2026-03-05
+ * 수정자 : 장대한
+ * 수정일 : 2026-03-09
  */
 
 #pragma once
@@ -65,4 +65,5 @@ private:
 	TMap<FGameplayTag, ABaseWeapon*> CharacterCarriedWeaponMap; // 소유 무기 맵
 	TMap<FGameplayTag, FWeaponRuntimeState> CharacterCarriedWeaponRuntimeStateMap; // 무기별 런타임 탄약 상태 맵 
 	FOnEquippedWeaponChangedSignature OnEquippedWeaponChanged; // 장착 변경 델리게이트
+	
 };

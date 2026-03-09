@@ -2,8 +2,8 @@
  * 파일명 : PlayerSprintGameplayAbility.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-03
- * 수정자 :  장대한
- * 수정일 :  2026-03-05
+ * 수정자 : 장대한
+ * 수정일 : 2026-03-09
  */
 
 #include "GAS/GA/PlayerSprintGameplayAbility.h"
@@ -45,6 +45,7 @@ bool UPlayerSprintGameplayAbility::CanActivateAbility(const FGameplayAbilitySpec
 
 	if (const UCharacterMovementComponent* MovementComponent = PlayerCharacter->GetCharacterMovement())
 	{
+		// 공중인지 확인
 		return !MovementComponent->IsFalling();
 	}
 
@@ -68,6 +69,7 @@ void UPlayerSprintGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHan
 	{
 		if (UCharacterMovementComponent* MovementComponent = PlayerCharacter->GetCharacterMovement())
 		{
+			// 기존 속도 캐싱 후 뛰기 속도로 변경
 			CachedMoveSpeed = MovementComponent->MaxWalkSpeed;
 			bHasCachedMoveSpeed = true;
 			MovementComponent->MaxWalkSpeed = SprintSpeed;
@@ -98,6 +100,7 @@ void UPlayerSprintGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle H
 		{
 			if (UCharacterMovementComponent* MovementComponent = PlayerCharacter->GetCharacterMovement())
 			{
+				// 속도 복원
 				MovementComponent->MaxWalkSpeed = CachedMoveSpeed;
 			}
 		}

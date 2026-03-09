@@ -1,9 +1,9 @@
 ﻿/*
- * 파일명: PlayerFireGameplayAbility.cpp
- * 생성자: 장대한
- * 생성일: 2026-03-04
- * 수정자: 장대한
- * 수정일: 2026-03-06
+ * 파일명 : PlayerFireGameplayAbility.cpp
+ * 생성자 : 장대한
+ * 생성일 : 2026-03-04
+ * 수정자 : 장대한
+ * 수정일 : 2026-03-09
  */
 
 #include "GAS/GA/PlayerFireGameplayAbility.h"
@@ -254,7 +254,6 @@ bool UPlayerFireGameplayAbility::FireSingleShot()
 		PlayerController,
 		EquippedGun,
 		AimReferenceDistance,
-		EquippedGun->GetBaseDamage(),
 		EffectiveSpreadRadius))
 	{
 		const bool bRefunded = EquippedGun->RefundAmmo(1);
@@ -300,55 +299,50 @@ float UPlayerFireGameplayAbility::CalculateStateSpreadMultiplier(const APlayerCh
 
 	const UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
 	const UCharacterMovementComponent* MovementComponent = PlayerCharacter->GetCharacterMovement();
-	// 공중인지 검사: MovementComponent 우선, 없으면 태그 검사
 	const bool bIsFalling = MovementComponent
 		? MovementComponent->IsFalling()
 		: (ASC && ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Movement_Falling));
 
-	float MovementSpreadMultiplier = 1.f;
-	// 공중인 경우
+	const float HorizontalSpeed = MovementComponent
+		? FVector(MovementComponent->Velocity.X, MovementComponent->Velocity.Y, 0.f).Size()
+		: FVector(PlayerCharacter->GetVelocity().X, PlayerCharacter->GetVelocity().Y, 0.f).Size();
+	const bool bIsMoving = HorizontalSpeed > MinMovingSpeedForSpread;
+	const bool bIsSprint = ASC && ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Movement_Sprint);
+	const bool bIsWalk = ASC && ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Movement_Walk);
+	const bool bIsCrouching = PlayerCharacter->bIsCrouched || (ASC && ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Crouching));
+
+	float StateSpreadMultiplier = 1.f;
 	if (bIsFalling)
 	{
-		MovementSpreadMultiplier = JumpSpreadMultiplier;
+		StateSpreadMultiplier = JumpSpreadMultiplier;
 	}
-	else if (MovementComponent)
+	else if (bIsMoving)
 	{
-		const float HorizontalSpeed = FVector(MovementComponent->Velocity.X, MovementComponent->Velocity.Y, 0.f).Size();
-		if (HorizontalSpeed > MinMovingSpeedForSpread)
+		if (bIsSprint)
 		{
-			// 뛰는 경우
-			if (ASC && ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Movement_Sprint))
-			{
-				MovementSpreadMultiplier = SprintSpreadMultiplier;
-			}
-			// 걷는 경우
-			else if (ASC && ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Movement_Walk))
-			{
-				MovementSpreadMultiplier = WalkSpreadMultiplier;
-			}
-			// 일반 이동인 경우
-			else
-			{
-				MovementSpreadMultiplier = MovingSpreadMultiplier;
-			}
+			StateSpreadMultiplier = SprintSpreadMultiplier;
+		}
+		else if (bIsWalk)
+		{
+			StateSpreadMultiplier = WalkSpreadMultiplier;
+		}
+		else
+		{
+			StateSpreadMultiplier = MovingSpreadMultiplier;
 		}
 	}
-
-	// 웅크리고 있는 경우
-	const bool bIsCrouching = PlayerCharacter->bIsCrouched;
-	if (bIsCrouching)
+	else if (bIsCrouching)
 	{
-		MovementSpreadMultiplier *= CrouchSpreadMultiplier;
+		StateSpreadMultiplier = CrouchSpreadMultiplier;
 	}
 
-	// 조준중인 경우
 	const bool bIsAiming = ASC && ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Aiming);
 	if (bIsAiming)
 	{
-		MovementSpreadMultiplier *= AimSpreadMultiplier;
+		StateSpreadMultiplier *= AimSpreadMultiplier;
 	}
 
-	return FMath::Max(0.f, MovementSpreadMultiplier);
+	return FMath::Max(0.f, StateSpreadMultiplier);
 }
 
 void UPlayerFireGameplayAbility::ApplyWeaponRecoil(AMGSPlayerController* PlayerController, ABaseGun* EquippedGun) const
@@ -379,7 +373,7 @@ void UPlayerFireGameplayAbility::ApplyWeaponRecoil(AMGSPlayerController* PlayerC
 
 	// 플레이어 컨트롤러 반동 적용
 	FRotator ControlRotation = PlayerController->GetControlRotation();
-	ControlRotation.Pitch = FRotator::NormalizeAxis(ControlRotation.Pitch - PitchRecoil);
+	ControlRotation.Pitch = FRotator::NormalizeAxis(ControlRotation.Pitch + PitchRecoil);
 	ControlRotation.Yaw = FRotator::NormalizeAxis(ControlRotation.Yaw + YawRecoil);
 	PlayerController->SetControlRotation(ControlRotation);
 
@@ -408,12 +402,14 @@ void UPlayerFireGameplayAbility::ApplyWeaponRecoil(AMGSPlayerController* PlayerC
 }
 
 bool UPlayerFireGameplayAbility::SpawnProjectileShot(APlayerCharacter* PlayerCharacter, AMGSPlayerController* PlayerController,
-	ABaseGun* EquippedGun, float AimReferenceDistance, float Damage, float SpreadRadius) const
+	ABaseGun* EquippedGun, float AimReferenceDistance, float SpreadRadius) const
 {
 	if (!PlayerCharacter || !EquippedGun)
 	{
 		return false;
 	}
+
+	const float WeaponDamage = FMath::Max(0.f, EquippedGun->GetBaseDamage());
 
 	const TSubclassOf<ABaseProjectile> ProjectileClassToSpawn = EquippedGun->GetProjectileClass();
 	if (!ProjectileClassToSpawn)
@@ -503,7 +499,6 @@ bool UPlayerFireGameplayAbility::SpawnProjectileShot(APlayerCharacter* PlayerCha
 	{
 		const FVector DebugEnd = MuzzleTraceStart + (MuzzleTraceDirection * AimReferenceDistance);
 		DrawDebugLine(World, MuzzleTraceStart, DebugEnd, FColor::Green, false, DebugTraceDuration, 0, 1.2f);
-		DrawDebugLine(World, MuzzleTraceStart, MuzzleTraceStart + (MuzzleForwardDirection.GetSafeNormal() * 150.f), FColor::Cyan, false, DebugTraceDuration, 0, 1.0f);
 	}
 
 	FActorSpawnParameters SpawnParams;
@@ -545,7 +540,7 @@ bool UPlayerFireGameplayAbility::SpawnProjectileShot(APlayerCharacter* PlayerCha
 		}
 	}
 
-	SpawnedProjectile->SetProjectileDamage(Damage);
+	SpawnedProjectile->CacheDamageFromWeapon(EquippedGun);
 	SpawnedProjectile->InitializeProjectile(MuzzleTraceDirection);
 
 	if (bEnableFireTraceLog)
@@ -555,7 +550,7 @@ bool UPlayerFireGameplayAbility::SpawnProjectileShot(APlayerCharacter* PlayerCha
 			SpreadHalfAngleDeg,
 			*ProjectileSpawnLocation.ToString(),
 			*MuzzleTraceDirection.ToString(),
-			Damage);
+			WeaponDamage);
 	}
 
 	return true;
