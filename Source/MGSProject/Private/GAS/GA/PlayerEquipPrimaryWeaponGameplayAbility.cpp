@@ -1,16 +1,15 @@
 ﻿/*
- * 파일명: PlayerEquipPrimaryWeaponGameplayAbility.cpp
- * 생성자: 장대한
- * 생성일: 2026-03-04
- * 수정자: 장대한
- * 수정일: 2026-03-04
+ * 파일명 : PlayerEquipPrimaryWeaponGameplayAbility.cpp
+ * 생성자 : 장대한
+ * 생성일 : 2026-03-04
+ * 수정자 : 장대한
+ * 수정일 : 2026-03-09
  */
 
 #include "GAS/GA/PlayerEquipPrimaryWeaponGameplayAbility.h"
 
 #include "Components/Combat/PlayerCombatComponent.h"
 #include "GAS/MGSGameplayTags.h"
-
 
 UPlayerEquipPrimaryWeaponGameplayAbility::UPlayerEquipPrimaryWeaponGameplayAbility()
 {
@@ -41,6 +40,3 @@ void UPlayerEquipPrimaryWeaponGameplayAbility::ActivateAbility(const FGameplayAb
 
 	EndAbility(Handle, ActorInfo, ActivationInfo, true, !bEquipSuccess);
 }
-
-
-

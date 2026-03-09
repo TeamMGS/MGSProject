@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-03
  * 수정자 : 장대한
- * 수정일 : 2026-03-03
+ * 수정일 : 2026-03-09
  */
 
 #include "GAS/GA/PlayerJumpGameplayAbility.h"
@@ -35,6 +35,7 @@ bool UPlayerJumpGameplayAbility::CanActivateAbility(const FGameplayAbilitySpecHa
 	const APlayerCharacter* PlayerCharacter = ActorInfo ? Cast<APlayerCharacter>(ActorInfo->AvatarActor.Get()) : nullptr;
 	if (PlayerCharacter)
 	{
+		// 플레이어 캐릭터가 점프 가능한지 조회
 		return PlayerCharacter->CanJump();
 	}
 
@@ -56,6 +57,7 @@ void UPlayerJumpGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandl
 
 	if (APlayerCharacter* PlayerCharacter = GetPlayerCharacterFromActorInfo(); PlayerCharacter && PlayerCharacter->CanJump())
 	{
+		// 점프
 		PlayerCharacter->Jump();
 		return;
 	}
@@ -71,6 +73,7 @@ void UPlayerJumpGameplayAbility::InputReleased(const FGameplayAbilitySpecHandle 
 
 	if (APlayerCharacter* PlayerCharacter = GetPlayerCharacterFromActorInfo())
 	{
+		// 점프 종료
 		PlayerCharacter->StopJumping();
 	}
 
@@ -85,10 +88,9 @@ void UPlayerJumpGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Han
 {
 	if (APlayerCharacter* PlayerCharacter = GetPlayerCharacterFromActorInfo())
 	{
+		// 점프 종료
 		PlayerCharacter->StopJumping();
 	}
 
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
-
-

@@ -2,8 +2,8 @@
  * 파일명 : PawnCombatComponent.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
- * 수정자 :  장대한
- * 수정일 :  2026-03-05
+ * 수정자 : 장대한
+ * 수정일 : 2026-03-09
  */
 
 #include "Components/Combat/PawnCombatComponent.h"
@@ -218,7 +218,9 @@ void UPawnCombatComponent::RemoveWeaponAbilities(ABaseWeapon* Weapon) const
 	}
 
 	RemoveWeaponInputMappingContext(Weapon);
-	ASC->RemoveGrantedWeaponAbilities(Weapon->GetGrantedAbilitySpecHandlesMutable());
+	TArray<FGameplayAbilitySpecHandle> SpecHandlesToRemove;
+	Weapon->ConsumeGrantedAbilitySpecHandles(SpecHandlesToRemove);
+	ASC->RemoveGrantedWeaponAbilities(SpecHandlesToRemove);
 }
 
 void UPawnCombatComponent::SaveCurrentWeaponRuntimeState()

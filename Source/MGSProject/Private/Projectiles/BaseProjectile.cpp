@@ -1,44 +1,37 @@
 ﻿/*
- * ?뚯씪紐? BaseProjectile.cpp
- * ?앹꽦?? ?λ??? * ?앹꽦?? 2026-03-06
- * ?섏젙?? ?λ??? * ?섏젙?? 2026-03-06
+ * 파일명 : BaseProjectile.cpp
+ * 생성자 : 장대한
+ * 생성일 : 2026-03-06
+ * 수정자 : 장대한
+ * 수정일 : 2026-03-09
  */
 
 #include "Projectiles/BaseProjectile.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
+#include "AbilitySystemComponent.h"
 #include "Components/PrimitiveComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "DataAssets/Projectile/DA_ProjectileDefinition.h"
-#include "GameFramework/DamageType.h"
+#include "GAS/GE/MGSDamageGameplayEffect.h"
+#include "GAS/MGSGameplayTags.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/ProjectileMovementComponent.h"
-#include "Kismet/GameplayStatics.h"
 #include "UObject/ConstructorHelpers.h"
-
-namespace
-{
-	constexpr float DefaultCollisionRadius = 6.f;
-	constexpr float DefaultVisualScale = 0.06f;
-	constexpr float DefaultInitialSpeed = 4500.f;
-	constexpr float DefaultMaxSpeed = 4500.f;
-	constexpr float DefaultLifeSpan = 5.f;
-	constexpr bool DefaultDestroyOnHit = true;
-	constexpr bool DefaultIgnoreOwnerOnHit = true;
-	constexpr bool DefaultRotationFollowsVelocity = true;
-	constexpr float DefaultProjectileGravityScale = 0.f;
-}
+#include "Weapon/BaseGun.h"
 
 ABaseProjectile::ABaseProjectile()
 {
+	// 틱은 사용하지 않음
 	PrimaryActorTick.bCanEverTick = false;
 	PrimaryActorTick.bStartWithTickEnabled = false;
 
-	// 肄쒕━???ㅼ젙
+	// 콜리전 컴포넌트 설정
 	CollisionComponent = CreateDefaultSubobject<USphereComponent>(TEXT("CollisionComponent"));
 	SetRootComponent(CollisionComponent);
 
-	CollisionComponent->InitSphereRadius(DefaultCollisionRadius);
+	CollisionComponent->InitSphereRadius(6.0f);
 	CollisionComponent->SetCollisionObjectType(ECC_WorldDynamic);
 	CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	CollisionComponent->SetCollisionResponseToAllChannels(ECR_Ignore);
@@ -50,14 +43,14 @@ ABaseProjectile::ABaseProjectile()
 	CollisionComponent->SetNotifyRigidBodyCollision(false);
 	CollisionComponent->SetCanEverAffectNavigation(false);
 
-	// 硫붿떆 而댄룷?뚰듃 ?ㅼ젙
+	// 메시 컴포넌트 설정
 	ProjectileMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ProjectileMeshComponent"));
 	ProjectileMeshComponent->SetupAttachment(CollisionComponent);
 	ProjectileMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	ProjectileMeshComponent->SetCanEverAffectNavigation(false);
-	ProjectileMeshComponent->SetRelativeScale3D(FVector(DefaultVisualScale));
+	ProjectileMeshComponent->SetRelativeScale3D(FVector(0.06f));
 
-	// 湲곕낯 ?쒓컖?붾? ?꾪빐 ?붿쭊 湲곕낯 Sphere 硫붿돩瑜??좊떦(?꾩슂 ??BP?먯꽌 援먯껜)
+	// 기본 시각화를 위한 기본 Sphere 메시 할당(필요 시 BP에서 교체)
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> DefaultProjectileMesh(
 		TEXT("/Engine/BasicShapes/Sphere.Sphere"));
 	if (DefaultProjectileMesh.Succeeded())
@@ -65,30 +58,38 @@ ABaseProjectile::ABaseProjectile()
 		ProjectileMeshComponent->SetStaticMesh(DefaultProjectileMesh.Object);
 	}
 
-	// 臾대툕癒쇳듃 而댄룷?뚰듃 ?ㅼ젙
+	// 무브먼트 컴포넌트 설정
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
 	ProjectileMovementComponent->UpdatedComponent = CollisionComponent;
-	ProjectileMovementComponent->InitialSpeed = DefaultInitialSpeed;
-	ProjectileMovementComponent->MaxSpeed = DefaultMaxSpeed;
-	ProjectileMovementComponent->bRotationFollowsVelocity = DefaultRotationFollowsVelocity;
-	ProjectileMovementComponent->ProjectileGravityScale = DefaultProjectileGravityScale;
+	ProjectileMovementComponent->InitialSpeed = 4500.0f;
+	ProjectileMovementComponent->MaxSpeed = 4500.0f;
+	ProjectileMovementComponent->bRotationFollowsVelocity = true;
+	ProjectileMovementComponent->ProjectileGravityScale = 0.0f;
 
-	// ?곕?吏 ????대옒???ㅼ젙
-	CurrentDamageTypeClass = UDamageType::StaticClass();
-	CurrentDamage = 0.f;
-	bShouldDestroyOnHit = DefaultDestroyOnHit;
-	bShouldIgnoreOwnerOnHit = DefaultIgnoreOwnerOnHit;
-	InitialLifeSpan = DefaultLifeSpan;
+	// 변수 초기화
+	CurrentDamageGameplayEffectClass = UMGSDamageGameplayEffect::StaticClass(); // 데미지 GE 클래스
+	CachedWeaponDamage = 0.0f; // 발사 시점 데미지
+	bShouldDestroyOnHit = true; // 히트 시 파괴 플래그
+	bShouldIgnoreOwnerOnHit = true; // 소유자 무시 플래그 
+	InitialLifeSpan = 5.0f; // 생존 시간
+}
+
+const UDA_ProjectileDefinition& ABaseProjectile::GetProjectileDefinitionChecked() const
+{
+	checkf(ProjectileDefinition, TEXT("%s has no ProjectileDefinition assigned."), *GetName());
+	return *ProjectileDefinition;
 }
 
 void ABaseProjectile::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ?곸옱??DA瑜?湲곗??쇰줈 媛??ㅼ젙
+	checkf(ProjectileDefinition, TEXT("%s has no ProjectileDefinition assigned."), *GetName());
+
+	// 데이터 에셋 설정 적용
 	ApplyProjectileDefinition();
 
-	// 諛쒖궗泥?異⑸룎? CollisionComponent濡쒕쭔 泥섎━?⑸땲??
+	// 충돌 처리는 CollisionComponent로만 수행
 	if (ProjectileMeshComponent)
 	{
 		ProjectileMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -106,10 +107,10 @@ void ABaseProjectile::BeginPlay()
 		CollisionComponent->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Overlap);
 		CollisionComponent->SetCollisionResponseToChannel(ECC_PhysicsBody, ECR_Overlap);
 
-		// 肄쒕━??Overlap ?대깽?몄뿉 ?몃뱾???곸슜
+		// Overlap 이벤트 바인딩
 		CollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::HandleProjectileOverlap);
 
-		// 肄쒕━?꾩뿉 Owner, Instigator 臾댁떆 ?ㅼ젙
+		// 피격 시 Owner/Instigator 무시
 		if (bShouldIgnoreOwnerOnHit)
 		{
 			if (AActor* OwnerActor = GetOwner())
@@ -147,9 +148,9 @@ void ABaseProjectile::InitializeProjectile(const FVector& ShootDirection)
 	SetActorRotation(SafeDirection.Rotation());
 }
 
-void ABaseProjectile::SetProjectileDamage(float InDamage)
+void ABaseProjectile::CacheDamageFromWeapon(const ABaseGun* InSourceWeapon)
 {
-	CurrentDamage = FMath::Max(0.f, InDamage);
+	CachedWeaponDamage = InSourceWeapon ? FMath::Max(0.f, InSourceWeapon->GetBaseDamage()) : 0.f;
 }
 
 void ABaseProjectile::HandleProjectileOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -176,9 +177,10 @@ void ABaseProjectile::HandleProjectileOverlap(UPrimitiveComponent* OverlappedCom
 	const FHitResult EffectiveHit = bFromSweep ? SweepResult : FHitResult();
 	bHasProcessedImpact = true;
 
-	// ?곕?吏 ?곸슜
+	// 피격 데미지 적용
 	ApplyHitDamage(OtherActor, EffectiveHit);
-	// 異⑸룎 ?대깽??	OnProjectileImpact(EffectiveHit);
+	// 충돌 이벤트 브로드캐스트
+	OnProjectileImpact(EffectiveHit);
 
 	if (bShouldDestroyOnHit)
 	{
@@ -189,33 +191,43 @@ void ABaseProjectile::HandleProjectileOverlap(UPrimitiveComponent* OverlappedCom
 void ABaseProjectile::ApplyHitDamage(AActor* DirectHitActor, const FHitResult& Hit)
 {
 	AActor* HitActor = DirectHitActor ? DirectHitActor : Hit.GetActor();
-	if (!HitActor || CurrentDamage <= 0.f)
+	const float DamageToApply = FMath::Max(0.f, CachedWeaponDamage);
+	if (!HitActor || DamageToApply <= 0.f)
 	{
 		return;
 	}
 
-	AController* InstigatorController = nullptr;
-	if (const APawn* InstigatorPawn = GetInstigator())
+	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(HitActor);
+	if (!TargetASC)
 	{
-		InstigatorController = InstigatorPawn->GetController();
+		// GE 전용 데미지 파이프라인: ASC 없는 대상은 데미지를 적용하지 않습니다.
+		return;
 	}
 
-	AActor* DamageCauser = GetOwner() ? GetOwner() : this;
-	const FVector ShotDirection = ProjectileMovementComponent
-		? ProjectileMovementComponent->Velocity.GetSafeNormal()
-		: GetActorForwardVector();
-	const TSubclassOf<UDamageType> ResolvedDamageTypeClass = CurrentDamageTypeClass
-		? CurrentDamageTypeClass
-		: TSubclassOf<UDamageType>(UDamageType::StaticClass());
+	AActor* SourceActor = GetOwner() ? GetOwner() : this;
+	UAbilitySystemComponent* SourceASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(SourceActor);
+	const TSubclassOf<UGameplayEffect> DamageGEClass = CurrentDamageGameplayEffectClass
+		? CurrentDamageGameplayEffectClass
+		: TSubclassOf<UGameplayEffect>(UMGSDamageGameplayEffect::StaticClass());
 
-	UGameplayStatics::ApplyPointDamage(
-		HitActor,
-		CurrentDamage,
-		ShotDirection,
-		Hit,
-		InstigatorController,
-		DamageCauser,
-		ResolvedDamageTypeClass);
+	FGameplayEffectContextHandle EffectContext = SourceASC
+		? SourceASC->MakeEffectContext()
+		: TargetASC->MakeEffectContext();
+	EffectContext.AddSourceObject(this);
+	EffectContext.AddInstigator(GetInstigator(), SourceActor);
+	EffectContext.AddHitResult(Hit, true);
+
+	FGameplayEffectSpecHandle DamageSpecHandle = SourceASC
+		? SourceASC->MakeOutgoingSpec(DamageGEClass, 1.f, EffectContext)
+		: TargetASC->MakeOutgoingSpec(DamageGEClass, 1.f, EffectContext);
+	if (!DamageSpecHandle.IsValid() || !DamageSpecHandle.Data.IsValid())
+	{
+		return;
+	}
+
+	// CurrentHp에 Additive 적용이므로 음수 값을 넣어 체력을 감소시킵니다.
+	DamageSpecHandle.Data->SetSetByCallerMagnitude(MGSGameplayTags::Data_Damage, -FMath::Abs(DamageToApply));
+	TargetASC->ApplyGameplayEffectSpecToSelf(*DamageSpecHandle.Data.Get());
 }
 
 void ABaseProjectile::ApplyProjectileDefinition()
@@ -225,26 +237,20 @@ void ABaseProjectile::ApplyProjectileDefinition()
 		return;
 	}
 
-	const UDA_ProjectileDefinition* Definition = ProjectileDefinition.Get();
-	if (!Definition)
-	{
-		ensureMsgf(false, TEXT("%s has no ProjectileDefinition. Using fallback defaults."), *GetName());
-	}
+	const UDA_ProjectileDefinition& Definition = GetProjectileDefinitionChecked();
 
-	const float CollisionRadius = Definition ? FMath::Max(0.f, Definition->CollisionRadius) : DefaultCollisionRadius;
-	const float DefinitionInitialSpeed = Definition ? FMath::Max(0.f, Definition->InitialSpeed) : DefaultInitialSpeed;
-	const float DefinitionMaxSpeed = Definition ? FMath::Max(DefinitionInitialSpeed, Definition->MaxSpeed) : DefaultMaxSpeed;
-	const float DefinitionLifeSpan = Definition ? FMath::Max(0.f, Definition->ProjectileLifeSpan) : DefaultLifeSpan;
-	const bool bDefinitionDestroyOnHit = Definition ? Definition->bDestroyOnHit : DefaultDestroyOnHit;
-	const bool bDefinitionIgnoreOwnerOnHit = Definition ? Definition->bIgnoreOwnerOnHit : DefaultIgnoreOwnerOnHit;
-	const bool bDefinitionRotationFollowsVelocity = Definition ? Definition->bRotationFollowsVelocity : DefaultRotationFollowsVelocity;
-	const float DefinitionProjectileGravityScale = Definition
-		? Definition->ProjectileGravityScale
-		: DefaultProjectileGravityScale;
+	const float CollisionRadius = FMath::Max(0.f, Definition.CollisionRadius);
+	const float DefinitionInitialSpeed = FMath::Max(0.f, Definition.InitialSpeed);
+	const float DefinitionMaxSpeed = FMath::Max(DefinitionInitialSpeed, Definition.MaxSpeed);
+	const float DefinitionLifeSpan = FMath::Max(0.f, Definition.ProjectileLifeSpan);
+	const bool bDefinitionDestroyOnHit = Definition.bDestroyOnHit;
+	const bool bDefinitionIgnoreOwnerOnHit = Definition.bIgnoreOwnerOnHit;
+	const bool bDefinitionRotationFollowsVelocity = Definition.bRotationFollowsVelocity;
+	const float DefinitionProjectileGravityScale = Definition.ProjectileGravityScale;
 
-	CurrentDamageTypeClass = (Definition && Definition->DamageTypeClass)
-		? Definition->DamageTypeClass
-		: TSubclassOf<UDamageType>(UDamageType::StaticClass());
+	CurrentDamageGameplayEffectClass = Definition.DamageGameplayEffectClass
+		? Definition.DamageGameplayEffectClass
+		: TSubclassOf<UGameplayEffect>(UMGSDamageGameplayEffect::StaticClass());
 	bShouldDestroyOnHit = bDefinitionDestroyOnHit;
 	bShouldIgnoreOwnerOnHit = bDefinitionIgnoreOwnerOnHit;
 
@@ -269,4 +275,3 @@ void ABaseProjectile::ApplyProjectileDefinition()
 void ABaseProjectile::OnProjectileImpact_Implementation(const FHitResult& HitResult)
 {
 }
-
