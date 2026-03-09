@@ -30,12 +30,33 @@ void UMGSCharacterMovementComponent::OnMovementUpdated(float DeltaSeconds, const
 // sprint, run, walk 상태 태그
 FGameplayTag UMGSCharacterMovementComponent::GetDesiredGait() const
 {
-	UMGSAbilitySystemComponent* ASC = Cast<ABaseCharacter>(GetCharacterOwner())->GetMGSAbilitySystemComponent();
+	// 정지 상태 체크
+	if (Velocity.SizeSquared2D() < KINDA_SMALL_NUMBER)
+	{
+		return FGameplayTag::EmptyTag;
+	}
+
+	// 캐릭터의 ASC 가져오기
+	ABaseCharacter* BaseChar = Cast<ABaseCharacter>(GetCharacterOwner());
+	if (!BaseChar) return MGSGameplayTags::State_Player_Gait_Run;
+
+	UMGSAbilitySystemComponent* ASC = BaseChar->GetMGSAbilitySystemComponent();
 	if (!ASC) return MGSGameplayTags::State_Player_Gait_Run;
 
-	if (CanSprint()) return MGSGameplayTags::State_Player_Gait_Sprint;
-	if (ASC->HasMatchingGameplayTag(MGSGameplayTags::InputTag_Walk)) return MGSGameplayTags::State_Player_Gait_Walk;
+	// 우선순위에 따른 태그 판정
+	// 질주 태그가 있는가?
+	if (ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Movement_Sprint))
+	{
+		return MGSGameplayTags::State_Player_Gait_Sprint;
+	}
 
+	// 걷기 태그가 있는가? 
+	if (ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Movement_Walk))
+	{
+		return MGSGameplayTags::State_Player_Gait_Walk;
+	}
+
+	// 아무 태그도 없다면 기본값은 '달리기(Run)'
 	return MGSGameplayTags::State_Player_Gait_Run;
 }
 
