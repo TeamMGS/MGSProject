@@ -2,8 +2,8 @@
  * 파일명 : PlayerCharacter.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
- * 수정자 : 김동석
- * 수정일 : 2026-03-06
+ * 수정자 : 장대한
+ * 수정일 : 2026-03-09
  */
 
 #pragma once
@@ -32,6 +32,7 @@ public:
 	
 protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void Landed(const FHitResult& Hit) override;
 	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode) override;
@@ -65,8 +66,31 @@ public:
 #pragma endregion 
 
 private:
+	// 캐릭터 방향과 컨트롤러 방향 동기화
 	void ApplyAlwaysAimFacingMode();
 	void UpdateFallingStateTag();
 	void TryRestoreHeldMovementAbilityInput();
+	// 다음 틱에 스프레드 갱신
+	void RequestSpreadRefreshNextTick();
+	// 스프레드 보정
+	void UpdateCurrentSpreadFromState();
+	// 스프레드 보정률 계산
+	float CalculateCurrentSpreadStateMultiplier() const;
+	// 장착 무기 변경 핸들러
+	void HandleEquippedWeaponChanged(FGameplayTag PreviousWeaponTag, FGameplayTag CurrentWeaponTag);
+	// 이동에 따른 스프레드 갱신 핸들러
+	UFUNCTION()
+	void HandleSpreadMovementUpdated(float DeltaSeconds, FVector OldLocation, FVector OldVelocity);
+
+	static constexpr float SpreadJumpMultiplier = 2.4f; // 점프 시 스프레드 보정률
+	static constexpr float SpreadSprintMultiplier = 1.6f; // 뛸 시 스프레드 보정률
+	static constexpr float SpreadMovingMultiplier = 1.3f; // 움직일 시 스프레드 보정률
+	static constexpr float SpreadWalkMultiplier = 1.1f; // 걸을 시 스프레드 보정률
+	static constexpr float SpreadCrouchStillMultiplier = 0.7f; // 웅크릴 시 스프레드 보정률
+	static constexpr float SpreadAimMultiplier = 0.65f; // 조준 시 스프레드 보정률
+	static constexpr float SpreadMovingSpeedThreshold = 10.0f; // 이동 시 스프레드 보정 임계값
+
+	FDelegateHandle EquippedWeaponChangedHandle;
+	bool bPendingSpreadRefreshRequest = false;
 	
 };

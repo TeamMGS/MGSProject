@@ -2,8 +2,8 @@
  * 파일명 : MGSAbilitySystemComponent.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
- * 수정자 :  장대한
- * 수정일 :  2026-03-05
+ * 수정자 : 장대한
+ * 수정일 : 2026-03-09
  */
 
 #pragma once
@@ -32,7 +32,7 @@ public:
 	
 	// 무기 해제 시 정리
 	UFUNCTION(BlueprintCallable, Category = "Ability")
-	void RemoveGrantedWeaponAbilities(UPARAM(ref) TArray<FGameplayAbilitySpecHandle>& SpecHandlesToRemove);
+	void RemoveGrantedWeaponAbilities(const TArray<FGameplayAbilitySpecHandle>& SpecHandlesToRemove);
 
 private:
 	FGameplayTagContainer PressedAbilityInputTags; // 현재 눌려 있는 Ability 입력 태그 집합

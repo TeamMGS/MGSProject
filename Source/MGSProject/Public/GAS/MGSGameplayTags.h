@@ -2,8 +2,8 @@
  * 파일명 : MGSGameplayTags.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
- * 수정자 : 김동석
- * 수정일 : 2026-03-06
+ * 수정자 : 장대한
+ * 수정일 : 2026-03-09
  */
 
 #pragma once
@@ -83,4 +83,7 @@ namespace MGSGameplayTags
 
 	// Event tags: gameplay event payload trigger
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Player_Interact)
+
+	// SetByCaller data tags
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Damage)
 }

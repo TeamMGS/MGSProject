@@ -1,9 +1,9 @@
 ﻿/*
- * 파일명: BaseGun.cpp
- * 생성자: 장대한
- * 생성일: 2026-03-04
- * 수정자:  장대한
- * 수정일:  2026-03-05
+ * 파일명 : BaseGun.cpp
+ * 생성자 : 장대한
+ * 생성일 : 2026-03-04
+ * 수정자 : 장대한
+ * 수정일 : 2026-03-09
  */
 
 #include "Weapon/BaseGun.h"
@@ -14,32 +14,17 @@
 #include "MGSStructType.h"
 #include "Projectiles/BaseBullet.h"
 
-namespace
-{
-	constexpr int32 DefaultMaxMagazineAmmo = 30;
-	constexpr int32 DefaultStartMagazineAmmo = 30;
-	constexpr int32 DefaultMaxCarriedAmmo = 120;
-	constexpr int32 DefaultStartCarriedAmmo = 120;
-	constexpr float DefaultAimReferenceDistance = 12000.f;
-	constexpr float DefaultBaseDamage = 20.f;
-	constexpr float DefaultFireInterval = 0.12f;
-	constexpr float DefaultBaseSpreadRadius = 0.f;
-	constexpr float DefaultMaxSpreadRadius = 120.f;
-	constexpr float DefaultSpreadRadiusIncreasePerShot = 6.f;
-	constexpr float DefaultAimFOV = 65.f;
-	const FVector DefaultAimCameraSocketOffset = FVector(0.f, 55.f, 12.f);
-	constexpr float DefaultRecoilPitchPerShot = 0.8f;
-	constexpr float DefaultRecoilYawPerShotMin = -0.25f;
-	constexpr float DefaultRecoilYawPerShotMax = 0.25f;
-	constexpr float DefaultRecoilADSScale = 0.7f;
-	constexpr float DefaultFireCameraShakeScale = 1.0f;
-}
-
 void ABaseGun::BeginPlay()
 {
 	Super::BeginPlay();
 
-	ensureMsgf(WeaponDefinition, TEXT("%s has no WeaponDefinition assigned."), *GetName());
+	checkf(WeaponDefinition, TEXT("%s has no WeaponDefinition assigned."), *GetName());
+}
+
+const UDA_WeaponDefinition& ABaseGun::GetWeaponDefinitionChecked() const
+{
+	checkf(WeaponDefinition, TEXT("%s has no WeaponDefinition assigned."), *GetName());
+	return *WeaponDefinition;
 }
 
 bool ABaseGun::CanFire() const
@@ -146,7 +131,10 @@ int32 ABaseGun::GetCurrentMagazineAmmo() const
 	}
 
 	ensureMsgf(false, TEXT("GetCurrentMagazineAmmo is reading definition fallback because WeaponAttributeSet is missing for %s (owner: %s)."), *GetName(), *GetNameSafe(GetOwner()));
-	return FMath::Clamp(GetDefinitionStartMagazineAmmo(), 0, GetDefinitionMaxMagazineAmmo());
+	const UDA_WeaponDefinition& WeaponDef = GetWeaponDefinitionChecked();
+	const int32 MaxAmmo = FMath::Max(1, WeaponDef.MaxMagazineAmmo);
+	const int32 StartAmmo = FMath::Max(0, WeaponDef.StartMagazineAmmo);
+	return FMath::Clamp(StartAmmo, 0, MaxAmmo);
 }
 
 int32 ABaseGun::GetMaxMagazineAmmo() const
@@ -156,7 +144,8 @@ int32 ABaseGun::GetMaxMagazineAmmo() const
 		return FMath::Max(1, FMath::RoundToInt(WeaponAttributeSet->GetMaxMagazineAmmo()));
 	}
 
-	return GetDefinitionMaxMagazineAmmo();
+	const UDA_WeaponDefinition& WeaponDef = GetWeaponDefinitionChecked();
+	return FMath::Max(1, WeaponDef.MaxMagazineAmmo);
 }
 
 int32 ABaseGun::GetCarriedAmmo() const
@@ -168,7 +157,10 @@ int32 ABaseGun::GetCarriedAmmo() const
 	}
 
 	ensureMsgf(false, TEXT("GetCarriedAmmo is reading definition fallback because WeaponAttributeSet is missing for %s (owner: %s)."), *GetName(), *GetNameSafe(GetOwner()));
-	return FMath::Clamp(GetDefinitionStartCarriedAmmo(), 0, GetDefinitionMaxCarriedAmmo());
+	const UDA_WeaponDefinition& WeaponDef = GetWeaponDefinitionChecked();
+	const int32 MaxCarried = FMath::Max(0, WeaponDef.MaxCarriedAmmo);
+	const int32 StartCarried = FMath::Max(0, WeaponDef.StartCarriedAmmo);
+	return FMath::Clamp(StartCarried, 0, MaxCarried);
 }
 
 float ABaseGun::GetAimReferenceDistance() const
@@ -178,7 +170,8 @@ float ABaseGun::GetAimReferenceDistance() const
 		return FMath::Max(100.f, WeaponAttributeSet->GetAimReferenceDistance());
 	}
 
-	return GetDefinitionAimReferenceDistance();
+	const UDA_WeaponDefinition& WeaponDef = GetWeaponDefinitionChecked();
+	return FMath::Max(100.f, WeaponDef.AimReferenceDistance);
 }
 
 float ABaseGun::GetBaseDamage() const
@@ -188,7 +181,8 @@ float ABaseGun::GetBaseDamage() const
 		return FMath::Max(0.f, WeaponAttributeSet->GetBaseDamage());
 	}
 
-	return GetDefinitionBaseDamage();
+	const UDA_WeaponDefinition& WeaponDef = GetWeaponDefinitionChecked();
+	return FMath::Max(0.f, WeaponDef.BaseDamage);
 }
 
 float ABaseGun::GetFireInterval() const
@@ -198,7 +192,8 @@ float ABaseGun::GetFireInterval() const
 		return FMath::Max(0.01f, WeaponAttributeSet->GetFireInterval());
 	}
 
-	return GetDefinitionFireInterval();
+	const UDA_WeaponDefinition& WeaponDef = GetWeaponDefinitionChecked();
+	return FMath::Max(0.01f, WeaponDef.FireInterval);
 }
 
 float ABaseGun::GetBaseSpreadRadius() const
@@ -208,7 +203,8 @@ float ABaseGun::GetBaseSpreadRadius() const
 		return FMath::Max(0.f, WeaponAttributeSet->GetBaseSpreadRadius());
 	}
 
-	return GetDefinitionBaseSpreadRadius();
+	const UDA_WeaponDefinition& WeaponDef = GetWeaponDefinitionChecked();
+	return FMath::Max(0.f, WeaponDef.BaseSpreadRadius);
 }
 
 float ABaseGun::GetMaxSpreadRadius() const
@@ -218,7 +214,8 @@ float ABaseGun::GetMaxSpreadRadius() const
 		return FMath::Max(0.f, WeaponAttributeSet->GetMaxSpreadRadius());
 	}
 
-	return GetDefinitionMaxSpreadRadius();
+	const UDA_WeaponDefinition& WeaponDef = GetWeaponDefinitionChecked();
+	return FMath::Max(0.f, WeaponDef.MaxSpreadRadius);
 }
 
 float ABaseGun::GetSpreadRadiusIncreasePerShot() const
@@ -228,7 +225,8 @@ float ABaseGun::GetSpreadRadiusIncreasePerShot() const
 		return FMath::Max(0.f, WeaponAttributeSet->GetSpreadRadiusIncreasePerShot());
 	}
 
-	return GetDefinitionSpreadRadiusIncreasePerShot();
+	const UDA_WeaponDefinition& WeaponDef = GetWeaponDefinitionChecked();
+	return FMath::Max(0.f, WeaponDef.SpreadRadiusIncreasePerShot);
 }
 
 float ABaseGun::GetAimFOV() const
@@ -238,47 +236,62 @@ float ABaseGun::GetAimFOV() const
 		return FMath::Clamp(WeaponAttributeSet->GetAimFOV(), 10.f, 170.f);
 	}
 
-	return GetDefinitionAimFOV();
+	const UDA_WeaponDefinition& WeaponDef = GetWeaponDefinitionChecked();
+	return FMath::Clamp(WeaponDef.AimFOV, 10.f, 170.f);
 }
 
 FVector ABaseGun::GetAimCameraSocketOffset() const
 {
-	return GetDefinitionAimCameraSocketOffset();
+	const UDA_WeaponDefinition& WeaponDef = GetWeaponDefinitionChecked();
+	return WeaponDef.AimCameraSocketOffset;
 }
 
 float ABaseGun::GetRecoilPitchPerShot() const
 {
-	return GetDefinitionRecoilPitchPerShot();
+	const UDA_WeaponDefinition& WeaponDef = GetWeaponDefinitionChecked();
+	return FMath::Max(0.f, WeaponDef.RecoilPitchPerShot);
 }
 
 float ABaseGun::GetRecoilYawPerShotMin() const
 {
-	return GetDefinitionRecoilYawPerShotMin();
+	const UDA_WeaponDefinition& WeaponDef = GetWeaponDefinitionChecked();
+	return WeaponDef.RecoilYawPerShotMin;
 }
 
 float ABaseGun::GetRecoilYawPerShotMax() const
 {
-	return GetDefinitionRecoilYawPerShotMax();
+	const UDA_WeaponDefinition& WeaponDef = GetWeaponDefinitionChecked();
+	return WeaponDef.RecoilYawPerShotMax;
 }
 
 float ABaseGun::GetRecoilADSScale() const
 {
-	return GetDefinitionRecoilADSScale();
+	const UDA_WeaponDefinition& WeaponDef = GetWeaponDefinitionChecked();
+	return FMath::Max(0.f, WeaponDef.RecoilADSScale);
 }
 
 TSubclassOf<UCameraShakeBase> ABaseGun::GetFireCameraShakeClass() const
 {
-	return GetDefinitionFireCameraShakeClass();
+	const UDA_WeaponDefinition& WeaponDef = GetWeaponDefinitionChecked();
+	return WeaponDef.FireCameraShakeClass;
 }
 
 float ABaseGun::GetFireCameraShakeScale() const
 {
-	return GetDefinitionFireCameraShakeScale();
+	const UDA_WeaponDefinition& WeaponDef = GetWeaponDefinitionChecked();
+	return FMath::Max(0.f, WeaponDef.FireCameraShakeScale);
 }
 
 TSubclassOf<ABaseProjectile> ABaseGun::GetProjectileClass() const
 {
-	return GetDefinitionProjectileClass();
+	const UDA_WeaponDefinition& WeaponDef = GetWeaponDefinitionChecked();
+	if (WeaponDef.ProjectileClass)
+	{
+		return WeaponDef.ProjectileClass;
+	}
+
+	ensureMsgf(false, TEXT("%s has no ProjectileClass in WeaponDefinition. Using ABaseBullet fallback."), *GetName());
+	return ABaseBullet::StaticClass();
 }
 
 bool ABaseGun::InitializeWeaponAttributes(UWeaponAttributeSet* WeaponAttributeSet) const
@@ -288,23 +301,31 @@ bool ABaseGun::InitializeWeaponAttributes(UWeaponAttributeSet* WeaponAttributeSe
 		return false;
 	}
 
-	const int32 NewMaxMagazineAmmo = GetDefinitionMaxMagazineAmmo();
-	const int32 NewMaxCarriedAmmo = GetDefinitionMaxCarriedAmmo();
-	const int32 NewCurrentMagazineAmmo = FMath::Clamp(GetDefinitionStartMagazineAmmo(), 0, NewMaxMagazineAmmo);
-	const int32 NewCurrentCarriedAmmo = FMath::Clamp(GetDefinitionStartCarriedAmmo(), 0, NewMaxCarriedAmmo);
+	const UDA_WeaponDefinition& WeaponDef = GetWeaponDefinitionChecked();
+	const int32 NewMaxMagazineAmmo = FMath::Max(1, WeaponDef.MaxMagazineAmmo);
+	const int32 NewMaxCarriedAmmo = FMath::Max(0, WeaponDef.MaxCarriedAmmo);
+	const int32 NewCurrentMagazineAmmo = FMath::Clamp(FMath::Max(0, WeaponDef.StartMagazineAmmo), 0, NewMaxMagazineAmmo);
+	const int32 NewCurrentCarriedAmmo = FMath::Clamp(FMath::Max(0, WeaponDef.StartCarriedAmmo), 0, NewMaxCarriedAmmo);
+	const float NewAimReferenceDistance = FMath::Max(100.f, WeaponDef.AimReferenceDistance);
+	const float NewBaseDamage = FMath::Max(0.f, WeaponDef.BaseDamage);
+	const float NewFireInterval = FMath::Max(0.01f, WeaponDef.FireInterval);
+	const float NewBaseSpreadRadius = FMath::Max(0.f, WeaponDef.BaseSpreadRadius);
+	const float NewMaxSpreadRadius = FMath::Max(0.f, WeaponDef.MaxSpreadRadius);
+	const float NewSpreadRadiusIncreasePerShot = FMath::Max(0.f, WeaponDef.SpreadRadiusIncreasePerShot);
+	const float NewAimFOV = FMath::Clamp(WeaponDef.AimFOV, 10.f, 170.f);
 
 	WeaponAttributeSet->SetMaxMagazineAmmo(static_cast<float>(NewMaxMagazineAmmo));
 	WeaponAttributeSet->SetCurrentMagazineAmmo(static_cast<float>(NewCurrentMagazineAmmo));
 	WeaponAttributeSet->SetMaxCarriedAmmo(static_cast<float>(NewMaxCarriedAmmo));
 	WeaponAttributeSet->SetCurrentCarriedAmmo(static_cast<float>(NewCurrentCarriedAmmo));
-	WeaponAttributeSet->SetAimReferenceDistance(GetDefinitionAimReferenceDistance());
-	WeaponAttributeSet->SetBaseDamage(GetDefinitionBaseDamage());
-	WeaponAttributeSet->SetFireInterval(GetDefinitionFireInterval());
-	WeaponAttributeSet->SetBaseSpreadRadius(GetDefinitionBaseSpreadRadius());
-	WeaponAttributeSet->SetCurrentSpreadRadius(GetDefinitionBaseSpreadRadius());
-	WeaponAttributeSet->SetMaxSpreadRadius(GetDefinitionMaxSpreadRadius());
-	WeaponAttributeSet->SetSpreadRadiusIncreasePerShot(GetDefinitionSpreadRadiusIncreasePerShot());
-	WeaponAttributeSet->SetAimFOV(GetDefinitionAimFOV());
+	WeaponAttributeSet->SetAimReferenceDistance(NewAimReferenceDistance);
+	WeaponAttributeSet->SetBaseDamage(NewBaseDamage);
+	WeaponAttributeSet->SetFireInterval(NewFireInterval);
+	WeaponAttributeSet->SetBaseSpreadRadius(NewBaseSpreadRadius);
+	WeaponAttributeSet->SetCurrentSpreadRadius(NewBaseSpreadRadius);
+	WeaponAttributeSet->SetMaxSpreadRadius(NewMaxSpreadRadius);
+	WeaponAttributeSet->SetSpreadRadiusIncreasePerShot(NewSpreadRadiusIncreasePerShot);
+	WeaponAttributeSet->SetAimFOV(NewAimFOV);
 	return true;
 }
 
@@ -341,11 +362,14 @@ FWeaponRuntimeState ABaseGun::MakeRuntimeState(const UWeaponAttributeSet* Weapon
 
 FWeaponRuntimeState ABaseGun::MakeDefaultRuntimeState() const
 {
+	const UDA_WeaponDefinition& WeaponDef = GetWeaponDefinitionChecked();
 	FWeaponRuntimeState RuntimeState;
-	const int32 MaxMag = GetDefinitionMaxMagazineAmmo();
-	const int32 MaxCarry = GetDefinitionMaxCarriedAmmo();
-	RuntimeState.CurrentMagazineAmmo = FMath::Clamp(GetDefinitionStartMagazineAmmo(), 0, MaxMag);
-	RuntimeState.CurrentCarriedAmmo = FMath::Clamp(GetDefinitionStartCarriedAmmo(), 0, MaxCarry);
+	const int32 MaxMag = FMath::Max(1, WeaponDef.MaxMagazineAmmo);
+	const int32 MaxCarry = FMath::Max(0, WeaponDef.MaxCarriedAmmo);
+	const int32 StartMag = FMath::Max(0, WeaponDef.StartMagazineAmmo);
+	const int32 StartCarry = FMath::Max(0, WeaponDef.StartCarriedAmmo);
+	RuntimeState.CurrentMagazineAmmo = FMath::Clamp(StartMag, 0, MaxMag);
+	RuntimeState.CurrentCarriedAmmo = FMath::Clamp(StartCarry, 0, MaxCarry);
 	return RuntimeState;
 }
 
@@ -360,213 +384,3 @@ UWeaponAttributeSet* ABaseGun::GetWeaponAttributeSetMutable() const
 	ABaseCharacter* OwnerCharacter = Cast<ABaseCharacter>(GetOwner());
 	return OwnerCharacter ? OwnerCharacter->GetWeaponAttributeSet() : nullptr;
 }
-
-int32 ABaseGun::GetDefinitionMaxMagazineAmmo() const
-{
-	if (WeaponDefinition)
-	{
-		return FMath::Max(1, WeaponDefinition->MaxMagazineAmmo);
-	}
-
-	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded MaxMagazineAmmo fallback."), *GetName());
-	return DefaultMaxMagazineAmmo;
-}
-
-int32 ABaseGun::GetDefinitionStartMagazineAmmo() const
-{
-	if (WeaponDefinition)
-	{
-		return FMath::Max(0, WeaponDefinition->StartMagazineAmmo);
-	}
-
-	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded StartMagazineAmmo fallback."), *GetName());
-	return DefaultStartMagazineAmmo;
-}
-
-int32 ABaseGun::GetDefinitionMaxCarriedAmmo() const
-{
-	if (WeaponDefinition)
-	{
-		return FMath::Max(0, WeaponDefinition->MaxCarriedAmmo);
-	}
-
-	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded MaxCarriedAmmo fallback."), *GetName());
-	return DefaultMaxCarriedAmmo;
-}
-
-int32 ABaseGun::GetDefinitionStartCarriedAmmo() const
-{
-	if (WeaponDefinition)
-	{
-		return FMath::Max(0, WeaponDefinition->StartCarriedAmmo);
-	}
-
-	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded StartCarriedAmmo fallback."), *GetName());
-	return DefaultStartCarriedAmmo;
-}
-
-float ABaseGun::GetDefinitionAimReferenceDistance() const
-{
-	if (WeaponDefinition)
-	{
-		return FMath::Max(100.f, WeaponDefinition->AimReferenceDistance);
-	}
-
-	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded AimReferenceDistance fallback."), *GetName());
-	return DefaultAimReferenceDistance;
-}
-
-float ABaseGun::GetDefinitionBaseDamage() const
-{
-	if (WeaponDefinition)
-	{
-		return FMath::Max(0.f, WeaponDefinition->BaseDamage);
-	}
-
-	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded BaseDamage fallback."), *GetName());
-	return DefaultBaseDamage;
-}
-
-float ABaseGun::GetDefinitionFireInterval() const
-{
-	if (WeaponDefinition)
-	{
-		return FMath::Max(0.01f, WeaponDefinition->FireInterval);
-	}
-
-	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded FireInterval fallback."), *GetName());
-	return DefaultFireInterval;
-}
-
-float ABaseGun::GetDefinitionBaseSpreadRadius() const
-{
-	if (WeaponDefinition)
-	{
-		return FMath::Max(0.f, WeaponDefinition->BaseSpreadRadius);
-	}
-
-	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded BaseSpreadRadius fallback."), *GetName());
-	return DefaultBaseSpreadRadius;
-}
-
-float ABaseGun::GetDefinitionMaxSpreadRadius() const
-{
-	if (WeaponDefinition)
-	{
-		return FMath::Max(0.f, WeaponDefinition->MaxSpreadRadius);
-	}
-
-	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded MaxSpreadRadius fallback."), *GetName());
-	return DefaultMaxSpreadRadius;
-}
-
-float ABaseGun::GetDefinitionSpreadRadiusIncreasePerShot() const
-{
-	if (WeaponDefinition)
-	{
-		return FMath::Max(0.f, WeaponDefinition->SpreadRadiusIncreasePerShot);
-	}
-
-	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded SpreadRadiusIncreasePerShot fallback."), *GetName());
-	return DefaultSpreadRadiusIncreasePerShot;
-}
-
-float ABaseGun::GetDefinitionAimFOV() const
-{
-	if (WeaponDefinition)
-	{
-		return FMath::Clamp(WeaponDefinition->AimFOV, 10.f, 170.f);
-	}
-
-	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded AimFOV fallback."), *GetName());
-	return DefaultAimFOV;
-}
-
-FVector ABaseGun::GetDefinitionAimCameraSocketOffset() const
-{
-	if (WeaponDefinition)
-	{
-		return WeaponDefinition->AimCameraSocketOffset;
-	}
-
-	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded AimCameraSocketOffset fallback."), *GetName());
-	return DefaultAimCameraSocketOffset;
-}
-
-float ABaseGun::GetDefinitionRecoilPitchPerShot() const
-{
-	if (WeaponDefinition)
-	{
-		return FMath::Max(0.f, WeaponDefinition->RecoilPitchPerShot);
-	}
-
-	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded RecoilPitchPerShot fallback."), *GetName());
-	return DefaultRecoilPitchPerShot;
-}
-
-float ABaseGun::GetDefinitionRecoilYawPerShotMin() const
-{
-	if (WeaponDefinition)
-	{
-		return WeaponDefinition->RecoilYawPerShotMin;
-	}
-
-	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded RecoilYawPerShotMin fallback."), *GetName());
-	return DefaultRecoilYawPerShotMin;
-}
-
-float ABaseGun::GetDefinitionRecoilYawPerShotMax() const
-{
-	if (WeaponDefinition)
-	{
-		return WeaponDefinition->RecoilYawPerShotMax;
-	}
-
-	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded RecoilYawPerShotMax fallback."), *GetName());
-	return DefaultRecoilYawPerShotMax;
-}
-
-float ABaseGun::GetDefinitionRecoilADSScale() const
-{
-	if (WeaponDefinition)
-	{
-		return FMath::Max(0.f, WeaponDefinition->RecoilADSScale);
-	}
-
-	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded RecoilADSScale fallback."), *GetName());
-	return DefaultRecoilADSScale;
-}
-
-TSubclassOf<UCameraShakeBase> ABaseGun::GetDefinitionFireCameraShakeClass() const
-{
-	if (WeaponDefinition)
-	{
-		return WeaponDefinition->FireCameraShakeClass;
-	}
-
-	ensureMsgf(false, TEXT("%s has no WeaponDefinition. CameraShakeClass is empty."), *GetName());
-	return nullptr;
-}
-
-float ABaseGun::GetDefinitionFireCameraShakeScale() const
-{
-	if (WeaponDefinition)
-	{
-		return FMath::Max(0.f, WeaponDefinition->FireCameraShakeScale);
-	}
-
-	ensureMsgf(false, TEXT("%s has no WeaponDefinition. Using hardcoded FireCameraShakeScale fallback."), *GetName());
-	return DefaultFireCameraShakeScale;
-}
-
-TSubclassOf<ABaseProjectile> ABaseGun::GetDefinitionProjectileClass() const
-{
-	if (WeaponDefinition && WeaponDefinition->ProjectileClass)
-	{
-		return WeaponDefinition->ProjectileClass;
-	}
-
-	ensureMsgf(false, TEXT("%s has no ProjectileClass in WeaponDefinition. Using ABaseBullet fallback."), *GetName());
-	return ABaseBullet::StaticClass();
-}
-

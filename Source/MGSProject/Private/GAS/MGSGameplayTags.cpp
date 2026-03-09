@@ -2,8 +2,8 @@
  * 파일명 : MGSGameplayTags.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
- * 수정자 : 김동석
- * 수정일 : 2026-03-06
+ * 수정자 : 장대한
+ * 수정일 : 2026-03-09
  */
 
 #include "GAS/MGSGameplayTags.h"
@@ -74,4 +74,7 @@ namespace MGSGameplayTags
 	
 	// Event
 	UE_DEFINE_GAMEPLAY_TAG(Event_Player_Interact, "Event.Player.Interact")
+
+	// SetByCaller data
+	UE_DEFINE_GAMEPLAY_TAG(Data_Damage, "Data.Damage")
 }
