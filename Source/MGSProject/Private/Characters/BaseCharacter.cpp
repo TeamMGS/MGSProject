@@ -2,7 +2,7 @@
  * 파일명 : BaseCharacter.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
- * 수정자 : 장대한
+ * 수정자 : 김동석
  * 수정일 : 2026-03-09
  */
 
@@ -101,6 +101,24 @@ void ABaseCharacter::Landed(const FHitResult& Hit)
 	if (LocomotionComponent)
 	{
 		LocomotionComponent->HandleOnLanded(GetVelocity());
+	}
+}
+
+void ABaseCharacter::OnStartCrouch(float HeightAdjust, float ScaledHeightAdjust)
+{
+	Super::OnStartCrouch(HeightAdjust, ScaledHeightAdjust);
+	if (LocomotionComponent)
+	{
+		LocomotionComponent->UpdateMovementTags(0.0f);
+	}
+}
+
+void ABaseCharacter::OnEndCrouch(float HeightAdjust, float ScaledHeightAdjust)
+{
+	Super::OnEndCrouch(HeightAdjust, ScaledHeightAdjust);
+	if (LocomotionComponent)
+	{
+		LocomotionComponent->UpdateMovementTags(0.0f);
 	}
 }
 

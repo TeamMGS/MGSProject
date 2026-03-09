@@ -2,7 +2,7 @@
  * 파일명 : BaseCharacter.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
- * 수정자 : 장대한
+ * 수정자 : 김동석
  * 수정일 : 2026-03-09
  */
 
@@ -45,6 +45,8 @@ protected:
 	virtual void OnJumped_Implementation() override;
 	
 	virtual void Landed(const FHitResult& Hit) override;
+	virtual void OnStartCrouch(float HeightAdjust, float ScaledHeightAdjust) override;
+	virtual void OnEndCrouch(float HeightAdjust, float ScaledHeightAdjust) override;
 	
 protected:
 	// DA_StartupBase : 초기 부여 어빌리티 데이터 에셋

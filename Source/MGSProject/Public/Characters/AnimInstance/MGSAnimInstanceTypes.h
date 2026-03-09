@@ -3,7 +3,7 @@
  * 생성자 : 김동석
  * 생성일 : 2026-03-05
  * 수정자 : 김동석
- * 수정일 : 2026-03-06
+ * 수정일 : 2026-03-09
  */
 #pragma once
 
@@ -76,6 +76,9 @@ struct FMGSEssentialValues
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) float AccelerationAmount = 0.f;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) bool bHasAcceleration = false;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) bool bHasVelocity = false;
+	
+	// 공중에 떠있는 시간
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) float InAirTime = 0.f;
 
 	// 트랜스폼 및 회전
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) FVector2D LeanAmount = FVector2D::ZeroVector;
@@ -151,6 +154,27 @@ struct FMGSTrajectoryHandler
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")
 	FPoseSearchTrajectoryData TrajectorySettings_Moving;
 	
+	float GetTrajectoryTurnAngle(const FVector& Acceleration, const FVector& Velocity) const
+	{
+		// 두 벡터 중 하나라도 거의 0이라면 계산할 의미가 없으므로 0 반환
+		if (Acceleration.SizeSquared2D() < KINDA_SMALL_NUMBER || Velocity.SizeSquared2D() < KINDA_SMALL_NUMBER)
+		{
+			return 0.0f;
+		}
+
+		// Acceleration(가속도)을 Rotator로 변환
+		FRotator AccelRot = Acceleration.Rotation();
+
+		// Velocity(속도)를 Rotator로 변환
+		FRotator VelocityRot = Velocity.Rotation();
+
+		// 두 회전값의 차이를 계산
+		FRotator DeltaRot = (AccelRot - VelocityRot).GetNormalized();
+
+		// Yaw 값 반환
+		return DeltaRot.Yaw;
+	}
+	
 	// 핵심 업데이트 함수
 	void Update(class UAnimInstance* AnimInstance, const FMGSEssentialValues& Values, float DeltaSeconds);
 };
@@ -164,23 +188,18 @@ struct FMGSLocomotionState
 {
 	GENERATED_BODY()
 
-	// // 현재 프레임 상태
-	// UPROPERTY(VisibleAnywhere, BlueprintReadOnly) EMGSMovementMode MovementMode = EMGSMovementMode::OnGround;
-	// UPROPERTY(VisibleAnywhere, BlueprintReadOnly) EMGSStance Stance = EMGSStance::Stand;
-	// UPROPERTY(VisibleAnywhere, BlueprintReadOnly) EMGSGait Gait = EMGSGait::Run;
-	// UPROPERTY(VisibleAnywhere, BlueprintReadOnly) EMGSRotationMode RotationMode = EMGSRotationMode::VelocityDirection;
-	// UPROPERTY(VisibleAnywhere, BlueprintReadOnly) EMGSMovementState MovementState = EMGSMovementState::Idle;
-	//
-	// // 이전 프레임 상태 (Last Frame)
-	// EMGSMovementMode MovementMode_LastFrame = EMGSMovementMode::OnGround;
-	// EMGSStance Stance_LastFrame = EMGSStance::Stand;
-	// EMGSGait Gait_LastFrame = EMGSGait::Run;
-	// EMGSRotationMode RotationMode_LastFrame = EMGSRotationMode::VelocityDirection;
-	// EMGSMovementState MovementState_LastFrame = EMGSMovementState::Idle;
-
-	// 특수 상태
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) bool bIsMoving = false;
+	// 메인 이동 상태
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) FGameplayTag MovementStateTag;
+	
+	// 부가 액션 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) FGameplayTag LocomotionActionTag;
+	
+	// 마지막 프레임 검사
+	FGameplayTag LastFrameMovementTag;
 
 	// 핵심 업데이트 함수
-	void Update(const FMGSCharacterDataProxy& Data, const FMGSTrajectoryHandler& Trajectory);
+	void Update(UAnimInstance* AnimInstance, const FMGSCharacterDataProxy& Data, const FMGSEssentialValues& Essential, const FMGSTrajectoryHandler& Trajectory, const FMGSMotionMatchingHandler& MMHandler);
+	
+	// 헬퍼 함수
+	bool CheckIsPivoting(const FMGSCharacterDataProxy& Data, const FMGSEssentialValues& Essential, const FMGSTrajectoryHandler& Trajectory);
 };
