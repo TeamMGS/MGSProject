@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-09
+ * 수정일 : 2026-03-03
  */
 
 #include "GAS/GA/BaseGameplayAbility.h"
@@ -69,3 +69,5 @@ UMGSAbilitySystemComponent* UBaseGameplayAbility::GetMGSAbilitySystemComponentFr
 
 	return Cast<UMGSAbilitySystemComponent>(CurrentActorInfo->AbilitySystemComponent.Get());
 }
+
+

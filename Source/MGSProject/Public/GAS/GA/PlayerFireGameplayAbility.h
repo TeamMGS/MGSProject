@@ -55,7 +55,7 @@ private:
 
 	// 총구 위치 기준으로 발사체를 스폰하고 발사 방향을 적용합니다.
 	bool SpawnProjectileShot(APlayerCharacter* PlayerCharacter, AMGSPlayerController* PlayerController,
-		ABaseGun* EquippedGun, float AimReferenceDistance, float SpreadRadius) const;
+		ABaseGun* EquippedGun, float AimReferenceDistance, float Damage, float SpreadRadius) const;
 
 private:
 	// 라인트레이스 디버그 시각화 활성화

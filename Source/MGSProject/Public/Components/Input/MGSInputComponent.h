@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-09
+ * 수정일 : 2026-03-03
  */
 
 #pragma once
@@ -19,11 +19,9 @@ class MGSPROJECT_API UMGSInputComponent : public UEnhancedInputComponent
 	GENERATED_BODY()
 	
 public:
-	// 네이티브 입력 연결
 	template<class UserObject, typename CallbackFunc>
 	void BindNativeInputAction(const UDA_InputConfig* InInputConfig, const FGameplayTag& InInputTag, ETriggerEvent TriggerEvent, UserObject* ContextObject, CallbackFunc Func);
 	
-	// 어빌리티 입력 연결
 	template<class UserObject, typename CallbackFunc>
 	void BindAbilityInputAction(const UDA_InputConfig* InInputConfig, UserObject* ContextObject, CallbackFunc InputPressedFunc, CallbackFunc InputReleasedFunc);
 	
@@ -40,7 +38,6 @@ void UMGSInputComponent::BindNativeInputAction(const UDA_InputConfig* InInputCon
 		return;
 	}
 	
-	// 태그로 IA 반환
 	if (UInputAction* FoundAction = InInputConfig->FindNativeInputActionByTag(InInputTag))
 	{
 		BindAction(FoundAction, TriggerEvent, ContextObject, Func);
@@ -69,3 +66,5 @@ void UMGSInputComponent::BindAbilityInputAction(const UDA_InputConfig* InInputCo
 		BindAction(AbilityInputActionConfig.InputAction, ETriggerEvent::Completed, ContextObject, InputReleasedFunc, AbilityInputActionConfig.InputTag);
 	}
 }
+
+

@@ -2,8 +2,8 @@
  * 파일명 : PlayerCrouchGameplayAbility.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-03
- * 수정자 : 장대한
- * 수정일 : 2026-03-09
+ * 수정자 :  장대한
+ * 수정일 :  2026-03-05
  */
 
 #include "GAS/GA/PlayerCrouchGameplayAbility.h"
@@ -47,7 +47,6 @@ bool UPlayerCrouchGameplayAbility::CanActivateAbility(const FGameplayAbilitySpec
 
 	if (const UCharacterMovementComponent* MovementComponent = PlayerCharacter->GetCharacterMovement())
 	{
-		// 공중 상태 확인
 		return !MovementComponent->IsFalling();
 	}
 
@@ -70,7 +69,6 @@ void UPlayerCrouchGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHan
 
 	if (APlayerCharacter* PlayerCharacter = GetPlayerCharacterFromActorInfo())
 	{
-		// 웅크리기
 		PlayerCharacter->Crouch();
 		return;
 	}
@@ -94,9 +92,7 @@ void UPlayerCrouchGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle H
 {
 	if (APlayerCharacter* PlayerCharacter = GetPlayerCharacterFromActorInfo())
 	{
-		// 웅크리기 해제
 		PlayerCharacter->UnCrouch();
-		// 이동 상태 복원
 		PlayerCharacter->RequestRestoreHeldMovementAbilityInputNextTick();
 	}
 

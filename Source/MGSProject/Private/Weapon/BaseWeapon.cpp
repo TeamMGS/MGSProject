@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-09
+ * 수정일 : 2026-03-02
  */
 
 #include "Weapon/BaseWeapon.h"
@@ -30,9 +30,9 @@ void ABaseWeapon::AssignGrantedAbilitySpecHandles(const TArray<FGameplayAbilityS
 	GrantedAbilitySpecHandles = SpecHandles;
 }
 
-void ABaseWeapon::ConsumeGrantedAbilitySpecHandles(TArray<FGameplayAbilitySpecHandle>& OutSpecHandles)
+TArray<FGameplayAbilitySpecHandle> ABaseWeapon::GetGrantedAbilitySpecHandles()
 {
-	// MoveTemp : rvalue로 캐스팅 후 이동 대입을 타게 함 (내부 버퍼를 복사 없이 넘겨 성능 향상)
-	OutSpecHandles = MoveTemp(GrantedAbilitySpecHandles);
-	GrantedAbilitySpecHandles.Reset();
+	return GrantedAbilitySpecHandles;
 }
+
+

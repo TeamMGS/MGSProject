@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-03
  * 수정자 : 장대한
- * 수정일 : 2026-03-09
+ * 수정일 : 2026-03-03
  */
 
 #pragma once
@@ -43,12 +43,11 @@ protected:
 		bool bWasCancelled) override;
 
 private:
-	// 걷기 속도
 	UPROPERTY(EditDefaultsOnly, Category = "Movement")
-	float WalkSpeed = 250.0f;
+	float WalkSpeed = 250.f;
 
-	float CachedMoveSpeed = 0.0f; // 기존 속도 캐싱
-	bool bHasCachedMoveSpeed = false; // 캐싱된 속도가 있는지 확인 플래그
+	float CachedMoveSpeed = 0.f;
+	bool bHasCachedMoveSpeed = false;
 };
 
 

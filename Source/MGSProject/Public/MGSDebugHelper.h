@@ -3,14 +3,13 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
  * 수정자 : 장대한
- * 수정일 : 2026-03-09
+ * 수정일 : 2026-03-02
  */
 
 #pragma once
 
 namespace Debug
 {
-	// 로그 출력
 	static void Print(const FString& Msg, const FColor& Color = FColor::MakeRandomColor(), int32 InKey = -1)
 	{
 		if (GEngine)
@@ -21,7 +20,6 @@ namespace Debug
 		}
 	}
 	
-	// float값 로그 출력
 	static void Print(const FString& FloatTitle, float FloatValueToPrint, int32 InKey = -1, const FColor& Color = FColor::MakeRandomColor())
 	{
 		if (GEngine)
@@ -33,3 +31,5 @@ namespace Debug
 		}
 	}
 }
+
+

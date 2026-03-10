@@ -2,13 +2,12 @@
  * 파일명 : EnemyCharacter.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
- * 수정자 : 장대한
- * 수정일 : 2026-03-09
+ * 수정자 : 김동석
+ * 수정일 : 2026-03-06
  */
 
 #pragma once
 
-#include "AbilitySystemInterface.h"
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "Characters/BaseCharacter.h"
@@ -16,13 +15,11 @@
 #include "EnemyCharacter.generated.h"
 
 class UEnemyCombatComponent;
-class UAbilitySystemComponent;
 class UCharacterAttributeSet;
 class UMGSAbilitySystemComponent;
-struct FOnAttributeChangeData;
 
 UCLASS()
-class MGSPROJECT_API AEnemyCharacter : public ABaseCharacter, public IAbilitySystemInterface
+class MGSPROJECT_API AEnemyCharacter : public ABaseCharacter
 {
 	GENERATED_BODY()
 	
@@ -30,18 +27,13 @@ public:
 	AEnemyCharacter(const FObjectInitializer& ObjectInitializer);
 
 	virtual UPawnCombatComponent* GetPawnCombatComponent() const override;
-	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	virtual UMGSAbilitySystemComponent* GetMGSAbilitySystemComponent() const override;
 	virtual UCharacterAttributeSet* GetCharacterAttributeSet() const override;
 protected:
 	virtual void BeginPlay() override;
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void PossessedBy(AController* NewController) override;
 	
 private:
-	void BindHpChangedDelegate();
-	void HandleCurrentHpChanged(const FOnAttributeChangeData& AttributeChangeData);
-	void InitializeEnemyAttributes();
 	void InitEnemyStartupData();
 	
 protected:	
@@ -74,15 +66,6 @@ private:
 	bool bEnableDebugStateInput = false;
 
 	bool bDebugStateInputBound = false;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Attribute", meta = (AllowPrivateAccess = true, ClampMin = "1.0"))
-	float DefaultMaxHp = 100.f;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Attribute", meta = (AllowPrivateAccess = true, ClampMin = "0.0"))
-	float DefaultCurrentHp = 100.f;
-
-	FDelegateHandle CurrentHpChangedDelegateHandle;
-	bool bHasBoundHpChangedDelegate = false;
 
 	UPROPERTY(EditDefaultsOnly, Category = "AI|State", meta = (ClampMin = 0))
 	int32 StateMaterialSlotIndex = 0;

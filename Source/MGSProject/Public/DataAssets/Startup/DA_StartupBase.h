@@ -1,9 +1,9 @@
 ﻿/*
- * 파일명 : DA_StartupBase.h
+ * 파일명 : DA_Startup.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-09
+ * 수정일 : 2026-03-04
  */
 
 #pragma once
@@ -22,7 +22,6 @@ class MGSPROJECT_API UDA_StartupBase : public UDataAsset
 	GENERATED_BODY()
 	
 public:
-	// ASC에 자동 활성화 GA, 반응형 GA 부여
 	virtual void GiveToAbilitySystemComponent(UMGSAbilitySystemComponent* ASC, int32 Level = 1);
 	
 protected:
@@ -34,7 +33,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "StartupData")
 	TArray<TSubclassOf<UBaseGameplayAbility>> ReactiveAbilities;
 	
-	// ASC에 부여된 직후 자동으로 발동할 GE 목록
 	UPROPERTY(EditDefaultsOnly, Category = "StartupData")
 	TArray<TSubclassOf<UGameplayEffect>> StartupGameplayEffects;
 	
@@ -42,3 +40,5 @@ protected:
 	void GrantAbilities(const TArray<TSubclassOf<UBaseGameplayAbility>> GAs, UMGSAbilitySystemComponent* InASC, int32 Level);
 	
 };
+
+

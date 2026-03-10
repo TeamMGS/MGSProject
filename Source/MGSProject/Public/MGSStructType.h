@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
  * 수정자 : 장대한
- * 수정일 : 2026-03-09
+ * 수정일 : 2026-03-05
  */
 
 #pragma once
@@ -15,7 +15,6 @@ class UPlayerGameplayAbility;
 class UInputMappingContext;
 class UTexture2D;
 
-// 플레이어 Tag-GA 데이터
 USTRUCT(BlueprintType)
 struct FPlayerAbilitySet
 {
@@ -30,16 +29,13 @@ struct FPlayerAbilitySet
 	TSubclassOf<UPlayerGameplayAbility> AbilityToGrant;
 	
 	bool IsValid() const;
-	
 };
 
-// 무기 IMC, UI 이미지, 플레이어 Tag-GA 데이터
 USTRUCT(BlueprintType)
 struct FPlayerWeaponData
 {
 	GENERATED_BODY()
 	
-	// 무기 IMC
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UInputMappingContext> WeaponInputMappingContext;
 
@@ -53,18 +49,14 @@ struct FPlayerWeaponData
 	
 };
 
-// 런타임 중 무기 탄약/탄창 데이터
 USTRUCT(BlueprintType)
 struct FWeaponRuntimeState
 {
 	GENERATED_BODY()
 
-	// 탄약
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Ammo")
 	int32 CurrentMagazineAmmo = 0;
 
-	// 탄창
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Ammo")
 	int32 CurrentCarriedAmmo = 0;
-	
 };

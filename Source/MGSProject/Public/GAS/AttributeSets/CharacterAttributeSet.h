@@ -2,8 +2,8 @@
  * 파일명 : CharacterAttributeSet.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
- * 수정자 : 장대한
- * 수정일 : 2026-03-09
+ * 수정자 :  장대한
+ * 수정일 :  2026-03-05
  */
 
 #pragma once
@@ -26,9 +26,6 @@ class MGSPROJECT_API UCharacterAttributeSet : public UAttributeSet
 	
 public:
 	UCharacterAttributeSet();
-
-	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
-	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
 	
 	// 현재 체력
 	UPROPERTY(BlueprintReadOnly, Category = "Status")

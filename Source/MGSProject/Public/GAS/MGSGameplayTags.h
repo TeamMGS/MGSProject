@@ -90,7 +90,4 @@ namespace MGSGameplayTags
 
 	// Event tags: gameplay event payload trigger
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Player_Interact)
-
-	// SetByCaller data tags
-	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Damage)
 }

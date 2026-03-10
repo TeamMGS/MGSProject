@@ -1,11 +1,10 @@
-﻿/*
+/*
  * 파일명 : MGSCharacterMovementComponent.h
- * 생성자 : 장대한
+ * 생성자 : 김동석
  * 생성일 : 2026-03-06
- * 수정자 : 장대한
- * 수정일 : 2026-03-09
+ * 수정자 : 김동석
+ * 수정일 : 2026-03-06
  */
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -51,13 +50,13 @@ public:
 protected:
 	// 보행 등급별 속도 설정 (X: 정면, Y: 측면, Z: 후면)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MGS|Movement")
-	FVector WalkSpeeds = FVector(375.f, 360.f, 350.f);
+	FVector WalkSpeeds = FVector(175.f, 160.f, 150.f);
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MGS|Movement")
-	FVector RunSpeeds = FVector(575.f, 510.f, 550.f);
+	FVector RunSpeeds = FVector(375.f, 310.f, 250.f);
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MGS|Movement")
-	FVector SprintSpeeds = FVector(700.f, 700.f, 700.f);
+	FVector SprintSpeeds = FVector(600.f, 600.f, 600.f);
 	
 	// 앉은 상태의 방향별 속도 설정 (X: 정면, Y: 측면, Z: 후면)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MGS|Movement")

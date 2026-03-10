@@ -2,8 +2,8 @@
  * 파일명 : MGSAbilitySystemComponent.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
- * 수정자 : 장대한
- * 수정일 : 2026-03-09
+ * 수정자 :  장대한
+ * 수정일 :  2026-03-05
  */
 
 #include "GAS/ASC/MGSAbilitySystemComponent.h"
@@ -52,10 +52,8 @@ void UMGSAbilitySystemComponent::OnAbilityInputPressed(const FGameplayTag& Input
 		{
 			if (Spec->IsActive())
 			{
-				const TArray<UGameplayAbility*> Instances = Spec->GetAbilityInstances();
-				const FGameplayAbilityActivationInfo& ActivationInfo = Instances.Last()->GetCurrentActivationInfo();
 				// 여전히 활성 상태인 경우에만 InputPressed 복제 이벤트를 전파합니다.
-				InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputPressed, Spec->Handle, ActivationInfo.GetActivationPredictionKey());
+				InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputPressed, Spec->Handle, Spec->ActivationInfo.GetActivationPredictionKey());
 			}
 
 			continue;
@@ -103,9 +101,7 @@ void UMGSAbilitySystemComponent::OnAbilityInputReleased(const FGameplayTag& Inpu
 
 		if (Spec->IsActive())
 		{
-			const TArray<UGameplayAbility*> Instances = Spec->GetAbilityInstances();
-			const FGameplayAbilityActivationInfo& ActivationInfo = Instances.Last()->GetCurrentActivationInfo();
-			InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputReleased, Spec->Handle, ActivationInfo.GetActivationPredictionKey());
+			InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputReleased, Spec->Handle, Spec->ActivationInfo.GetActivationPredictionKey());
 		}
 	}
 }
@@ -135,20 +131,22 @@ void UMGSAbilitySystemComponent::GrantWeaponAbilities(const TArray<FPlayerAbilit
 	}
 }
 
-void UMGSAbilitySystemComponent::RemoveGrantedWeaponAbilities(const TArray<FGameplayAbilitySpecHandle>& SpecHandlesToRemove)
+void UMGSAbilitySystemComponent::RemoveGrantedWeaponAbilities(TArray<FGameplayAbilitySpecHandle>& SpecHandlesToRemove)
 {
 	if (SpecHandlesToRemove.IsEmpty())
 	{
 		return;
 	}
 
-	for (const FGameplayAbilitySpecHandle& SpecHandle : SpecHandlesToRemove)
+	for (FGameplayAbilitySpecHandle& SpecHandle : SpecHandlesToRemove)
 	{
 		if (SpecHandle.IsValid())
 		{
 			ClearAbility(SpecHandle);
 		}
 	}
+
+	SpecHandlesToRemove.Empty();
 }
 
 bool UMGSAbilitySystemComponent::IsAbilityInputTagPressed(const FGameplayTag& InputTag) const

@@ -81,7 +81,4 @@ namespace MGSGameplayTags
 	
 	// Event
 	UE_DEFINE_GAMEPLAY_TAG(Event_Player_Interact, "Event.Player.Interact")
-
-	// SetByCaller data
-	UE_DEFINE_GAMEPLAY_TAG(Data_Damage, "Data.Damage")
 }
