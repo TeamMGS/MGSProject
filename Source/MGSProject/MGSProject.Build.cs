@@ -18,7 +18,16 @@ public class MGSProject : ModuleRules
 			"StateTreeModule",
 			"GameplayStateTreeModule",
 			"UMG",
-			"Slate"
+			"Slate",
+			"GameplayAbilities",
+			"GameplayTags",
+			"GameplayTasks",
+			"PoseSearch",
+			"Chooser",
+			"AnimationWarpingRuntime",
+			"MotionWarping",
+			"AnimGraphRuntime",
+			"BlendStack"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });
