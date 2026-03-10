@@ -18,6 +18,8 @@
 #include "GAS/MGSGameplayTags.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/ProjectileMovementComponent.h"
+#include "Subsystems/ProjectilePoolWorldSubsystem.h"
+#include "TimerManager.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Weapon/BaseGun.h"
 
@@ -36,9 +38,9 @@ ABaseProjectile::ABaseProjectile()
 	CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	CollisionComponent->SetCollisionResponseToAllChannels(ECR_Ignore);
 	CollisionComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
-	CollisionComponent->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Overlap);
-	CollisionComponent->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Overlap);
-	CollisionComponent->SetCollisionResponseToChannel(ECC_PhysicsBody, ECR_Overlap);
+	CollisionComponent->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+	CollisionComponent->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Block);
+	CollisionComponent->SetCollisionResponseToChannel(ECC_PhysicsBody, ECR_Block);
 	CollisionComponent->SetGenerateOverlapEvents(true);
 	CollisionComponent->SetNotifyRigidBodyCollision(false);
 	CollisionComponent->SetCanEverAffectNavigation(false);
@@ -65,6 +67,9 @@ ABaseProjectile::ABaseProjectile()
 	ProjectileMovementComponent->MaxSpeed = 4500.0f;
 	ProjectileMovementComponent->bRotationFollowsVelocity = true;
 	ProjectileMovementComponent->ProjectileGravityScale = 0.0f;
+	ProjectileMovementComponent->bShouldBounce = false;
+	ProjectileMovementComponent->bSweepCollision = true;
+	ProjectileMovementComponent->bForceSubStepping = true;
 
 	// 변수 초기화
 	CurrentDamageGameplayEffectClass = UMGSDamageGameplayEffect::StaticClass(); // 데미지 GE 클래스
@@ -103,9 +108,9 @@ void ABaseProjectile::BeginPlay()
 		CollisionComponent->SetGenerateOverlapEvents(true);
 		CollisionComponent->SetCollisionResponseToAllChannels(ECR_Ignore);
 		CollisionComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
-		CollisionComponent->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Overlap);
-		CollisionComponent->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Overlap);
-		CollisionComponent->SetCollisionResponseToChannel(ECC_PhysicsBody, ECR_Overlap);
+		CollisionComponent->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+		CollisionComponent->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Block);
+		CollisionComponent->SetCollisionResponseToChannel(ECC_PhysicsBody, ECR_Block);
 
 		// Overlap 이벤트 바인딩
 		CollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::HandleProjectileOverlap);
@@ -124,6 +129,11 @@ void ABaseProjectile::BeginPlay()
 			}
 		}
 	}
+
+	if (ensureMsgf(ProjectileMovementComponent, TEXT("%s has no projectile movement component."), *GetName()))
+	{
+		ProjectileMovementComponent->OnProjectileStop.AddDynamic(this, &ThisClass::HandleProjectileStop);
+	}
 }
 
 void ABaseProjectile::InitializeProjectile(const FVector& ShootDirection)
@@ -138,6 +148,8 @@ void ABaseProjectile::InitializeProjectile(const FVector& ShootDirection)
 		return;
 	}
 
+	ProjectileMovementComponent->SetUpdatedComponent(CollisionComponent);
+
 	FVector SafeDirection = ShootDirection.GetSafeNormal();
 	if (SafeDirection.IsNearlyZero())
 	{
@@ -145,7 +157,10 @@ void ABaseProjectile::InitializeProjectile(const FVector& ShootDirection)
 	}
 
 	ProjectileMovementComponent->Velocity = SafeDirection * ProjectileMovementComponent->InitialSpeed;
+	ProjectileMovementComponent->UpdateComponentVelocity();
 	SetActorRotation(SafeDirection.Rotation());
+	bIsActiveInPool = true;
+	StartProjectileLifeSpanTimer();
 }
 
 void ABaseProjectile::CacheDamageFromWeapon(const ABaseGun* InSourceWeapon)
@@ -153,38 +168,175 @@ void ABaseProjectile::CacheDamageFromWeapon(const ABaseGun* InSourceWeapon)
 	CachedWeaponDamage = InSourceWeapon ? FMath::Max(0.f, InSourceWeapon->GetBaseDamage()) : 0.f;
 }
 
+void ABaseProjectile::ActivateFromPool(const FTransform& SpawnTransform, AActor* NewOwner, APawn* NewInstigator)
+{
+	SetOwner(NewOwner);
+	SetInstigator(NewInstigator);
+	SetActorTransform(SpawnTransform, false, nullptr, ETeleportType::TeleportPhysics);
+
+	bHasProcessedImpact = false;
+	bIsActiveInPool = false;
+
+	if (CollisionComponent)
+	{
+		CollisionComponent->ClearMoveIgnoreActors();
+		CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		CollisionComponent->SetGenerateOverlapEvents(true);
+	}
+
+	if (ProjectileMovementComponent)
+	{
+		ProjectileMovementComponent->SetUpdatedComponent(CollisionComponent);
+		ProjectileMovementComponent->StopMovementImmediately();
+		ProjectileMovementComponent->Velocity = FVector::ZeroVector;
+		ProjectileMovementComponent->UpdateComponentVelocity();
+		ProjectileMovementComponent->Activate(true);
+	}
+
+	SetActorHiddenInGame(false);
+	SetActorEnableCollision(true);
+}
+
+void ABaseProjectile::DeactivateToPool()
+{
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(ProjectileLifeSpanTimerHandle);
+	}
+
+	bHasProcessedImpact = false;
+	bIsActiveInPool = false;
+	CachedWeaponDamage = 0.0f;
+
+	if (ProjectileMovementComponent)
+	{
+		ProjectileMovementComponent->StopMovementImmediately();
+		ProjectileMovementComponent->Velocity = FVector::ZeroVector;
+		ProjectileMovementComponent->UpdateComponentVelocity();
+		ProjectileMovementComponent->Deactivate();
+	}
+
+	if (CollisionComponent)
+	{
+		CollisionComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		CollisionComponent->SetGenerateOverlapEvents(false);
+		CollisionComponent->ClearMoveIgnoreActors();
+	}
+
+	SetActorEnableCollision(false);
+	SetActorHiddenInGame(true);
+	SetOwner(nullptr);
+	SetInstigator(nullptr);
+}
+
+void ABaseProjectile::SetProjectilePoolSubsystem(UMGSProjectilePoolWorldSubsystem* InProjectilePoolSubsystem)
+{
+	ProjectilePoolSubsystem = InProjectilePoolSubsystem;
+}
+
 void ABaseProjectile::HandleProjectileOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	(void)OverlappedComponent;
+	(void)OtherComp;
 	(void)OtherBodyIndex;
+
+	if (!bIsActiveInPool)
+	{
+		return;
+	}
+
+	const FHitResult EffectiveHit = bFromSweep ? SweepResult : FHitResult();
+	ProcessProjectileImpact(OtherActor, EffectiveHit);
+}
+
+void ABaseProjectile::HandleProjectileStop(const FHitResult& ImpactResult)
+{
+	if (!bIsActiveInPool)
+	{
+		return;
+	}
+
+	ProcessProjectileImpact(ImpactResult.GetActor(), ImpactResult);
+}
+
+void ABaseProjectile::HandleLifeSpanExpired()
+{
+	if (!bIsActiveInPool)
+	{
+		return;
+	}
+
+	ReleaseToPoolOrDestroy();
+}
+
+void ABaseProjectile::ProcessProjectileImpact(AActor* HitActor, const FHitResult& Hit)
+{
+	if (!bIsActiveInPool)
+	{
+		return;
+	}
 
 	if (bShouldDestroyOnHit && bHasProcessedImpact)
 	{
 		return;
 	}
 
-	if (!OtherActor || OtherActor == this || !OtherComp)
+	AActor* EffectiveHitActor = HitActor ? HitActor : Hit.GetActor();
+	if (EffectiveHitActor == this)
 	{
 		return;
 	}
 
-	if (bShouldIgnoreOwnerOnHit && (OtherActor == GetOwner() || OtherActor == GetInstigator()))
+	if (bShouldIgnoreOwnerOnHit && EffectiveHitActor && (EffectiveHitActor == GetOwner() || EffectiveHitActor == GetInstigator()))
 	{
 		return;
 	}
-
-	const FHitResult EffectiveHit = bFromSweep ? SweepResult : FHitResult();
-	bHasProcessedImpact = true;
-
-	// 피격 데미지 적용
-	ApplyHitDamage(OtherActor, EffectiveHit);
-	// 충돌 이벤트 브로드캐스트
-	OnProjectileImpact(EffectiveHit);
 
 	if (bShouldDestroyOnHit)
 	{
-		Destroy();
+		bHasProcessedImpact = true;
+	}
+
+	// 피격 데미지 적용
+	ApplyHitDamage(EffectiveHitActor, Hit);
+	// 충돌 이벤트 브로드캐스트
+	OnProjectileImpact(Hit);
+
+	if (bShouldDestroyOnHit)
+	{
+		ReleaseToPoolOrDestroy();
+	}
+}
+
+void ABaseProjectile::ReleaseToPoolOrDestroy()
+{
+	if (ProjectilePoolSubsystem.IsValid())
+	{
+		ProjectilePoolSubsystem->ReturnProjectile(this);
+		return;
+	}
+
+	Destroy();
+}
+
+void ABaseProjectile::StartProjectileLifeSpanTimer()
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	World->GetTimerManager().ClearTimer(ProjectileLifeSpanTimerHandle);
+	if (ActiveProjectileLifeSpan > 0.0f)
+	{
+		World->GetTimerManager().SetTimer(
+			ProjectileLifeSpanTimerHandle,
+			this,
+			&ThisClass::HandleLifeSpanExpired,
+			ActiveProjectileLifeSpan,
+			false);
 	}
 }
 
@@ -267,8 +419,8 @@ void ABaseProjectile::ApplyProjectileDefinition()
 		ProjectileMovementComponent->ProjectileGravityScale = DefinitionProjectileGravityScale;
 	}
 
-	InitialLifeSpan = DefinitionLifeSpan;
-	SetLifeSpan(DefinitionLifeSpan);
+	ActiveProjectileLifeSpan = DefinitionLifeSpan;
+	InitialLifeSpan = 0.0f;
 	bHasAppliedDefinition = true;
 }
 

@@ -23,6 +23,7 @@
 #include "DrawDebugHelpers.h"
 #include "Engine/World.h"
 #include "Projectiles/BaseProjectile.h"
+#include "Subsystems/ProjectilePoolWorldSubsystem.h"
 #include "TimerManager.h"
 #include "Weapon/BaseGun.h"
 
@@ -501,16 +502,33 @@ bool UPlayerFireGameplayAbility::SpawnProjectileShot(APlayerCharacter* PlayerCha
 		DrawDebugLine(World, MuzzleTraceStart, DebugEnd, FColor::Green, false, DebugTraceDuration, 0, 1.2f);
 	}
 
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = DamageCauser;
-	SpawnParams.Instigator = InstigatorPawn;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	UMGSProjectilePoolWorldSubsystem* ProjectilePoolSubsystem = World->GetSubsystem<UMGSProjectilePoolWorldSubsystem>();
+	ABaseProjectile* SpawnedProjectile = ProjectilePoolSubsystem
+		? ProjectilePoolSubsystem->AcquireProjectile(
+			ProjectileClassToSpawn,
+			FTransform(MuzzleTraceDirection.Rotation(), ProjectileSpawnLocation),
+			DamageCauser,
+			InstigatorPawn)
+		: nullptr;
 
-	ABaseProjectile* SpawnedProjectile = World->SpawnActor<ABaseProjectile>(
-		ProjectileClassToSpawn,
-		ProjectileSpawnLocation,
-		MuzzleTraceDirection.Rotation(),
-		SpawnParams);
+	if (!SpawnedProjectile)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[FireProjectile][PoolFallback] Class=%s Reason=%s"),
+			*GetNameSafe(ProjectileClassToSpawn.Get()),
+			ProjectilePoolSubsystem ? TEXT("AcquireFailed") : TEXT("SubsystemMissing"));
+
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = DamageCauser;
+		SpawnParams.Instigator = InstigatorPawn;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+		SpawnedProjectile = World->SpawnActor<ABaseProjectile>(
+			ProjectileClassToSpawn,
+			ProjectileSpawnLocation,
+			MuzzleTraceDirection.Rotation(),
+			SpawnParams);
+	}
+
 	if (!SpawnedProjectile)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[FireProjectile][FAILED] Spawn failed. Class=%s Muzzle=%s"),

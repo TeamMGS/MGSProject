@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-03
  * 수정자 : 장대한
- * 수정일 : 2026-03-09
+ * 수정일 : 2026-03-10
  */
 
 #include "GAS/GA/PlayerSprintGameplayAbility.h"
@@ -21,7 +21,6 @@ UPlayerSprintGameplayAbility::UPlayerSprintGameplayAbility()
 	ActivationOwnedTags.AddTag(MGSGameplayTags::State_Player_Movement_Sprint);
 	ActivationBlockedTags.AddTag(MGSGameplayTags::State_Player_Movement_Walk);
 	ActivationBlockedTags.AddTag(MGSGameplayTags::State_Player_Crouching);
-	
 	BlockAbilitiesWithTag.AddTag(MGSGameplayTags::Ability_Player_Walk);
 	BlockAbilitiesWithTag.AddTag(MGSGameplayTags::Ability_Player_Crouch);
 }
@@ -64,20 +63,6 @@ void UPlayerSprintGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHan
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
-
-	if (APlayerCharacter* PlayerCharacter = GetPlayerCharacterFromActorInfo())
-	{
-		if (UCharacterMovementComponent* MovementComponent = PlayerCharacter->GetCharacterMovement())
-		{
-			// 기존 속도 캐싱 후 뛰기 속도로 변경
-			CachedMoveSpeed = MovementComponent->MaxWalkSpeed;
-			bHasCachedMoveSpeed = true;
-			MovementComponent->MaxWalkSpeed = SprintSpeed;
-			return;
-		}
-	}
-
-	EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 }
 
 void UPlayerSprintGameplayAbility::InputReleased(const FGameplayAbilitySpecHandle Handle,
@@ -86,27 +71,4 @@ void UPlayerSprintGameplayAbility::InputReleased(const FGameplayAbilitySpecHandl
 {
 	Super::InputReleased(Handle, ActorInfo, ActivationInfo);
 	EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
-}
-
-void UPlayerSprintGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,
-	const FGameplayAbilityActorInfo* ActorInfo,
-	const FGameplayAbilityActivationInfo ActivationInfo,
-	bool bReplicateEndAbility,
-	bool bWasCancelled)
-{
-	if (bHasCachedMoveSpeed)
-	{
-		if (APlayerCharacter* PlayerCharacter = GetPlayerCharacterFromActorInfo())
-		{
-			if (UCharacterMovementComponent* MovementComponent = PlayerCharacter->GetCharacterMovement())
-			{
-				// 속도 복원
-				MovementComponent->MaxWalkSpeed = CachedMoveSpeed;
-			}
-		}
-
-		bHasCachedMoveSpeed = false;
-	}
-
-	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }

@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
  * 수정자 : 장대한
- * 수정일 : 2026-03-09
+ * 수정일 : 2026-03-10
  */
 
 #include "Components/Combat/PawnCombatComponent.h"
@@ -40,7 +40,6 @@ void UPawnCombatComponent::RegisterSpawnedWeapon(FGameplayTag WeaponTag, ABaseWe
 	{
 		AttachWeaponToSocket(Weapon, Weapon->GetHolsterSocketName());
 		Weapon->SetActorHiddenInGame(Weapon->GetHolsterSocketName().IsNone()); // 숨김 
-		Weapon->SetActorEnableCollision(false); // 충돌 Off
 		return;
 	}
 
@@ -101,7 +100,6 @@ bool UPawnCombatComponent::EquipWeaponByTag(FGameplayTag WeaponTag)
 
 	AttachWeaponToSocket(TargetWeapon, TargetWeapon->GetEquippedSocketName()); // 장착 소켓 부착
 	TargetWeapon->SetActorHiddenInGame(false); // 숨김 Off
-	TargetWeapon->SetActorEnableCollision(false); // 충돌 Off
 
 	ApplyWeaponAbilities(TargetWeapon); // 무기 어빌리티 부여 및 무기 입력 매핑 컨택스트 추가
 	CurrentEquippedWeaponTag = WeaponTag;
@@ -121,10 +119,94 @@ bool UPawnCombatComponent::UnequipCurrentWeapon()
 	RemoveWeaponAbilities(CurrentWeapon); // 무기 어빌리티 제거 및 무기 입력 매핑 제거
 	AttachWeaponToSocket(CurrentWeapon, CurrentWeapon->GetHolsterSocketName()); // 홀스터 소켓을 이동
 	CurrentWeapon->SetActorHiddenInGame(CurrentWeapon->GetHolsterSocketName().IsNone()); // 숨김
-	CurrentWeapon->SetActorEnableCollision(false); // 충돌 Off
 	const FGameplayTag PreviousEquippedWeaponTag = CurrentEquippedWeaponTag;
 	CurrentEquippedWeaponTag = FGameplayTag();
 	OnEquippedWeaponChanged.Broadcast(PreviousEquippedWeaponTag, CurrentEquippedWeaponTag);
+	return true;
+}
+
+bool UPawnCombatComponent::PickupDroppedWeaponByTag(FGameplayTag WeaponTag, ABaseWeapon* DroppedWeapon)
+{
+	if (!WeaponTag.IsValid() || !DroppedWeapon)
+	{
+		return false;
+	}
+
+	ACharacter* OwningCharacter = Cast<ACharacter>(GetOwningPawn());
+	if (!OwningCharacter)
+	{
+		return false;
+	}
+
+	// 이미 자신이 들고 있는 무기면 처리하지 않습니다.
+	if (DroppedWeapon->GetOwner() == OwningCharacter)
+	{
+		return false;
+	}
+
+	const bool bWasEquippedTargetTag = CurrentEquippedWeaponTag.MatchesTagExact(WeaponTag);
+	ABaseWeapon* ExistingWeapon = GetCharacterCarriedWeaponByTag(WeaponTag);
+
+	// 교체 시 기존 슬롯 무기는 캐릭터 기준 고정 위치에서 월드로 떨굽니다.
+	const FVector CharacterDropOrigin =
+		OwningCharacter->GetActorLocation() + OwningCharacter->GetActorForwardVector() * PickupSwapDropForwardOffset;
+	const FVector DroppedWeaponLocation = CharacterDropOrigin + FVector(0.0f, 0.0f, PickupSwapDropHeightOffset);
+	const FRotator DroppedWeaponRotation = OwningCharacter->GetActorRotation();
+
+	if (bWasEquippedTargetTag)
+	{
+		UnequipCurrentWeapon();
+	}
+
+	if (ExistingWeapon)
+	{
+		FWeaponRuntimeState ExistingWeaponRuntimeState;
+		if (const FWeaponRuntimeState* ExistingRuntimeState = CharacterCarriedWeaponRuntimeStateMap.Find(WeaponTag))
+		{
+			ExistingWeaponRuntimeState = *ExistingRuntimeState;
+			ExistingWeapon->SaveDroppedRuntimeState(ExistingWeaponRuntimeState);
+		}
+
+		CharacterCarriedWeaponMap.Remove(WeaponTag);
+		CharacterCarriedWeaponRuntimeStateMap.Remove(WeaponTag);
+
+		ExistingWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		ExistingWeapon->SetOwner(nullptr);
+		ExistingWeapon->SetActorHiddenInGame(false);
+		ExistingWeapon->SetActorLocationAndRotation(DroppedWeaponLocation, DroppedWeaponRotation);
+		ExistingWeapon->SetAsWorldDroppedWeapon();
+	}
+
+	// 주운 무기를 슬롯에 등록합니다.
+	DroppedWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	DroppedWeapon->SetOwner(GetOwningPawn());
+	DroppedWeapon->SetActorHiddenInGame(false);
+	CharacterCarriedWeaponMap.Emplace(WeaponTag, DroppedWeapon);
+
+	if (ABaseGun* PickedGun = Cast<ABaseGun>(DroppedWeapon))
+	{
+		FWeaponRuntimeState PickedRuntimeState;
+		if (DroppedWeapon->ConsumeDroppedRuntimeState(PickedRuntimeState))
+		{
+			CharacterCarriedWeaponRuntimeStateMap.FindOrAdd(WeaponTag) = PickedRuntimeState;
+		}
+		else
+		{
+			CharacterCarriedWeaponRuntimeStateMap.FindOrAdd(WeaponTag) = PickedGun->MakeDefaultRuntimeState();
+		}
+	}
+	else
+	{
+		CharacterCarriedWeaponRuntimeStateMap.Remove(WeaponTag);
+	}
+
+	if (bWasEquippedTargetTag)
+	{
+		return EquipWeaponByTag(WeaponTag);
+	}
+
+	AttachWeaponToSocket(DroppedWeapon, DroppedWeapon->GetHolsterSocketName());
+	DroppedWeapon->SetActorHiddenInGame(DroppedWeapon->GetHolsterSocketName().IsNone());
 	return true;
 }
 
@@ -135,6 +217,8 @@ bool UPawnCombatComponent::AttachWeaponToSocket(ABaseWeapon* Weapon, FName Socke
 	{
 		return false;
 	}
+
+	Weapon->SetAsEquippedOrHolsteredWeapon();
 
 	USkeletalMeshComponent* CharacterMesh = OwningCharacter->GetMesh();
 	if (!CharacterMesh)

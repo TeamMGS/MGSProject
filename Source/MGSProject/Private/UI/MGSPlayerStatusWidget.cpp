@@ -42,6 +42,14 @@ void UMGSPlayerStatusWidget::UpdateWeaponInfo(bool bInVisible, UTexture2D* InWea
 	BP_OnWeaponInfoVisibilityChanged(bWeaponInfoVisible);
 }
 
+void UMGSPlayerStatusWidget::UpdatePickupWeaponPrompt(bool bInVisible, const FText& InWeaponName, UTexture2D* InWeaponInfoImage)
+{
+	bPickupWeaponPromptVisible = bInVisible;
+	PickupWeaponPromptName = InWeaponName;
+	PickupWeaponPromptImage = InWeaponInfoImage;
+	BP_OnPickupWeaponPromptUpdated(bPickupWeaponPromptVisible, PickupWeaponPromptName, PickupWeaponPromptImage.Get());
+}
+
 float UMGSPlayerStatusWidget::GetHealthPercent() const
 {
 	if (MaxHp <= KINDA_SMALL_NUMBER)
@@ -65,4 +73,14 @@ float UMGSPlayerStatusWidget::GetSpreadPercent() const
 UTexture2D* UMGSPlayerStatusWidget::GetCurrentWeaponInfoImage() const
 {
 	return CurrentWeaponInfoImage.Get();
+}
+
+FText UMGSPlayerStatusWidget::GetPickupWeaponPromptName() const
+{
+	return PickupWeaponPromptName;
+}
+
+UTexture2D* UMGSPlayerStatusWidget::GetPickupWeaponPromptImage() const
+{
+	return PickupWeaponPromptImage.Get();
 }

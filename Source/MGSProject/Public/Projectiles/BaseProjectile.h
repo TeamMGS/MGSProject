@@ -14,11 +14,14 @@
 
 class UDA_ProjectileDefinition;
 class ABaseGun;
+class APawn;
 class UGameplayEffect;
 class UPrimitiveComponent;
 class UProjectileMovementComponent;
 class USphereComponent;
 class UStaticMeshComponent;
+class UMGSProjectilePoolWorldSubsystem;
+struct FTimerHandle;
 struct FHitResult;
 
 UCLASS()
@@ -35,6 +38,10 @@ public:
 
 	// 무기에서 데미지 값을 읽어 발사 시점 데미지로 캐시
 	void CacheDamageFromWeapon(const ABaseGun* InSourceWeapon);
+
+	void ActivateFromPool(const FTransform& SpawnTransform, AActor* NewOwner, APawn* NewInstigator);
+	void DeactivateToPool();
+	void SetProjectilePoolSubsystem(UMGSProjectilePoolWorldSubsystem* InProjectilePoolSubsystem);
 
 	float GetCachedWeaponDamage() const { return CachedWeaponDamage; }
 
@@ -53,6 +60,11 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+	// ProjectileMovement 정지 이벤트(블로킹 충돌 시)
+	UFUNCTION()
+	virtual void HandleProjectileStop(const FHitResult& ImpactResult);
+	void HandleLifeSpanExpired();
+
 	// Overlap 이벤트 핸들러
 	UFUNCTION()
 	virtual void HandleProjectileOverlap(
@@ -65,6 +77,9 @@ protected:
 
 	// 데미지 적용
 	virtual void ApplyHitDamage(AActor* DirectHitActor, const FHitResult& Hit);
+	void ProcessProjectileImpact(AActor* HitActor, const FHitResult& Hit);
+	void ReleaseToPoolOrDestroy();
+	void StartProjectileLifeSpanTimer();
 
 	// 충돌 이벤트
 	UFUNCTION(BlueprintNativeEvent, Category = "Projectile")
@@ -98,11 +113,17 @@ protected:
 	UPROPERTY(Transient)
 	TSubclassOf<UGameplayEffect> CurrentDamageGameplayEffectClass;
 
+	TWeakObjectPtr<UMGSProjectilePoolWorldSubsystem> ProjectilePoolSubsystem;
+
 	// 무기에서 전달받은 발사 시점 데미지
 	float CachedWeaponDamage = 0.0f;
+	float ActiveProjectileLifeSpan = 0.0f;
 	bool bShouldDestroyOnHit = true;
 	bool bShouldIgnoreOwnerOnHit = true;
 	bool bHasAppliedDefinition = false;
 	bool bHasProcessedImpact = false;
+	bool bIsActiveInPool = false;
+
+	FTimerHandle ProjectileLifeSpanTimerHandle;
 	
 };

@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-09
+ * 수정일 : 2026-03-10
  */
 
 #include "Characters/Player/PlayerCharacter.h"
@@ -77,7 +77,13 @@ UPawnCombatComponent* APlayerCharacter::GetPawnCombatComponent() const
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
 	ApplyAlwaysAimFacingMode();
+	if (CameraBoom)
+	{
+		CameraBoom->TargetOffset.Z = bIsCrouched ? CrouchCameraCrouchedOffsetZ : CrouchCameraStandingOffsetZ;
+		DesiredCrouchCameraOffsetZ = CameraBoom->TargetOffset.Z;
+	}
 	OnCharacterMovementUpdated.AddDynamic(this, &ThisClass::HandleSpreadMovementUpdated);
 
 	if (PlayerCombatComponent)
@@ -85,6 +91,7 @@ void APlayerCharacter::BeginPlay()
 		EquippedWeaponChangedHandle = PlayerCombatComponent->GetOnEquippedWeaponChangedDelegate().AddUObject(
 			this,
 			&ThisClass::HandleEquippedWeaponChanged);
+		PlayerCombatComponent->RefreshNearbyDroppedWeaponCandidate();
 	}
 
 	RequestSpreadRefreshNextTick();
@@ -93,6 +100,7 @@ void APlayerCharacter::BeginPlay()
 void APlayerCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	OnCharacterMovementUpdated.RemoveDynamic(this, &ThisClass::HandleSpreadMovementUpdated);
+	GetWorldTimerManager().ClearTimer(CrouchCameraBlendTimerHandle);
 
 	if (PlayerCombatComponent && EquippedWeaponChangedHandle.IsValid())
 	{
@@ -144,6 +152,20 @@ void APlayerCharacter::OnMovementModeChanged(EMovementMode PrevMovementMode, uin
 	Super::OnMovementModeChanged(PrevMovementMode, PreviousCustomMode);
 	UpdateFallingStateTag();
 	RequestSpreadRefreshNextTick();
+}
+
+void APlayerCharacter::OnStartCrouch(float HeightAdjust, float ScaledHeightAdjust)
+{
+	Super::OnStartCrouch(HeightAdjust, ScaledHeightAdjust);
+	// 웅크리기 시작할 때 아래로 카메라 보간 시작
+	StartCrouchCameraBlend(CrouchCameraCrouchedOffsetZ);
+}
+
+void APlayerCharacter::OnEndCrouch(float HeightAdjust, float ScaledHeightAdjust)
+{
+	Super::OnEndCrouch(HeightAdjust, ScaledHeightAdjust);
+	// 웅크리기 끝날 때 위로 카메라 보간 시작
+	StartCrouchCameraBlend(CrouchCameraStandingOffsetZ);
 }
 
 void APlayerCharacter::Input_Move(const FInputActionValue& InputActionValue)
@@ -230,6 +252,68 @@ void APlayerCharacter::ApplyAlwaysAimFacingMode()
 	MovementComponent->bUseControllerDesiredRotation = false;
 }
 
+void APlayerCharacter::StartCrouchCameraBlend(float TargetOffsetZ)
+{
+	if (!CameraBoom)
+	{
+		return;
+	}
+
+	DesiredCrouchCameraOffsetZ = TargetOffsetZ;
+	UWorld* World = GetWorld();
+	// 타이머를 못돌리는 경우
+	if (!World)
+	{
+		FVector CurrentTargetOffset = CameraBoom->TargetOffset;
+		CurrentTargetOffset.Z = DesiredCrouchCameraOffsetZ;
+		// 바로 목표 카메라 Z 오프셋으로 설정
+		CameraBoom->TargetOffset = CurrentTargetOffset;
+		return;
+	}
+
+	if (!World->GetTimerManager().IsTimerActive(CrouchCameraBlendTimerHandle))
+	{
+		// 타이머를 돌려 자연스러운 카메라 보간 진행
+		World->GetTimerManager().SetTimer(
+			CrouchCameraBlendTimerHandle,
+			this,
+			&ThisClass::UpdateCrouchCameraBlend,
+			CrouchCameraBlendTickInterval,
+			true);
+	}
+}
+
+void APlayerCharacter::UpdateCrouchCameraBlend()
+{
+	UWorld* World = GetWorld();
+	if (!CameraBoom || !World)
+	{
+		if (World)
+		{
+			World->GetTimerManager().ClearTimer(CrouchCameraBlendTimerHandle);
+		}
+		return;
+	}
+
+	const float DeltaSeconds = FMath::Max(World->GetDeltaSeconds(), KINDA_SMALL_NUMBER);
+	FVector CurrentTargetOffset = CameraBoom->TargetOffset;
+	// 카메라 보간
+	CurrentTargetOffset.Z = FMath::FInterpTo(
+		CurrentTargetOffset.Z,
+		DesiredCrouchCameraOffsetZ,
+		DeltaSeconds,
+		CrouchCameraInterpSpeed);
+	CameraBoom->TargetOffset = CurrentTargetOffset;
+
+	// 현재 카메라 Z 오프셋이 목표 카메라 Z 오프셋과 거의 같을 경우 종료
+	if (FMath::IsNearlyEqual(CurrentTargetOffset.Z, DesiredCrouchCameraOffsetZ, 0.1f))
+	{
+		CurrentTargetOffset.Z = DesiredCrouchCameraOffsetZ;
+		CameraBoom->TargetOffset = CurrentTargetOffset;
+		World->GetTimerManager().ClearTimer(CrouchCameraBlendTimerHandle);
+	}
+}
+
 void APlayerCharacter::UpdateFallingStateTag()
 {
 	UMGSAbilitySystemComponent* ASC = GetMGSAbilitySystemComponent();
@@ -291,6 +375,10 @@ void APlayerCharacter::HandleSpreadMovementUpdated(float DeltaSeconds, FVector O
 	(void)DeltaSeconds;
 	(void)OldLocation;
 	(void)OldVelocity;
+	if (PlayerCombatComponent)
+	{
+		PlayerCombatComponent->RefreshNearbyDroppedWeaponCandidate();
+	}
 	RequestSpreadRefreshNextTick();
 }
 
