@@ -23,6 +23,9 @@
 #include "InputCoreTypes.h"
 #include "Engine/Engine.h"
 #include "GameplayEffectTypes.h"
+#include "Perception/AIPerceptionStimuliSourceComponent.h"
+#include "Perception/AISense_Hearing.h"
+#include "Perception/AISense_Sight.h"
 
 AEnemyCharacter::AEnemyCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -45,6 +48,10 @@ AEnemyCharacter::AEnemyCharacter(const FObjectInitializer& ObjectInitializer)
 	CharacterAttributeSet = CreateDefaultSubobject<UCharacterAttributeSet>(TEXT("CharacterAttributeSet"));
 	
 	EnemyCombatComponent = CreateDefaultSubobject<UEnemyCombatComponent>(TEXT("EnemyCombatComponent"));
+
+	PerceptionStimuliSource = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("PerceptionStimuliSource"));
+	PerceptionStimuliSource->RegisterForSense(UAISense_Sight::StaticClass());
+	PerceptionStimuliSource->RegisterForSense(UAISense_Hearing::StaticClass());
 
 	DefaultEnemyStateTag = MGSGameplayTags::State_Enemy_Clear;
 }
@@ -72,6 +79,11 @@ UCharacterAttributeSet* AEnemyCharacter::GetCharacterAttributeSet() const
 void AEnemyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (PerceptionStimuliSource)
+	{
+		PerceptionStimuliSource->RegisterWithPerceptionSystem();
+	}
 	InitializeEnemyAttributes();
 	BindHpChangedDelegate();
 
