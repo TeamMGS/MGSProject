@@ -1,9 +1,9 @@
 ﻿/*
- * 파일명: PlayerReloadGameplayAbility.cpp
- * 생성자: 장대한
- * 생성일: 2026-03-04
- * 수정자: 장대한
- * 수정일: 2026-03-04
+ * 파일명 : PlayerReloadGameplayAbility.cpp
+ * 생성자 : 장대한
+ * 생성일 : 2026-03-04
+ * 수정자 : 장대한
+ * 수정일 : 2026-03-09
  */
 
 #include "GAS/GA/PlayerReloadGameplayAbility.h"
@@ -11,7 +11,6 @@
 #include "Components/Combat/PlayerCombatComponent.h"
 #include "GAS/MGSGameplayTags.h"
 #include "Weapon/BaseGun.h"
-
 
 UPlayerReloadGameplayAbility::UPlayerReloadGameplayAbility()
 {
@@ -36,8 +35,9 @@ bool UPlayerReloadGameplayAbility::CanActivateAbility(const FGameplayAbilitySpec
 	{
 		return false;
 	}
-
+	
 	const ABaseGun* EquippedGun = Cast<ABaseGun>(PlayerCombatComponent->GetCharacterCurrentEquippedWeapon());
+	// 장전 가능 확인
 	return EquippedGun && EquippedGun->CanReload();
 }
 
@@ -62,6 +62,7 @@ void UPlayerReloadGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHan
 		return;
 	}
 
+	// 장전
 	const int32 ReloadedAmmo = EquippedGun->ReloadAmmo();
 	if (bEnableReloadLog)
 	{
@@ -74,6 +75,3 @@ void UPlayerReloadGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHan
 
 	EndAbility(Handle, ActorInfo, ActivationInfo, true, ReloadedAmmo <= 0);
 }
-
-
-

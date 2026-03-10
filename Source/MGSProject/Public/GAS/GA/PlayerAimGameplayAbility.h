@@ -1,13 +1,12 @@
 ﻿/*
- * 파일명: PlayerAimGameplayAbility.h
- * 생성자: 장대한
- * 생성일: 2026-03-04
- * 수정자: 장대한
- * 수정일: 2026-03-04
+ * 파일명 : PlayerAimGameplayAbility.h
+ * 생성자 : 장대한
+ * 생성일 : 2026-03-03
+ * 수정자 : 장대한
+ * 수정일 : 2026-03-09
  */
 
 #pragma once
-
 
 #include "CoreMinimal.h"
 #include "GAS/GA/PlayerGameplayAbility.h"
@@ -44,11 +43,10 @@ protected:
 		bool bWasCancelled) override;
 
 private:
-	float CachedFOV = 90.f;
-	bool bHasCachedFOV = false;
+	float CachedFOV = 90.0f; // 카메라 FOV 캐싱
+	bool bHasCachedFOV = false; // FOV 캐싱되어 있는지 확인 플래그
 
-	FVector CachedCameraSocketOffset = FVector::ZeroVector;
-	bool bHasCachedCameraSocketOffset = false;
+	FVector CachedCameraSocketOffset = FVector::ZeroVector; // 카메라 오프셋 캐싱
+	bool bHasCachedCameraSocketOffset = false; // 카메라 오프셋 캐싱되어 있는지 확인 플래그
+	
 };
-
-

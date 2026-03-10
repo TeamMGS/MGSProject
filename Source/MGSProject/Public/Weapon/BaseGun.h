@@ -1,9 +1,9 @@
 ﻿/*
- * 파일명: BaseGun.h
- * 생성자: 장대한
- * 생성일: 2026-03-04
- * 수정자: 장대한
- * 수정일: 2026-03-05
+ * 파일명 : BaseGun.h
+ * 생성자 : 장대한
+ * 생성일 : 2026-03-04
+ * 수정자 : 장대한
+ * 수정일 : 2026-03-09
  */
 
 #pragma once
@@ -24,6 +24,7 @@ class MGSPROJECT_API ABaseGun : public ABaseWeapon
 	GENERATED_BODY()
 
 public:
+	// --- Ammo ---
 	// 발사 가능 조회
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Ammo")
 	bool CanFire() const;
@@ -52,18 +53,14 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Ammo")
 	int32 GetMaxMagazineAmmo() const;
 
-	// 현재 탄창
+	// 현재 휴대 탄약
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Ammo")
 	int32 GetCarriedAmmo() const;
 
+	// --- Fire ---
 	// 에임 목표점 계산 기준 거리
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Fire")
 	float GetAimReferenceDistance() const;
-
-	// 하위 호환용 구 이름(FireRange)
-	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Fire",
-		meta = (DeprecatedFunction, DeprecationMessage = "Use GetAimReferenceDistance instead."))
-	float GetFireRange() const { return GetAimReferenceDistance(); }
 
 	// 기본 데미지
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Fire")
@@ -85,6 +82,7 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Fire")
 	float GetSpreadRadiusIncreasePerShot() const;
 
+	// --- Aim ---
 	// 조준 줌 FOV
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Aim")
 	float GetAimFOV() const;
@@ -93,6 +91,7 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Aim")
 	FVector GetAimCameraSocketOffset() const;
 
+	// --- Recoil ---
 	// 1발당 수직 반동(도)
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Recoil")
 	float GetRecoilPitchPerShot() const;
@@ -117,13 +116,16 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Recoil")
 	float GetFireCameraShakeScale() const;
 
+	// --- Projectile ---
 	// 발사할 프로젝타일 클래스
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Fire")
 	TSubclassOf<ABaseProjectile> GetProjectileClass() const;
 
+	// --- Data ---
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Data")
 	const UDA_WeaponDefinition* GetWeaponDefinition() const { return WeaponDefinition; }
 
+	// --- Runtime state ---
 	// 장착 시 DA 값을 WeaponAttributeSet에 반영합니다.
 	bool InitializeWeaponAttributes(UWeaponAttributeSet* WeaponAttributeSet) const;
 
@@ -139,36 +141,15 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-private:
-	const UWeaponAttributeSet* GetWeaponAttributeSet() const;
-	UWeaponAttributeSet* GetWeaponAttributeSetMutable() const;
-
-	// DA_WeaponDefinition에 정의된 값 Getter
-	int32 GetDefinitionMaxMagazineAmmo() const;
-	int32 GetDefinitionStartMagazineAmmo() const;
-	int32 GetDefinitionMaxCarriedAmmo() const;
-	int32 GetDefinitionStartCarriedAmmo() const;
-	float GetDefinitionAimReferenceDistance() const;
-	float GetDefinitionBaseDamage() const;
-	float GetDefinitionFireInterval() const;
-	float GetDefinitionBaseSpreadRadius() const;
-	float GetDefinitionMaxSpreadRadius() const;
-	float GetDefinitionSpreadRadiusIncreasePerShot() const;
-	float GetDefinitionAimFOV() const;
-	FVector GetDefinitionAimCameraSocketOffset() const;
-	float GetDefinitionRecoilPitchPerShot() const;
-	float GetDefinitionRecoilYawPerShotMin() const;
-	float GetDefinitionRecoilYawPerShotMax() const;
-	float GetDefinitionRecoilADSScale() const;
-	TSubclassOf<UCameraShakeBase> GetDefinitionFireCameraShakeClass() const;
-	float GetDefinitionFireCameraShakeScale() const;
-	TSubclassOf<ABaseProjectile> GetDefinitionProjectileClass() const;
-
-protected:
 	// DA_WeaponDefinition
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|Data")
 	TObjectPtr<UDA_WeaponDefinition> WeaponDefinition;
+
+private:
+	const UDA_WeaponDefinition& GetWeaponDefinitionChecked() const;
+
+	// Owner의 WeaponAttributeSet 조회
+	const UWeaponAttributeSet* GetWeaponAttributeSet() const;
+	UWeaponAttributeSet* GetWeaponAttributeSetMutable() const;
+	
 };
-
-
-

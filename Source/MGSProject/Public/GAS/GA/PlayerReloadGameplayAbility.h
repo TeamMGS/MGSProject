@@ -1,13 +1,12 @@
 ﻿/*
- * 파일명: PlayerReloadGameplayAbility.h
- * 생성자: 장대한
- * 생성일: 2026-03-04
- * 수정자: 장대한
- * 수정일: 2026-03-04
+ * 파일명 : PlayerReloadGameplayAbility.h
+ * 생성자 : 장대한
+ * 생성일 : 2026-03-04
+ * 수정자 : 장대한
+ * 수정일 : 2026-03-09
  */
 
 #pragma once
-
 
 #include "CoreMinimal.h"
 #include "GAS/GA/PlayerGameplayAbility.h"
@@ -37,7 +36,5 @@ private:
 	// 재장전 처리 시 탄약 정보를 로그로 출력할지 여부
 	UPROPERTY(EditDefaultsOnly, Category = "Debug")
 	bool bEnableReloadLog = true;
+	
 };
-
-
-
