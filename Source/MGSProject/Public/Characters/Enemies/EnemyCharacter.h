@@ -19,6 +19,7 @@ class UEnemyCombatComponent;
 class UAbilitySystemComponent;
 class UCharacterAttributeSet;
 class UMGSAbilitySystemComponent;
+class UAIPerceptionStimuliSourceComponent;
 struct FOnAttributeChangeData;
 
 UCLASS()
@@ -53,6 +54,9 @@ protected:
 
 protected:
 	TObjectPtr<UEnemyCombatComponent> EnemyCombatComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI", meta = (AllowPrivateAccess = true))
+	TObjectPtr<UAIPerceptionStimuliSourceComponent> PerceptionStimuliSource;
 
 private:
 	void SetEnemyStateTag(const FGameplayTag& NewStateTag);
