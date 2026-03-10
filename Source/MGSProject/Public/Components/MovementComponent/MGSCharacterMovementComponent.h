@@ -51,10 +51,10 @@ public:
 protected:
 	// 보행 등급별 속도 설정 (X: 정면, Y: 측면, Z: 후면)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MGS|Movement")
-	FVector WalkSpeeds = FVector(375.f, 360.f, 350.f);
+	FVector WalkSpeeds = FVector(250.f, 235.f, 220.f);
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MGS|Movement")
-	FVector RunSpeeds = FVector(575.f, 510.f, 550.f);
+	FVector RunSpeeds = FVector(500.f, 510.f, 500.f);
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MGS|Movement")
 	FVector SprintSpeeds = FVector(700.f, 700.f, 700.f);

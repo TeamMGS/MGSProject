@@ -197,8 +197,64 @@ void FMGSEssentialValues::Update(UAnimInstance* AnimInstance, const FMGSCharacte
 	const FVector VelocityAcceleration = (Data.Velocity - Velocity_LastFrame) / DeltaSeconds;
 	Velocity_LastFrame = Data.Velocity;
 
-	// 2. [수정] 오프셋 루트 트랜스폼 가져오기 (임시 변수에 저장)
-	FTransform RawRootTransform = Data.ActorTransform; // 기본값
+	// // 3. [Aim Offset 핵심] 좌우(Yaw) 계산 방식 변경
+	// if (AnimInstance)
+	// {
+	// 	// 카메라 각도 (마우스 방향)
+	// 	float CameraYaw = Data.AimingRotation.Yaw;
+	//
+	// 	// 캡슐 각도 (몸통이 실제로 정렬되려는 물리적 기준점)
+	// 	// 1단계에서 설정을 껐으므로, 이제 마우스를 돌려도 이 값은 변하지 않고 가만히 있을 것입니다.
+	// 	float ActorYaw = Data.ActorTransform.Rotator().Yaw;
+	//
+	// 	// 두 각도의 순수 차이 (이게 우리가 원하던 에임 각도입니다!)
+	// 	float DeltaYaw = FRotator::NormalizeAxis(CameraYaw - ActorYaw);
+	// 	float FinalPitch = FRotator::NormalizeAxis(Data.AimingRotation.Pitch);
+	//
+	// 	float DisableAO = AnimInstance->GetCurveValue(FName("Disable_AO"));
+	//
+	// 	// 결과 적용 (X: Yaw, Y: Pitch)
+	// 	AOValue.X = FMath::Lerp(DeltaYaw, 0.0f, DisableAO);
+	// 	AOValue.Y = FMath::Lerp(FinalPitch, 0.0f, DisableAO);
+	//
+	// 	// [디버그] 이제 마우스를 흔들면 이 숫자가 +- 90도까지 시원하게 변할 것입니다!
+	// 	if (GEngine)
+	// 	{
+	// 		GEngine->AddOnScreenDebugMessage(7, 0.1f, FColor::Cyan,
+	// 			FString::Printf(TEXT("AIM_X: %.2f (Cam: %.1f | Act: %.1f)"), AOValue.X, CameraYaw, ActorYaw));
+	// 	}
+	// }
+	//
+	// // 2. 오프셋 루트 트랜스폼 가져오기
+	// FTransform RelativeOffset = FTransform::Identity;
+	// if (AnimInstance)
+	// {
+	// 	int32 NodeIndex = INDEX_NONE;
+	// 	if (IAnimClassInterface* AnimClass = IAnimClassInterface::GetFromClass(AnimInstance->GetClass()))
+	// 	{
+	// 		const FAnimSubsystem_Tag& TagSubsystem = AnimClass->GetSubsystem<FAnimSubsystem_Tag>();
+	// 		NodeIndex = TagSubsystem.FindNodeIndexByTag(FName("OffsetRoot"));
+	// 	}
+	//
+	// 	if (NodeIndex != INDEX_NONE)
+	// 	{
+	// 		FAnimNodeReference OffsetRootNode = UAnimExecutionContextLibrary::GetAnimNodeReference(AnimInstance, NodeIndex);
+	// 		RelativeOffset = UAnimationWarpingLibrary::GetOffsetRootTransform(OffsetRootNode);
+	// 	}
+	// }
+	//
+	// // 4. 시각적 보정 (Lean 계산용 RootTransform)
+	// // 메쉬의 실제 월드 트랜스폼 = 상대 오프셋 * 캡슐 트랜스폼
+	// RootTransform = RelativeOffset * Data.ActorTransform;
+	// FRotator VisualRootRot = RootTransform.Rotator();
+	// VisualRootRot.Yaw = FRotator::NormalizeAxis(VisualRootRot.Yaw + 90.0f); // -90도 보정
+	// RootTransform.SetRotation(VisualRootRot.Quaternion());
+
+	// [2] 기준점 설정 (여기서 모든 삽질을 끝냅니다)
+	// 'body'의 기준을 월드 0점이 아닌, 현재 '캡슐(Actor)의 Yaw'로 먼저 잡습니다.
+	float BaseActorYaw = Data.ActorTransform.Rotator().Yaw;
+	float MeshTwistYaw = 0.0f; // 메쉬가 캡슐 대비 얼마나 뒤처졌는가?
+
 	if (AnimInstance)
 	{
 		int32 NodeIndex = INDEX_NONE;
@@ -210,43 +266,51 @@ void FMGSEssentialValues::Update(UAnimInstance* AnimInstance, const FMGSCharacte
 
 		if (NodeIndex != INDEX_NONE)
 		{
-			FAnimNodeReference OffsetRootNode = UAnimExecutionContextLibrary::GetAnimNodeReference(
-				AnimInstance, NodeIndex);
-			RawRootTransform = UAnimationWarpingLibrary::GetOffsetRootTransform(OffsetRootNode);
+			FAnimNodeReference OffsetRootNode = UAnimExecutionContextLibrary::GetAnimNodeReference(AnimInstance, NodeIndex);
+			// 여기서 가져오는 값은 '상대적 회전량'입니다.
+			FTransform RelOffset = UAnimationWarpingLibrary::GetOffsetRootTransform(OffsetRootNode);
+			MeshTwistYaw = RelOffset.Rotator().Yaw;
 		}
 	}
 
-	// 3. [핵심] 조준 각도 계산 (메쉬 보정 전의 순수 값 사용)
+	// [3] 진짜 몸통 방향(Body) 결정
+	// 캡슐 방향에 메쉬의 지연(Twist)을 더합니다. 이제 body는 0이 아니라 캐릭터가 보는 방향을 가리킵니다!
+	float CurrentBodyWorldYaw = FRotator::NormalizeAxis(BaseActorYaw + MeshTwistYaw);
+
+	// [4] 에임 오프셋 계산 (카메라 vs 진짜 몸통)
 	if (AnimInstance)
 	{
 		float CameraYaw = Data.AimingRotation.Yaw;
-		float ActorYaw = Data.ActorTransform.Rotator().Yaw;
 
-		// [Pitch 수정] NormalizeAxis를 사용하여 350도 같은 값을 -10도 형태로 변환합니다.
-		float CameraPitch = FRotator::NormalizeAxis(Data.AimingRotation.Pitch);
+		// 몸통의 진짜 앞방향 보정 (-90도)
+		// 대부분의 UE 캐릭터는 -90도가 정면입니다.
+		// 만약 고개가 정면에서 90도 꺾여 보인다면 아래 -90.0f를 0.0f나 +90.0f로 바꾸세요.
+		float FinalYaw = FRotator::NormalizeAxis(CameraYaw - (CurrentBodyWorldYaw));
 
-		// 몸통(메쉬)의 뒤처짐 계산
-		float MeshOffsetYaw = FRotator::NormalizeAxis(RawRootTransform.Rotator().Yaw - ActorYaw);
-
-		// 최종 Yaw: (카메라-캡슐) 차이에서 몸통이 못 따라온 만큼을 더 보정
-		float FinalYaw = FRotator::NormalizeAxis(CameraYaw - ActorYaw) - MeshOffsetYaw;
-
+		float FinalPitch = FRotator::NormalizeAxis(Data.AimingRotation.Pitch);
 		float DisableAO = AnimInstance->GetCurveValue(FName("Disable_AO"));
 
-		// AOValue에 정규화된 값 적용
+		// 최종 대입
 		AOValue.X = FMath::Lerp(FRotator::NormalizeAxis(FinalYaw), 0.0f, DisableAO);
-		AOValue.Y = FMath::Lerp(CameraPitch, 0.0f, DisableAO); // 하늘 보는 문제 해결
+		AOValue.Y = FMath::Lerp(FinalPitch, 0.0f, DisableAO);
+
+		// [디버그] 이제 body가 캡슐을 따라 시원하게 변하는지 보세요!
+		GEngine->AddOnScreenDebugMessage(9, 0.1f, FColor::Cyan, FString::Printf(TEXT("Body: %.1f | AO_X: %.1f"), CurrentBodyWorldYaw, AOValue.X));
 	}
 
-	// 4. 시각적 보정 및 가속도 계산 (여기서 멤버 변수 RootTransform 업데이트)
-	RootTransform = RawRootTransform;
-	FRotator VisualRootRot = RootTransform.Rotator();
-	VisualRootRot.Yaw += 90.0f; // 스켈레탈 메쉬 -90도 상쇄
-	RootTransform.SetRotation(VisualRootRot.Quaternion());
+	// [5] 시각적 보정 (RootTransform 업데이트)
+	// 위에서 구한 논리를 트랜스폼으로 복원합니다.
+	FRotator VisualRot = FRotator(0, CurrentBodyWorldYaw, 0);
+	RootTransform.SetLocation(Data.ActorTransform.GetLocation());
+	RootTransform.SetRotation(VisualRot.Quaternion());
 
-	// 이제 보정된 방향을 기준으로 상대적 가속도 계산
-	RelativeAcceleration = RootTransform.GetRotation().UnrotateVector(VelocityAcceleration);
-
+	// [6] 상대 가속도(Lean) 계산
+	// 보정된 RootTransform(+90도) 기준으로 가속도를 Unrotate 합니다.
+	FRotator LeanRefRot = VisualRot;
+	LeanRefRot.Yaw = FRotator::NormalizeAxis(LeanRefRot.Yaw + 90.0f);
+	RelativeAcceleration = LeanRefRot.Quaternion().UnrotateVector(VelocityAcceleration);
+	
+	LastFrameActorYaw = Data.ActorTransform.Rotator().Yaw;
 	// RelativeAccelerationAmount 및 Lean 계산 (기존 로직 유지)
 	FVector RelativeAccelAmt = FVector::ZeroVector;
 	if (Data.MaxAcceleration > 0.f)
@@ -411,7 +475,7 @@ void FMGSLocomotionState::Update(UAnimInstance* AnimInstance, const FMGSCharacte
 	// 3. 각 특수 상태 판정 (조건들)
 
 	// A. Starting (급출발)
-	const bool bIsAcceleratingStart = (Trajectory.Trj_FutureVelocity.Size2D() >= Essential.Speed2D + 100.0f);
+	const bool bIsAcceleratingStart = (Trajectory.Trj_FutureVelocity.Size2D() >= Essential.Speed2D + 250.0f);
 	const bool bIsNotPivotingDB = !MMHandler.CurrentDatabaseTags.Contains(FName("Pivots"));
 	const bool bIsStarting = bIsMoving && bIsAcceleratingStart && bIsNotPivotingDB;
 
@@ -468,47 +532,90 @@ void FMGSLocomotionState::Update(UAnimInstance* AnimInstance, const FMGSCharacte
 	LastFrameMovementTag = MovementStateTag;
 }
 
-bool FMGSLocomotionState::CheckIsPivoting(const FMGSCharacterDataProxy& Data, const FMGSEssentialValues& Essential,
-	const FMGSTrajectoryHandler& Trajectory)
+// 03.10 수정전
+// bool FMGSLocomotionState::CheckIsPivoting(const FMGSCharacterDataProxy& Data, const FMGSEssentialValues& Essential,
+// 	const FMGSTrajectoryHandler& Trajectory)
+// {
+// 	// 기본 조건: 움직이고 있어야 함
+// 	if (MovementStateTag != MGSGameplayTags::State_Player_Movement_Moving) return false;
+//
+// 	// 피벗 각도 계산 (현재 속도 방향 vs 미래 예측 궤적 방향)
+// 	FVector CurrentDir = Data.Velocity.GetSafeNormal2D();
+// 	FVector FutureDir = Trajectory.Trj_FutureVelocity.GetSafeNormal2D();
+//
+// 	float Dot = FVector::DotProduct(CurrentDir, FutureDir);
+// 	float TurnAngle = FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(Dot, -1.0f, 1.0f)));
+// 	
+// 	float AngleThreshold = 0.0f;
+//
+// 	// 가중치 계산 (Gait 및 Speed에 따른 동적 임계값)
+// 	if (Data.GameplayTags.HasTag(MGSGameplayTags::State_Player_Stance_Crouch))
+// 	{
+// 		AngleThreshold = 65.0f; // 앉은 상태 고정값
+// 	}
+// 	else
+// 	{
+// 		// 서 있는 상태: 속도와 Gait에 따라 MapRangeClamped 적용
+// 		if (Data.GameplayTags.HasTag(MGSGameplayTags::State_Player_Gait_Walk))
+// 		{
+// 			AngleThreshold = FMath::GetMappedRangeValueClamped(FVector2D(150.f, 200.f), FVector2D(70.f, 60.f), Essential.Speed2D);
+// 		}
+// 		else if (Data.GameplayTags.HasTag(MGSGameplayTags::State_Player_Gait_Run))
+// 		{
+// 			AngleThreshold = FMath::GetMappedRangeValueClamped(FVector2D(300.f, 500.f), FVector2D(70.f, 60.f), Essential.Speed2D);
+// 		}
+// 		else if (Data.GameplayTags.HasTag(MGSGameplayTags::State_Player_Gait_Sprint))
+// 		{
+// 			AngleThreshold = FMath::GetMappedRangeValueClamped(FVector2D(300.f, 700.f), FVector2D(60.f, 50.f), Essential.Speed2D);
+// 		}
+// 	}
+//
+// 	// 회전 모드 보정 (MM Pivot conditions 부분)
+// 	if (Data.RotationMode == EMGSRotationMode::VelocityDirection) AngleThreshold += 45.0f;
+// 	else if (Data.RotationMode == EMGSRotationMode::LookingDirection) AngleThreshold += 30.0f;
+//
+// 	// 최종 판정
+// 	return TurnAngle > AngleThreshold;
+// }
+
+// 03.10 수정 후
+bool FMGSLocomotionState::CheckIsPivoting(const FMGSCharacterDataProxy& Data, const FMGSEssentialValues& Essential, const FMGSTrajectoryHandler& Trajectory)
 {
-	// 기본 조건: 움직이고 있어야 함
+	// 1. 움직이는 중이 아니면 피벗도 아님
 	if (MovementStateTag != MGSGameplayTags::State_Player_Movement_Moving) return false;
 
-	// 피벗 각도 계산 (현재 속도 방향 vs 미래 예측 궤적 방향)
-	FVector CurrentDir = Data.Velocity.GetSafeNormal2D();
-	FVector FutureDir = Trajectory.Trj_FutureVelocity.GetSafeNormal2D();
+	// 2. 입력이 없으면 피벗이 아님
+	FVector DesiredMoveDir = Data.InputAcceleration.GetSafeNormal2D();
+	if (DesiredMoveDir.IsNearlyZero()) return false;
 
-	float Dot = FVector::DotProduct(CurrentDir, FutureDir);
-	float TurnAngle = FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(Dot, -1.0f, 1.0f)));
-	
-	float AngleThreshold = 0.0f;
+	// 3. [핵심] 현재 진행 방향(관성)과 입력 방향(의도)을 비교
+	// 캡슐이 아무리 빨리 돌아도 속도 벡터(Velocity)는 관성 때문에 천천히 변합니다.
+	FVector CurrentMoveDir = Data.Velocity.GetSafeNormal2D();
 
-	// 가중치 계산 (Gait 및 Speed에 따른 동적 임계값)
-	if (Data.GameplayTags.HasTag(MGSGameplayTags::State_Player_Stance_Crouch))
+	// 만약 속도가 너무 낮다면(출발 직후 등) 캡슐 정면을 대신 사용
+	if (Data.Velocity.SizeSquared2D() < 10000.f) // 약 100cm/s 미만
 	{
-		AngleThreshold = 65.0f; // 앉은 상태 고정값
+		CurrentMoveDir = Data.ActorTransform.GetUnitAxis(EAxis::X);
+	}
+
+	float Dot = FVector::DotProduct(CurrentMoveDir, DesiredMoveDir);
+	float TurnAngle = FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(Dot, -1.0f, 1.0f)));
+
+	// 4. 임계값 (테스트를 위해 90도 설정)
+	float AngleThreshold = 90.0f;
+	bool bIsPivoting = TurnAngle > AngleThreshold;
+
+	// [로그 코드]
+	if (bIsPivoting)
+	{
+		// 조건 충족 시 녹색으로 출력 (2초간 유지)
+		GEngine->AddOnScreenDebugMessage(2, 2.0f, FColor::Green, FString::Printf(TEXT("PIVOT DETECTED! Angle: %f > %f"), TurnAngle, AngleThreshold));
 	}
 	else
 	{
-		// 서 있는 상태: 속도와 Gait에 따라 MapRangeClamped 적용
-		if (Data.GameplayTags.HasTag(MGSGameplayTags::State_Player_Gait_Walk))
-		{
-			AngleThreshold = FMath::GetMappedRangeValueClamped(FVector2D(150.f, 200.f), FVector2D(70.f, 60.f), Essential.Speed2D);
-		}
-		else if (Data.GameplayTags.HasTag(MGSGameplayTags::State_Player_Gait_Run))
-		{
-			AngleThreshold = FMath::GetMappedRangeValueClamped(FVector2D(300.f, 500.f), FVector2D(70.f, 60.f), Essential.Speed2D);
-		}
-		else if (Data.GameplayTags.HasTag(MGSGameplayTags::State_Player_Gait_Sprint))
-		{
-			AngleThreshold = FMath::GetMappedRangeValueClamped(FVector2D(300.f, 700.f), FVector2D(60.f, 50.f), Essential.Speed2D);
-		}
+		// 미충족 시 빨간색으로 실시간 출력
+		GEngine->AddOnScreenDebugMessage(2, 0.1f, FColor::Red, FString::Printf(TEXT("No Pivot. Angle: %f / Thr: %f"), TurnAngle, AngleThreshold));
 	}
 
-	// 회전 모드 보정 (MM Pivot conditions 부분)
-	if (Data.RotationMode == EMGSRotationMode::VelocityDirection) AngleThreshold += 45.0f;
-	else if (Data.RotationMode == EMGSRotationMode::LookingDirection) AngleThreshold += 30.0f;
-
-	// 최종 판정
-	return TurnAngle > AngleThreshold;
+	return bIsPivoting;
 }

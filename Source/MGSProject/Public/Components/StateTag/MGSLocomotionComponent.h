@@ -50,6 +50,15 @@ private:
 	
 	// 공중에 떠 있는 시간을 체크하기 위한 변수 추가
 	float CurrentAirTime = 0.f;
+	
+	// 피벗 태그 유지를 위한 타이머
+	float PivotingTagTimer = 0.f;
+
+	// 피벗 애니메이션이 재생되기에 충분한 최소 시간 (GASP 기준 약 0.2~0.3초)
+	const float MinPivotingDuration = 0.55f;
+	
+	FVector LastFrameForward = FVector::ForwardVector;
+
 private:
 	// 캐싱용 변수들
 	UPROPERTY()
