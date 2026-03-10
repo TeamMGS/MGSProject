@@ -20,6 +20,9 @@
 #include "InputActionValue.h"
 #include "Components/CapsuleComponent.h"
 #include "Math/RotationMatrix.h"
+#include "Perception/AIPerceptionStimuliSourceComponent.h"
+#include "Perception/AISense_Hearing.h"
+#include "Perception/AISense_Sight.h"
 #include "TimerManager.h"
 #include "MotionWarpingComponent.h"
 #include "Weapon/BaseGun.h"
@@ -67,6 +70,10 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 	
 	// 모션워핑
 	MotionWarpingComponent = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("MotionWarpingComponent"));
+
+	PerceptionStimuliSource = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("PerceptionStimuliSource"));
+	PerceptionStimuliSource->RegisterForSense(UAISense_Sight::StaticClass());
+	PerceptionStimuliSource->RegisterForSense(UAISense_Hearing::StaticClass());
 }
 
 UPawnCombatComponent* APlayerCharacter::GetPawnCombatComponent() const
@@ -77,6 +84,11 @@ UPawnCombatComponent* APlayerCharacter::GetPawnCombatComponent() const
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (PerceptionStimuliSource)
+	{
+		PerceptionStimuliSource->RegisterWithPerceptionSystem();
+	}
 	ApplyAlwaysAimFacingMode();
 	OnCharacterMovementUpdated.AddDynamic(this, &ThisClass::HandleSpreadMovementUpdated);
 

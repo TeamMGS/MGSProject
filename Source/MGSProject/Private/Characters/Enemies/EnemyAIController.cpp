@@ -3,18 +3,21 @@
  * 생성자 : 김사윤
  * 생성일 : 2026-03-05
  * 수정자 : 김사윤
- * 수정일 : 2026-03-05
+ * 수정일 : 2026-03-10
  */
 
 
 #include "Characters/Enemies/EnemyAIController.h"
 
-#include "StateTree.h"
-#include "Components/StateTreeComponent.h"
+#include "GameplayStateTreeModule/Public/Components/StateTreeAIComponent.h"
 
 AEnemyAIController::AEnemyAIController()
 {
-	StateTreeComponent = CreateDefaultSubobject<UStateTreeComponent>(TEXT("StateTreeComponent"));
+	StateTreeComponent = CreateDefaultSubobject<UStateTreeAIComponent>(TEXT("StateTreeComponent"));
+
+	// Match AI StateTree expectations: start logic on possess and attach to pawn for EQS.
+	bStartAILogicOnPossess = true;
+	bAttachToPawn = true;
 }
 
 void AEnemyAIController::OnPossess(APawn* InPawn)
@@ -26,11 +29,7 @@ void AEnemyAIController::OnPossess(APawn* InPawn)
 		return;
 	}
 
-	if (DefaultStateTree)
-	{
-		StateTreeComponent->SetStateTree(DefaultStateTree);
-		StateTreeComponent->StartLogic();
-	}
+	StateTreeComponent->StartLogic();
 }
 
 void AEnemyAIController::OnUnPossess()

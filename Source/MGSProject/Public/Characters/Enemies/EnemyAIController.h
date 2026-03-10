@@ -3,7 +3,7 @@
  * 생성자 : 김사윤
  * 생성일 : 2026-03-05
  * 수정자 : 김사윤
- * 수정일 : 2026-03-05
+ * 수정일 : 2026-03-10
  */
 #pragma once
 
@@ -11,8 +11,7 @@
 #include "AI/Core/AICoreAIController.h"
 #include "EnemyAIController.generated.h"
 
-class UStateTree;
-class UStateTreeComponent;
+class UStateTreeAIComponent;
 
 /**
  * 
@@ -31,8 +30,6 @@ protected:
 
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI", meta = (AllowPrivateAccess = true))
-	TObjectPtr<UStateTreeComponent> StateTreeComponent;
+	TObjectPtr<UStateTreeAIComponent> StateTreeComponent;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI", meta = (AllowPrivateAccess = true))
-	TObjectPtr<UStateTree> DefaultStateTree;
 };
