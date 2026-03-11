@@ -76,6 +76,25 @@ UCharacterAttributeSet* AEnemyCharacter::GetCharacterAttributeSet() const
 	return CharacterAttributeSet;
 }
 
+void AEnemyCharacter::SetEnemyStateTagFromAI(const FGameplayTag& NewStateTag)
+{
+	SetEnemyStateTag(NewStateTag);
+}
+
+void AEnemyCharacter::DebugPrintOwnedTags() const
+{
+	if (!MGSAbilitySystemComponent)
+	{
+		return;
+	}
+
+	FGameplayTagContainer OwnedTags;
+	MGSAbilitySystemComponent->GetOwnedGameplayTags(OwnedTags);
+
+	const FString TagString = OwnedTags.ToStringSimple();
+	UE_LOG(LogTemp, Log, TEXT("[Enemy ASC Tags] %s"), *TagString);
+}
+
 void AEnemyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -218,6 +237,7 @@ void AEnemyCharacter::SetEnemyStateTag(const FGameplayTag& NewStateTag)
 
 	CurrentEnemyStateTag = NewStateTag;
 	ApplyStateMaterial(NewStateTag);
+	DebugPrintOwnedTags();
 }
 
 void AEnemyCharacter::ApplyStateMaterial(const FGameplayTag& NewStateTag)
