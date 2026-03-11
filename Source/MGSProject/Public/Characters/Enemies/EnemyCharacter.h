@@ -34,6 +34,8 @@ public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	virtual UMGSAbilitySystemComponent* GetMGSAbilitySystemComponent() const override;
 	virtual UCharacterAttributeSet* GetCharacterAttributeSet() const override;
+	void SetEnemyStateTagFromAI(const FGameplayTag& NewStateTag);
+	void DebugPrintOwnedTags() const;
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
