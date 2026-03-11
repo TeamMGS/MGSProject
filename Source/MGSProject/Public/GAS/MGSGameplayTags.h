@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 김동석
- * 수정일 : 2026-03-09
+ * 수정일 : 2026-03-11
  */
 
 #pragma once
@@ -88,6 +88,10 @@ namespace MGSGameplayTags
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Enemy_Investigation)
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Enemy_Combat)
 
+	// 무기 장착 여부 판정 태그
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Character_WeaponEquipped_Secondary)
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Character_WeaponEquipped_Primary)
+	
 	// Event tags: gameplay event payload trigger
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Player_Interact)
 
