@@ -96,8 +96,10 @@ void FMGSEssentialValues::Update(UAnimInstance* AnimInstance, const FMGSCharacte
 		int32 NodeIndex = INDEX_NONE;
 		if (IAnimClassInterface* AnimClass = IAnimClassInterface::GetFromClass(AnimInstance->GetClass()))
 		{
-			const FAnimSubsystem_Tag& TagSubsystem = AnimClass->GetSubsystem<FAnimSubsystem_Tag>();
-			NodeIndex = TagSubsystem.FindNodeIndexByTag(FName("OffsetRoot"));
+			if (const FAnimSubsystem_Tag* TagSubsystem = AnimClass->FindSubsystem<FAnimSubsystem_Tag>())
+			{
+				NodeIndex = TagSubsystem->FindNodeIndexByTag(FName("OffsetRoot"));
+			}
 		}
 
 		if (NodeIndex != INDEX_NONE)
@@ -146,9 +148,6 @@ void FMGSEssentialValues::Update(UAnimInstance* AnimInstance, const FMGSCharacte
 		// 최종 대입
 		AOValue.X = FMath::Lerp(FRotator::NormalizeAxis(FinalYaw), 0.0f, DisableAO);
 		AOValue.Y = FMath::Lerp(FinalPitch, 0.0f, DisableAO);
-
-		// [디버그] 이제 body가 캡슐을 따라 시원하게 변하는지 보세요!
-		GEngine->AddOnScreenDebugMessage(9, 0.1f, FColor::Cyan, FString::Printf(TEXT("Body: %.1f | AO_X: %.1f"), CurrentBodyWorldYaw, AOValue.X));
 	}
 
 	// [5] 시각적 보정 (RootTransform 업데이트)
@@ -385,52 +384,6 @@ void FMGSLocomotionState::Update(UAnimInstance* AnimInstance, const FMGSCharacte
 	LastFrameMovementTag = MovementStateTag;
 }
 
-// 03.10 수정전
-// bool FMGSLocomotionState::CheckIsPivoting(const FMGSCharacterDataProxy& Data, const FMGSEssentialValues& Essential,
-// 	const FMGSTrajectoryHandler& Trajectory)
-// {
-// 	// 기본 조건: 움직이고 있어야 함
-// 	if (MovementStateTag != MGSGameplayTags::State_Player_Movement_Moving) return false;
-//
-// 	// 피벗 각도 계산 (현재 속도 방향 vs 미래 예측 궤적 방향)
-// 	FVector CurrentDir = Data.Velocity.GetSafeNormal2D();
-// 	FVector FutureDir = Trajectory.Trj_FutureVelocity.GetSafeNormal2D();
-//
-// 	float Dot = FVector::DotProduct(CurrentDir, FutureDir);
-// 	float TurnAngle = FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(Dot, -1.0f, 1.0f)));
-// 	
-// 	float AngleThreshold = 0.0f;
-//
-// 	// 가중치 계산 (Gait 및 Speed에 따른 동적 임계값)
-// 	if (Data.GameplayTags.HasTag(MGSGameplayTags::State_Player_Stance_Crouch))
-// 	{
-// 		AngleThreshold = 65.0f; // 앉은 상태 고정값
-// 	}
-// 	else
-// 	{
-// 		// 서 있는 상태: 속도와 Gait에 따라 MapRangeClamped 적용
-// 		if (Data.GameplayTags.HasTag(MGSGameplayTags::State_Player_Gait_Walk))
-// 		{
-// 			AngleThreshold = FMath::GetMappedRangeValueClamped(FVector2D(150.f, 200.f), FVector2D(70.f, 60.f), Essential.Speed2D);
-// 		}
-// 		else if (Data.GameplayTags.HasTag(MGSGameplayTags::State_Player_Gait_Run))
-// 		{
-// 			AngleThreshold = FMath::GetMappedRangeValueClamped(FVector2D(300.f, 500.f), FVector2D(70.f, 60.f), Essential.Speed2D);
-// 		}
-// 		else if (Data.GameplayTags.HasTag(MGSGameplayTags::State_Player_Gait_Sprint))
-// 		{
-// 			AngleThreshold = FMath::GetMappedRangeValueClamped(FVector2D(300.f, 700.f), FVector2D(60.f, 50.f), Essential.Speed2D);
-// 		}
-// 	}
-//
-// 	// 회전 모드 보정 (MM Pivot conditions 부분)
-// 	if (Data.RotationMode == EMGSRotationMode::VelocityDirection) AngleThreshold += 45.0f;
-// 	else if (Data.RotationMode == EMGSRotationMode::LookingDirection) AngleThreshold += 30.0f;
-//
-// 	// 최종 판정
-// 	return TurnAngle > AngleThreshold;
-// }
-
 // 03.10 수정 후
 bool FMGSLocomotionState::CheckIsPivoting(const FMGSCharacterDataProxy& Data, const FMGSEssentialValues& Essential, const FMGSTrajectoryHandler& Trajectory)
 {
@@ -457,18 +410,6 @@ bool FMGSLocomotionState::CheckIsPivoting(const FMGSCharacterDataProxy& Data, co
 	// 4. 임계값 (테스트를 위해 90도 설정)
 	float AngleThreshold = 90.0f;
 	bool bIsPivoting = TurnAngle > AngleThreshold;
-
-	// [로그 코드]
-	if (bIsPivoting)
-	{
-		// 조건 충족 시 녹색으로 출력 (2초간 유지)
-		GEngine->AddOnScreenDebugMessage(2, 2.0f, FColor::Green, FString::Printf(TEXT("PIVOT DETECTED! Angle: %f > %f"), TurnAngle, AngleThreshold));
-	}
-	else
-	{
-		// 미충족 시 빨간색으로 실시간 출력
-		GEngine->AddOnScreenDebugMessage(2, 0.1f, FColor::Red, FString::Printf(TEXT("No Pivot. Angle: %f / Thr: %f"), TurnAngle, AngleThreshold));
-	}
 
 	return bIsPivoting;
 }

@@ -79,6 +79,9 @@ namespace MGSGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_LOD_Sparse, "State.Player.LOD.Sparse")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_LOD_ExtremeSparse, "State.Player.LOD.ExtremeSparse")
 	
+	UE_DEFINE_GAMEPLAY_TAG(State_Character_WeaponEquipped_Secondary, "State.Character.WeaponEquipped.Secondary")
+	UE_DEFINE_GAMEPLAY_TAG(State_Character_WeaponEquipped_Primary, "State.Character.WeaponEquipped.Primary")
+	
 	// Event
 	UE_DEFINE_GAMEPLAY_TAG(Event_Player_Interact, "Event.Player.Interact")
 
