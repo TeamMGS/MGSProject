@@ -23,6 +23,9 @@
 #include "InputCoreTypes.h"
 #include "Engine/Engine.h"
 #include "GameplayEffectTypes.h"
+#include "Perception/AIPerceptionStimuliSourceComponent.h"
+#include "Perception/AISense_Hearing.h"
+#include "Perception/AISense_Sight.h"
 
 AEnemyCharacter::AEnemyCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -45,6 +48,10 @@ AEnemyCharacter::AEnemyCharacter(const FObjectInitializer& ObjectInitializer)
 	CharacterAttributeSet = CreateDefaultSubobject<UCharacterAttributeSet>(TEXT("CharacterAttributeSet"));
 	
 	EnemyCombatComponent = CreateDefaultSubobject<UEnemyCombatComponent>(TEXT("EnemyCombatComponent"));
+
+	PerceptionStimuliSource = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("PerceptionStimuliSource"));
+	PerceptionStimuliSource->RegisterForSense(UAISense_Sight::StaticClass());
+	PerceptionStimuliSource->RegisterForSense(UAISense_Hearing::StaticClass());
 
 	DefaultEnemyStateTag = MGSGameplayTags::State_Enemy_Clear;
 }
@@ -69,9 +76,33 @@ UCharacterAttributeSet* AEnemyCharacter::GetCharacterAttributeSet() const
 	return CharacterAttributeSet;
 }
 
+void AEnemyCharacter::SetEnemyStateTagFromAI(const FGameplayTag& NewStateTag)
+{
+	SetEnemyStateTag(NewStateTag);
+}
+
+void AEnemyCharacter::DebugPrintOwnedTags() const
+{
+	if (!MGSAbilitySystemComponent)
+	{
+		return;
+	}
+
+	FGameplayTagContainer OwnedTags;
+	MGSAbilitySystemComponent->GetOwnedGameplayTags(OwnedTags);
+
+	const FString TagString = OwnedTags.ToStringSimple();
+	UE_LOG(LogTemp, Log, TEXT("[Enemy ASC Tags] %s"), *TagString);
+}
+
 void AEnemyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (PerceptionStimuliSource)
+	{
+		PerceptionStimuliSource->RegisterWithPerceptionSystem();
+	}
 	InitializeEnemyAttributes();
 	BindHpChangedDelegate();
 
@@ -206,6 +237,7 @@ void AEnemyCharacter::SetEnemyStateTag(const FGameplayTag& NewStateTag)
 
 	CurrentEnemyStateTag = NewStateTag;
 	ApplyStateMaterial(NewStateTag);
+	DebugPrintOwnedTags();
 }
 
 void AEnemyCharacter::ApplyStateMaterial(const FGameplayTag& NewStateTag)

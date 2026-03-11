@@ -106,6 +106,22 @@ EOrientationWarpingSpace UBaseAnimInstance::Get_OrientationWarpingWarpingSpace()
 							   : EOrientationWarpingSpace::ComponentTransform;
 }
 
+FFootPlacementPlantSettings UBaseAnimInstance::Get_FootPlacementPlantSettings() const
+{
+	const bool bIsStopping = MMHandler.CurrentDatabaseTags.Contains(FName("Stops"));
+
+	return bIsStopping ? ProceduralSettings.PlantSettings_Stops
+					   : ProceduralSettings.PlantSettings_Default;
+}
+
+FFootPlacementInterpolationSettings UBaseAnimInstance::Get_FootPlacementInterpolationSettings() const
+{
+	const bool bIsStopping = MMHandler.CurrentDatabaseTags.Contains(FName("Stops"));
+
+	return bIsStopping ? ProceduralSettings.InterpolationSettings_Stops
+					   : ProceduralSettings.InterpolationSettings_Default;
+}
+
 void UBaseAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);

@@ -13,6 +13,7 @@
 #include "Animation/TrajectoryTypes.h"
 #include "PoseSearch/PoseSearchTrajectoryLibrary.h"
 #include "Animation/AnimNodeReference.h"
+#include "BoneControllers/AnimNode_FootPlacement.h"
 #include "MGSAnimInstanceTypes.generated.h"
 
 class UPoseSearchDatabase;
@@ -90,6 +91,8 @@ struct FMGSEssentialValues
 	// 계산을 위한 이전 프레임 저장용 (내부 변수)
 	FVector Velocity_LastFrame = FVector::ZeroVector;
 	FTransform CharacterTransform_LastFrame = FTransform::Identity;
+	float LastFrameActorYaw = 0.f;	
+	float LastBodyWorldYaw = 0.f;
 
 	// GASP 로직을 C++로 이식한 업데이트 함수
 	void Update(UAnimInstance* AnimInstance, const FMGSCharacterDataProxy& Data, float DeltaSeconds);
@@ -202,4 +205,30 @@ struct FMGSLocomotionState
 	
 	// 헬퍼 함수
 	bool CheckIsPivoting(const FMGSCharacterDataProxy& Data, const FMGSEssentialValues& Essential, const FMGSTrajectoryHandler& Trajectory);
+};
+
+
+USTRUCT(BlueprintType)
+struct FMGSProceduralSettings
+{
+	GENERATED_BODY()
+
+	// 기본 설정들
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
+	FFootPlacementPlantSettings PlantSettings_Default;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
+	FFootPlacementInterpolationSettings InterpolationSettings_Default;
+
+	// 멈춤(Stop) 전용 설정들 (더 민감한 접지용)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
+	FFootPlacementPlantSettings PlantSettings_Stops;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
+	FFootPlacementInterpolationSettings InterpolationSettings_Stops;
+
+	FMGSProceduralSettings()
+	{
+		// 초기화 로직 (에디터에서 수정 가능하도록 기본값 세팅)
+	}
 };

@@ -2,8 +2,8 @@
  * 파일명 : PlayerCharacter.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
- * 수정자 : 장대한
- * 수정일 : 2026-03-10
+ * 수정자 : 김동석
+ * 수정일 : 2026-03-11
  */
 
 #include "Characters/Player/PlayerCharacter.h"
@@ -20,6 +20,9 @@
 #include "InputActionValue.h"
 #include "Components/CapsuleComponent.h"
 #include "Math/RotationMatrix.h"
+#include "Perception/AIPerceptionStimuliSourceComponent.h"
+#include "Perception/AISense_Hearing.h"
+#include "Perception/AISense_Sight.h"
 #include "TimerManager.h"
 #include "MotionWarpingComponent.h"
 #include "Weapon/BaseGun.h"
@@ -67,6 +70,10 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 	
 	// 모션워핑
 	MotionWarpingComponent = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("MotionWarpingComponent"));
+
+	PerceptionStimuliSource = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("PerceptionStimuliSource"));
+	PerceptionStimuliSource->RegisterForSense(UAISense_Sight::StaticClass());
+	PerceptionStimuliSource->RegisterForSense(UAISense_Hearing::StaticClass());
 }
 
 UPawnCombatComponent* APlayerCharacter::GetPawnCombatComponent() const
@@ -77,6 +84,11 @@ UPawnCombatComponent* APlayerCharacter::GetPawnCombatComponent() const
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (PerceptionStimuliSource)
+	{
+		PerceptionStimuliSource->RegisterWithPerceptionSystem();
+	}
 
 	ApplyAlwaysAimFacingMode();
 	if (CameraBoom)

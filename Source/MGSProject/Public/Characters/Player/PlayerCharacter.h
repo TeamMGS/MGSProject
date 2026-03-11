@@ -18,6 +18,7 @@ struct FInputActionValue;
 class UCameraComponent;
 class USpringArmComponent;
 class UMotionWarpingComponent;
+class UAIPerceptionStimuliSourceComponent;
 
 UCLASS()
 class MGSPROJECT_API APlayerCharacter : public ABaseCharacter
@@ -57,6 +58,9 @@ private:
 	// 파쿠르 위치 보정용 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MotionWarping", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UMotionWarpingComponent> MotionWarpingComponent;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UAIPerceptionStimuliSourceComponent> PerceptionStimuliSource;
 	
 public:
 	FORCEINLINE UPlayerCombatComponent* GetPlayerCombatComponent() const { return PlayerCombatComponent; }

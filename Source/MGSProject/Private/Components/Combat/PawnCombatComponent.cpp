@@ -2,8 +2,8 @@
  * 파일명 : PawnCombatComponent.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
- * 수정자 : 장대한
- * 수정일 : 2026-03-10
+ * 수정자 : 김동석
+ * 수정일 : 2026-03-11
  */
 
 #include "Components/Combat/PawnCombatComponent.h"
@@ -40,6 +40,7 @@ void UPawnCombatComponent::RegisterSpawnedWeapon(FGameplayTag WeaponTag, ABaseWe
 	{
 		AttachWeaponToSocket(Weapon, Weapon->GetHolsterSocketName());
 		Weapon->SetActorHiddenInGame(Weapon->GetHolsterSocketName().IsNone()); // 숨김 
+		Weapon->SetActorEnableCollision(false); // 충돌 Off
 		return;
 	}
 
@@ -100,8 +101,21 @@ bool UPawnCombatComponent::EquipWeaponByTag(FGameplayTag WeaponTag)
 
 	AttachWeaponToSocket(TargetWeapon, TargetWeapon->GetEquippedSocketName()); // 장착 소켓 부착
 	TargetWeapon->SetActorHiddenInGame(false); // 숨김 Off
+	TargetWeapon->SetActorEnableCollision(false); // 충돌 Off
 
 	ApplyWeaponAbilities(TargetWeapon); // 무기 어빌리티 부여 및 무기 입력 매핑 컨택스트 추가
+	// [03.11 김동석 추가] 애니메이션 레이어 링크
+	if (ACharacter* OwningChar = Cast<ACharacter>(GetOwningPawn()))
+	{
+		if (UAnimInstance* AnimInst = OwningChar->GetMesh()->GetAnimInstance())
+		{
+			TSubclassOf<UAnimInstance> NewLayer = TargetWeapon->GetWeaponData().WeaponAnimLayer;
+			if (NewLayer)
+			{
+				AnimInst->LinkAnimClassLayers(NewLayer);
+			}
+		}
+	}
 	CurrentEquippedWeaponTag = WeaponTag;
 	OnEquippedWeaponChanged.Broadcast(PreviousEquippedWeaponTag, CurrentEquippedWeaponTag);
 	return true;
@@ -115,10 +129,24 @@ bool UPawnCombatComponent::UnequipCurrentWeapon()
 		return false;
 	}
 
+	// [03.11 김동석 추가] 애니메이션 레이어 해제
+	if (ACharacter* OwningChar = Cast<ACharacter>(GetOwningPawn()))
+	{
+		if (UAnimInstance* AnimInst = OwningChar->GetMesh()->GetAnimInstance())
+		{
+			TSubclassOf<UAnimInstance> LayerToUnlink = CurrentWeapon->GetWeaponData().WeaponAnimLayer;
+			if (LayerToUnlink)
+			{
+				AnimInst->UnlinkAnimClassLayers(LayerToUnlink);
+			}
+		}
+	}
+	
 	SaveCurrentWeaponRuntimeState(); // 현재 무기 런타임 탄약 저장
 	RemoveWeaponAbilities(CurrentWeapon); // 무기 어빌리티 제거 및 무기 입력 매핑 제거
 	AttachWeaponToSocket(CurrentWeapon, CurrentWeapon->GetHolsterSocketName()); // 홀스터 소켓을 이동
 	CurrentWeapon->SetActorHiddenInGame(CurrentWeapon->GetHolsterSocketName().IsNone()); // 숨김
+	CurrentWeapon->SetActorEnableCollision(false); // 충돌 Off
 	const FGameplayTag PreviousEquippedWeaponTag = CurrentEquippedWeaponTag;
 	CurrentEquippedWeaponTag = FGameplayTag();
 	OnEquippedWeaponChanged.Broadcast(PreviousEquippedWeaponTag, CurrentEquippedWeaponTag);
@@ -290,6 +318,13 @@ void UPawnCombatComponent::ApplyWeaponAbilities(ABaseWeapon* Weapon) const
 	ASC->GrantWeaponAbilities(Weapon->GetWeaponData().WeaponAbilities, 1, GrantedHandles);
 	Weapon->AssignGrantedAbilitySpecHandles(GrantedHandles);
 	AddWeaponInputMappingContext(Weapon);
+	
+	// 무기데이터에 저장된 태그 부여
+	FGameplayTag EquipTag = Weapon->GetWeaponData().WeaponEquippedTag;
+	if (EquipTag.IsValid())
+	{
+		ASC->AddLooseGameplayTag(EquipTag);
+	}
 }
 
 void UPawnCombatComponent::RemoveWeaponAbilities(ABaseWeapon* Weapon) const
@@ -305,6 +340,13 @@ void UPawnCombatComponent::RemoveWeaponAbilities(ABaseWeapon* Weapon) const
 	TArray<FGameplayAbilitySpecHandle> SpecHandlesToRemove;
 	Weapon->ConsumeGrantedAbilitySpecHandles(SpecHandlesToRemove);
 	ASC->RemoveGrantedWeaponAbilities(SpecHandlesToRemove);
+	
+	// 무기데이터에 저장된 태그 해제
+	FGameplayTag EquipTag = Weapon->GetWeaponData().WeaponEquippedTag;
+	if (EquipTag.IsValid())
+	{
+		ASC->RemoveLooseGameplayTag(EquipTag);
+	}
 }
 
 void UPawnCombatComponent::SaveCurrentWeaponRuntimeState()

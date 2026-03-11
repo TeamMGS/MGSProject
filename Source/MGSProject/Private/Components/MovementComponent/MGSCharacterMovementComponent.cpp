@@ -3,7 +3,7 @@
  * 생성자 : 김동석
  * 생성일 : 2026-03-06
  * 수정자 : 김동석
- * 수정일 : 2026-03-06
+ * 수정일 : 2026-03-11
  */
 
 #include "Components/MovementComponent/MGSCharacterMovementComponent.h"
@@ -258,34 +258,17 @@ void UMGSCharacterMovementComponent::UpdateRotationMode()
 	UMGSAbilitySystemComponent* ASC = BaseChar ? BaseChar->GetMGSAbilitySystemComponent() : nullptr;
 	if (!ASC) return;
 
-	// Strafe(게 걸음) 또는 Aim(조준) 상태인지 태그로 확인
-	const bool bWantsToStrafe = ASC->HasMatchingGameplayTag(MGSGameplayTags::InputTag_Strafe) ||
-								ASC->HasMatchingGameplayTag(MGSGameplayTags::InputTag_Aim);
+	// [게 걸음 / 조준 모드] -> 카메라 방향을 응시함
+	bOrientRotationToMovement = false;
+	bUseControllerDesiredRotation = true;
 
-	if (bWantsToStrafe)
+	// 공중에 떠 있을 때는 천천히 회전 (Yaw: 200), 지상이면 즉시 회전 (Yaw: -1)
+	if (IsFalling())
 	{
-		// [게 걸음 / 조준 모드] -> 카메라 방향을 응시함
-		bOrientRotationToMovement = false;
-		bUseControllerDesiredRotation = true;
-
-		// 공중에 떠 있을 때는 천천히 회전 (Yaw: 200), 지상이면 즉시 회전 (Yaw: -1)
-		if (IsFalling())
-		{
-			RotationRate = FRotator(0.0f, 200.0f, 0.0f);
-		}
-		else
-		{
-			RotationRate = FRotator(0.0f, -1.0f, 0.0f); // -1은 즉각적인 회전을 의미함
-		}
+		RotationRate = FRotator(0.0f, 200.0f, 0.0f);
 	}
 	else
 	{
-		// [일반 이동 모드] -> 이동하는 방향을 바라봄
-		bOrientRotationToMovement = true;
-		bUseControllerDesiredRotation = false;
-
-		// GASP의 핵심 트릭: 물리 엔진의 부드러운 회전을 끄고 (-1),
-		// 나중에 AnimBP(Motion Matching 보정 노드)에서 시각적인 부드러운 회전을 처리하게 함.
-		RotationRate = FRotator(0.0f, -1.0f, 0.0f);
+		RotationRate = FRotator(0.0f, -1.0f, 0.0f); // -1은 즉각적인 회전을 의미함
 	}
 }

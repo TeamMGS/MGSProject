@@ -19,6 +19,7 @@ class UEnemyCombatComponent;
 class UAbilitySystemComponent;
 class UCharacterAttributeSet;
 class UMGSAbilitySystemComponent;
+class UAIPerceptionStimuliSourceComponent;
 struct FOnAttributeChangeData;
 
 UCLASS()
@@ -33,6 +34,8 @@ public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	virtual UMGSAbilitySystemComponent* GetMGSAbilitySystemComponent() const override;
 	virtual UCharacterAttributeSet* GetCharacterAttributeSet() const override;
+	void SetEnemyStateTagFromAI(const FGameplayTag& NewStateTag);
+	void DebugPrintOwnedTags() const;
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -53,6 +56,9 @@ protected:
 
 protected:
 	TObjectPtr<UEnemyCombatComponent> EnemyCombatComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI", meta = (AllowPrivateAccess = true))
+	TObjectPtr<UAIPerceptionStimuliSourceComponent> PerceptionStimuliSource;
 
 private:
 	void SetEnemyStateTag(const FGameplayTag& NewStateTag);
