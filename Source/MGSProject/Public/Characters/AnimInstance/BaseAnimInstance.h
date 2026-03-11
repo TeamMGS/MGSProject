@@ -50,6 +50,12 @@ public:
 	UFUNCTION(BlueprintPure, Category = "MGS|Warping", meta = (BlueprintThreadSafe))
 	EOrientationWarpingSpace Get_OrientationWarpingWarpingSpace() const;
 	
+	UFUNCTION(BlueprintPure, Category = "MGS|Procedural", meta = (BlueprintThreadSafe))
+	FFootPlacementPlantSettings Get_FootPlacementPlantSettings() const;
+
+	UFUNCTION(BlueprintPure, Category = "MGS|Procedural", meta = (BlueprintThreadSafe))
+	FFootPlacementInterpolationSettings Get_FootPlacementInterpolationSettings() const;
+	
 protected:
 	// 데이터 프록시 (데이터 복사용)
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MGS|Animation")
@@ -68,6 +74,10 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MGS|Animation")
 	FMGSLocomotionState LocomotionState;
+	
+	// 발 접지(Foot Placement)를 위한 세부 설정 데이터
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MGS|Settings")
+	FMGSProceduralSettings ProceduralSettings;
 	
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 };

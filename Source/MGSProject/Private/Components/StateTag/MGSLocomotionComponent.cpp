@@ -108,6 +108,46 @@ void UMGSLocomotionComponent::UpdateMovementTags(float DeltaSeconds)
 		LastModeTag = NewMode;
 	}
 	
+	// 피벗 타이머 업데이트
+	if (PivotingTagTimer > 0.f)
+	{
+		PivotingTagTimer -= DeltaSeconds;
+	}
+	bool bIsPivoting = false;
+	FVector InputDir = MGSMovementComponent->GetCurrentAcceleration().GetSafeNormal2D();
+	
+	if (!InputDir.IsNearlyZero())
+	{
+		float Dot = FVector::DotProduct(LastFrameForward, InputDir);
+		float TurnAngle = FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(Dot, -1.0f, 1.0f)));
+
+		// [판정] 100도 이상 확 꺾었는가? (정지 상태에서 뒤로 가는 180도 상황 포함)
+		if (TurnAngle > 100.0f)
+		{
+			bIsPivoting = true;
+			PivotingTagTimer = MinPivotingDuration;
+		}
+	}
+
+	// 3. 태그 동기화 (타이머가 살아있는 동안은 무조건 유지)
+	const bool bShouldHavePivotTag = bIsPivoting || (PivotingTagTimer > 0.f);
+
+	if (bShouldHavePivotTag)
+	{
+		if (!ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Movement_Pivoting))
+		{
+			ASC->AddLooseGameplayTag(MGSGameplayTags::State_Player_Movement_Pivoting);
+		}
+	}
+	else
+	{
+		if (ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Movement_Pivoting))
+		{
+			ASC->RemoveLooseGameplayTag(MGSGameplayTags::State_Player_Movement_Pivoting);
+		}
+	}
+	LastFrameForward = OwningCharacter->GetActorForwardVector();
+	
 	// 착지 태그 제거
 	if (LandingTagTimer > 0.f)
 	{
@@ -127,6 +167,7 @@ void UMGSLocomotionComponent::UpdateMovementTags(float DeltaSeconds)
 	{
 		CurrentAirTime = 0.f;
 	}
+	
 }
 
 void UMGSLocomotionComponent::HandleOnJumped()
