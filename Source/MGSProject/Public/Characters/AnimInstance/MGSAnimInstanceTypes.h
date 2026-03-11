@@ -92,6 +92,7 @@ struct FMGSEssentialValues
 	FVector Velocity_LastFrame = FVector::ZeroVector;
 	FTransform CharacterTransform_LastFrame = FTransform::Identity;
 	float LastFrameActorYaw = 0.f;	
+	float LastBodyWorldYaw = 0.f;
 
 	// GASP 로직을 C++로 이식한 업데이트 함수
 	void Update(UAnimInstance* AnimInstance, const FMGSCharacterDataProxy& Data, float DeltaSeconds);
