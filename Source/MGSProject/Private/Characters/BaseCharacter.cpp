@@ -15,31 +15,31 @@
 ABaseCharacter::ABaseCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer.SetDefaultSubobjectClass<UMGSCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
-	// 성능을 위해 Tick을 사용하지 않습니다.
+	// Tick을 사용하지 않음
 	PrimaryActorTick.bCanEverTick = false;
-	PrimaryActorTick.bStartWithTickEnabled = false;
-	
-	// VFX Decal 영향이 필요 없는 캐릭터는 비활성화합니다.
+	// Decal의 영향을 받지 않음
 	GetMesh()->bReceivesDecals = false;
 	
 	// 1. 커스텀 CMC 캐싱
 	MGSMovementComponent = Cast<UMGSCharacterMovementComponent>(GetCharacterMovement());
-
 	// 2. 로코모션 컴포넌트 생성
 	LocomotionComponent = CreateDefaultSubobject<UMGSLocomotionComponent>(TEXT("LocomotionComponent"));
 }
 
 UPawnCombatComponent* ABaseCharacter::GetPawnCombatComponent() const
 {
-	// 부모 클래스에서는 전투 컴포넌트를 직접 소유하지 않습니다.
+	// 파생 클래스에서 CombatComponent 소유
 	return nullptr;
 }
 
-void ABaseCharacter::PossessedBy(AController* NewController)
+AMGSPlayerState* ABaseCharacter::GetMGSPlayerState() const
 {
-	Super::PossessedBy(NewController);
-	
-	ensureMsgf(!StartupData.IsNull(), TEXT("Forgot to assigned startup data to %s"), *GetName());
+	if (const AController* CharacterController = GetController())
+	{
+		return CharacterController->GetPlayerState<AMGSPlayerState>();
+	}
+
+	return nullptr;
 }
 
 UMGSAbilitySystemComponent* ABaseCharacter::GetMGSAbilitySystemComponent() const
@@ -72,25 +72,11 @@ UWeaponAttributeSet* ABaseCharacter::GetWeaponAttributeSet() const
 	return nullptr;
 }
 
-AMGSPlayerState* ABaseCharacter::GetMGSPlayerState() const
+void ABaseCharacter::PossessedBy(AController* NewController)
 {
-	if (const AController* CharacterController = GetController())
-	{
-		return CharacterController->GetPlayerState<AMGSPlayerState>();
-	}
-
-	return nullptr;
-}
-
-void ABaseCharacter::OnJumped_Implementation()
-{
-	Super::OnJumped_Implementation();
-
-	// 로코모션 컴포넌트에게 점프 사실을 전달합니다.
-	if (LocomotionComponent)
-	{
-		LocomotionComponent->HandleOnJumped();
-	}
+	Super::PossessedBy(NewController);
+	
+	ensureMsgf(!StartupData.IsNull(), TEXT("Forgot to assigned startup data to %s"), *GetName());
 }
 
 void ABaseCharacter::Landed(const FHitResult& Hit)
@@ -104,9 +90,21 @@ void ABaseCharacter::Landed(const FHitResult& Hit)
 	}
 }
 
+void ABaseCharacter::OnJumped_Implementation()
+{
+	Super::OnJumped_Implementation();
+
+	// 로코모션 컴포넌트에게 점프 사실을 전달합니다.
+	if (LocomotionComponent)
+	{
+		LocomotionComponent->HandleOnJumped();
+	}
+}
+
 void ABaseCharacter::OnStartCrouch(float HeightAdjust, float ScaledHeightAdjust)
 {
 	Super::OnStartCrouch(HeightAdjust, ScaledHeightAdjust);
+	
 	if (LocomotionComponent)
 	{
 		LocomotionComponent->UpdateMovementTags(0.0f);
@@ -116,10 +114,9 @@ void ABaseCharacter::OnStartCrouch(float HeightAdjust, float ScaledHeightAdjust)
 void ABaseCharacter::OnEndCrouch(float HeightAdjust, float ScaledHeightAdjust)
 {
 	Super::OnEndCrouch(HeightAdjust, ScaledHeightAdjust);
+	
 	if (LocomotionComponent)
 	{
 		LocomotionComponent->UpdateMovementTags(0.0f);
 	}
 }
-
-

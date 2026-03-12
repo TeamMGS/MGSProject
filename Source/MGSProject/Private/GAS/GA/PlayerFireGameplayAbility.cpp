@@ -14,6 +14,7 @@
 #include "Characters/Player/MGSPlayerController.h"
 #include "Characters/Player/PlayerCharacter.h"
 #include "Components/Combat/PlayerCombatComponent.h"
+#include "DataAssets/Spread/DA_SpreadSettings.h"
 #include "Components/SceneComponent.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -298,6 +299,7 @@ float UPlayerFireGameplayAbility::CalculateStateSpreadMultiplier(const APlayerCh
 		return 1.f;
 	}
 
+	const UDA_SpreadSettings* SpreadSettings = PlayerCharacter->GetSpreadSettings();
 	const UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
 	const UCharacterMovementComponent* MovementComponent = PlayerCharacter->GetCharacterMovement();
 	const bool bIsFalling = MovementComponent
@@ -307,7 +309,7 @@ float UPlayerFireGameplayAbility::CalculateStateSpreadMultiplier(const APlayerCh
 	const float HorizontalSpeed = MovementComponent
 		? FVector(MovementComponent->Velocity.X, MovementComponent->Velocity.Y, 0.f).Size()
 		: FVector(PlayerCharacter->GetVelocity().X, PlayerCharacter->GetVelocity().Y, 0.f).Size();
-	const bool bIsMoving = HorizontalSpeed > MinMovingSpeedForSpread;
+	const bool bIsMoving = HorizontalSpeed > SpreadSettings->MovingSpeedThreshold;
 	const bool bIsSprint = ASC && ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Movement_Sprint);
 	const bool bIsWalk = ASC && ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Movement_Walk);
 	const bool bIsCrouching = PlayerCharacter->bIsCrouched || (ASC && ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Crouching));
@@ -315,32 +317,32 @@ float UPlayerFireGameplayAbility::CalculateStateSpreadMultiplier(const APlayerCh
 	float StateSpreadMultiplier = 1.f;
 	if (bIsFalling)
 	{
-		StateSpreadMultiplier = JumpSpreadMultiplier;
+		StateSpreadMultiplier = SpreadSettings->JumpMultiplier;
 	}
 	else if (bIsMoving)
 	{
 		if (bIsSprint)
 		{
-			StateSpreadMultiplier = SprintSpreadMultiplier;
+			StateSpreadMultiplier = SpreadSettings->SprintMultiplier;
 		}
 		else if (bIsWalk)
 		{
-			StateSpreadMultiplier = WalkSpreadMultiplier;
+			StateSpreadMultiplier = SpreadSettings->WalkMultiplier;
 		}
 		else
 		{
-			StateSpreadMultiplier = MovingSpreadMultiplier;
+			StateSpreadMultiplier = SpreadSettings->MovingMultiplier;
 		}
 	}
 	else if (bIsCrouching)
 	{
-		StateSpreadMultiplier = CrouchSpreadMultiplier;
+		StateSpreadMultiplier = SpreadSettings->CrouchStillMultiplier;
 	}
 
 	const bool bIsAiming = ASC && ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Aiming);
 	if (bIsAiming)
 	{
-		StateSpreadMultiplier *= AimSpreadMultiplier;
+		StateSpreadMultiplier *= SpreadSettings->AimMultiplier;
 	}
 
 	return FMath::Max(0.f, StateSpreadMultiplier);
