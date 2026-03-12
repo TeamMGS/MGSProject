@@ -13,7 +13,8 @@
 				"AIModule",
 				"UMG",
 				"EnhancedInput",
-				"GameplayAbilities"
+				"GameplayAbilities",
+				"StateTreeModule"
 			]
 		}
 	],
