@@ -46,6 +46,10 @@ struct FPlayerWeaponData
 	// HUD 무기 정보 패널에서 사용할 아이콘
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
 	TObjectPtr<UTexture2D> WeaponInfoImage = nullptr;
+
+	// HUD/프롬프트에서 사용할 무기 이름
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
+	FText WeaponDisplayName;
 	
 	// 무기 장착 시 부여할 어빌리티 목록
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (TitleProperty = "InputTag"))

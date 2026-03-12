@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
  * 수정자 : 장대한
- * 수정일 : 2026-03-09
+ * 수정일 : 2026-03-10
  */
 
 #pragma once
@@ -53,6 +53,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	bool UnequipCurrentWeapon();
 
+	// 월드에 떨어진 무기를 지정 슬롯 태그로 줍고, 기존 슬롯 무기와 교체합니다.
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	bool PickupDroppedWeaponByTag(FGameplayTag WeaponTag, ABaseWeapon* DroppedWeapon);
+
 private:
 	bool AttachWeaponToSocket(ABaseWeapon* Weapon, FName SocketName) const; // 소켓에 무기 장착
 	void AddWeaponInputMappingContext(ABaseWeapon* Weapon) const; // 무기 입력 매핑
@@ -61,6 +65,9 @@ private:
 	void RemoveWeaponAbilities(ABaseWeapon* Weapon) const; // 무기 능력 추가
 	void SaveCurrentWeaponRuntimeState(); // 무기 런타임 탄약값 저장
 	void ApplyWeaponRuntimeState(FGameplayTag WeaponTag, ABaseWeapon* Weapon); // 무기 런타임 탄약값 적용
+
+	static constexpr float PickupSwapDropForwardOffset = 70.0f;
+	static constexpr float PickupSwapDropHeightOffset = 90.0f;
 
 	TMap<FGameplayTag, ABaseWeapon*> CharacterCarriedWeaponMap; // 소유 무기 맵
 	TMap<FGameplayTag, FWeaponRuntimeState> CharacterCarriedWeaponRuntimeStateMap; // 무기별 런타임 탄약 상태 맵 

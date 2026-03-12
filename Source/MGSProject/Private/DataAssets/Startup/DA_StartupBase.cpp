@@ -16,10 +16,11 @@ void UDA_StartupBase::GiveToAbilitySystemComponent(UMGSAbilitySystemComponent* A
 	// ASC 유효성 검사
 	check(ASC);
 	
-	// 시작 어빌리티 두 그룹을 ASC에 부여
+	// ASC에 자동 활성화 및 반응형 GA 목록 부여
 	GrantAbilities(ActivateOnGivenAbilities, ASC, Level);
 	GrantAbilities(ReactiveAbilities, ASC, Level);
 	
+	// 자동 활성화 GE 목록이 비어있지 않으면
 	if (!StartupGameplayEffects.IsEmpty())
 	{
 		for (const TSubclassOf<UGameplayEffect>& BP_Effect : StartupGameplayEffects)
@@ -29,7 +30,7 @@ void UDA_StartupBase::GiveToAbilitySystemComponent(UMGSAbilitySystemComponent* A
 				continue;
 			}
 			
-			// GameplayEffect 클래스의 CDO를 가져와 자기 자신에게 적용
+			// GameplayEffect 클래스의 CDO(Class Default Object)를 가져와 ASC 자신에게 적용
 			UGameplayEffect* EffectCDO = BP_Effect->GetDefaultObject<UGameplayEffect>();
 			ASC->ApplyGameplayEffectToSelf(EffectCDO, Level, ASC->MakeEffectContext());
 		}
@@ -39,20 +40,21 @@ void UDA_StartupBase::GiveToAbilitySystemComponent(UMGSAbilitySystemComponent* A
 void UDA_StartupBase::GrantAbilities(const TArray<TSubclassOf<UBaseGameplayAbility>> GAs,
 	UMGSAbilitySystemComponent* InASC, int32 Level)
 {
-	// 부여할 어빌리티가 없으면 종료
+	// GA 목록이 비어있으면
 	if (GAs.IsEmpty())
 	{
 		return;
 	}
 	
+	// GA 목록 순회
 	for (const TSubclassOf<UBaseGameplayAbility> Ability : GAs)
 	{
-		// 어빌리티 스펙 생성 및 공통 메타데이터 설정
+		// Spec 생성
 		FGameplayAbilitySpec Spec(Ability);
 		Spec.SourceObject = InASC->GetAvatarActor();
 		Spec.Level = Level;
 		
-		// 설정된 스펙을 ASC에 최종 부여
+		// ASC에 어빌리티 부여
 		InASC->GiveAbility(Spec);
 	}
 }

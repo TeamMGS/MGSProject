@@ -20,7 +20,7 @@ class MGSPROJECT_API UDA_StartupEnemy : public UDA_StartupBase
 	GENERATED_BODY()
 	
 public:
-	// ASC에 자동 활성화 GA, 반응형 GA 부여
+	// ASC에 자동 활성화/반응형 GA 및 자동 활성화 GE 부여
 	virtual void GiveToAbilitySystemComponent(UMGSAbilitySystemComponent* ASC, int32 Level = 1) override;
 	
 private:
@@ -29,5 +29,3 @@ private:
 	TArray<TSubclassOf<UEnemyGameplayAbility>> EnemyCombatAbilities;
 	
 };
-
-

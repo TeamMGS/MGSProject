@@ -17,6 +17,7 @@ class UCharacterAttributeSet;
 class UWeaponAttributeSet;
 class UPlayerCombatComponent;
 class UMGSPlayerStatusWidget;
+class ABaseWeapon;
 struct FGameplayAttribute;
 struct FGameplayTag;
 struct FOnAttributeChangeData;
@@ -41,6 +42,7 @@ private:
 	void UnbindAttributeChangedDelegate(const FGameplayAttribute& Attribute, FDelegateHandle& Handle); // 델리게이트 공통 바인딩 해제
 	void PushInitialHUDValues() const; // HUD 반영
 	void UpdateWeaponInfoVisibility() const; // 장착 무기 존재 여부로 패널 표시
+	void UpdatePickupWeaponPrompt(const ABaseWeapon* NearbyDroppedWeapon) const; // 근처 드랍 무기 프롬프트 반영
 	void UpdateAmmoOnHUD() const; // 탄창/최대/예비탄 반영
 	void UpdateSpreadOnHUD() const; // 현재/최대 탄착군 반영
 
@@ -49,6 +51,7 @@ private:
 	void HandleAmmoAttributeChanged(const FOnAttributeChangeData& AttributeChangeData);
 	void HandleSpreadAttributeChanged(const FOnAttributeChangeData& AttributeChangeData);
 	void HandleEquippedWeaponChanged(FGameplayTag PreviousWeaponTag, FGameplayTag CurrentWeaponTag);
+	void HandleNearbyDroppedWeaponChanged(const ABaseWeapon* NearbyDroppedWeapon);
 
 private:
 	UPROPERTY(Transient)
@@ -77,5 +80,5 @@ private:
 	FDelegateHandle CurrentSpreadRadiusChangedHandle;
 	FDelegateHandle MaxSpreadRadiusChangedHandle;
 	FDelegateHandle EquippedWeaponChangedHandle;
+	FDelegateHandle NearbyDroppedWeaponChangedHandle;
 };
-

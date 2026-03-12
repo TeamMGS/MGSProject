@@ -27,28 +27,14 @@ void AMGSPlayerController::BeginPlay()
 	Super::BeginPlay();
 
 	ensureMsgf(InputConfigDataAsset, TEXT("InputConfigDataAsset is not assigned on %s"), *GetName());
+	
+	// IMC Setting
 	SetupInputMappingContext();
 
+	// HUD 노출
 	if (PlayerHUDPresenterComponent)
 	{
 		PlayerHUDPresenterComponent->SetPlayerStatusWidgetClass(PlayerStatusWidgetClass);
-		PlayerHUDPresenterComponent->RefreshHUDDataBindings();
-	}
-}
-
-void AMGSPlayerController::SetupInputComponent()
-{
-	Super::SetupInputComponent();
-
-	BindInputActions();
-}
-
-void AMGSPlayerController::OnPossess(APawn* InPawn)
-{
-	Super::OnPossess(InPawn);
-
-	if (PlayerHUDPresenterComponent)
-	{
 		PlayerHUDPresenterComponent->RefreshHUDDataBindings();
 	}
 }
@@ -57,6 +43,7 @@ void AMGSPlayerController::AcknowledgePossession(APawn* InPawn)
 {
 	Super::AcknowledgePossession(InPawn);
 
+	// HUD 생성
 	if (PlayerHUDPresenterComponent)
 	{
 		PlayerHUDPresenterComponent->RefreshHUDDataBindings();
@@ -65,6 +52,7 @@ void AMGSPlayerController::AcknowledgePossession(APawn* InPawn)
 
 void AMGSPlayerController::OnUnPossess()
 {
+	// HUD 정리
 	if (PlayerHUDPresenterComponent)
 	{
 		PlayerHUDPresenterComponent->ClearHUDDataBindings();
@@ -75,6 +63,7 @@ void AMGSPlayerController::OnUnPossess()
 
 void AMGSPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	// HUD 정리
 	if (PlayerHUDPresenterComponent)
 	{
 		PlayerHUDPresenterComponent->ClearHUDDataBindings();
@@ -83,15 +72,24 @@ void AMGSPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 }
 
+void AMGSPlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+
+	// Bind IA
+	BindInputActions();
+}
+
 void AMGSPlayerController::SetupInputMappingContext() const
 {
 	if (!IsLocalPlayerController() || !InputConfigDataAsset || !InputConfigDataAsset->InputMappingContext)
 	{
 		return;
 	}
-
+	
 	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
 	{
+		// DA_InputConfig의 IMC으로 설정
 		Subsystem->AddMappingContext(InputConfigDataAsset->InputMappingContext, 0);
 	}
 }
@@ -109,8 +107,10 @@ void AMGSPlayerController::BindInputActions()
 		return;
 	}
 
+	// Bind Native input
 	MGSInputComponent->BindNativeInputAction(InputConfigDataAsset, MGSGameplayTags::InputTag_Move, ETriggerEvent::Triggered, this, &ThisClass::Input_Move);
 	MGSInputComponent->BindNativeInputAction(InputConfigDataAsset, MGSGameplayTags::InputTag_Look, ETriggerEvent::Triggered, this, &ThisClass::Input_Look);
+	// Bind Ability input
 	MGSInputComponent->BindAbilityInputAction(InputConfigDataAsset, this, &ThisClass::Input_AbilityInputPressed, &ThisClass::Input_AbilityInputReleased);
 }
 

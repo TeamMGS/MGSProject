@@ -15,8 +15,10 @@ void UDA_StartupEnemy::GiveToAbilitySystemComponent(UMGSAbilitySystemComponent* 
 {
 	Super::GiveToAbilitySystemComponent(ASC, Level);
 	
+	// 적 GA 목록이 비어있지 않으면
 	if (!EnemyCombatAbilities.IsEmpty())
 	{
+		// 적 GA 목록 순회
 		for (const TSubclassOf<UEnemyGameplayAbility>& AbilityClass : EnemyCombatAbilities)
 		{
 			if (!AbilityClass)
@@ -24,9 +26,12 @@ void UDA_StartupEnemy::GiveToAbilitySystemComponent(UMGSAbilitySystemComponent* 
 				continue;
 			}
 			
+			// Spec 생성
 			FGameplayAbilitySpec AbilitySpec(AbilityClass);
 			AbilitySpec.SourceObject = ASC->GetAvatarActor();
 			AbilitySpec.Level = Level;
+			
+			// ASC에 어빌리티 부여
 			ASC->GiveAbility(AbilitySpec);
 		}
 	}

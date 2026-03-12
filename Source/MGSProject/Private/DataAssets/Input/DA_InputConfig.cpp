@@ -15,6 +15,7 @@ UInputAction* UDA_InputConfig::FindNativeInputActionByTag(const FGameplayTag& In
 		return nullptr;
 	}
 
+	// Native input 목록 순회
 	for (const FInputActionConfig& InputActionConfig : NativeInputActions)
 	{
 		if (InputActionConfig.InputTag == InInputTag && InputActionConfig.InputAction)

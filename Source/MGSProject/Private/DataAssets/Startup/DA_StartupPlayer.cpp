@@ -16,6 +16,7 @@ void UDA_StartupPlayer::GiveToAbilitySystemComponent(UMGSAbilitySystemComponent*
 {
 	Super::GiveToAbilitySystemComponent(ASC, Level);
 	
+	// Tag-GA 목록 순회
 	for (const FPlayerAbilitySet& AbilitySet : PlayerStartupAbilitySets)
 	{
 		if (!AbilitySet.IsValid())
@@ -23,12 +24,14 @@ void UDA_StartupPlayer::GiveToAbilitySystemComponent(UMGSAbilitySystemComponent*
 			continue;
 		}
 		
+		// Spec 생성
 		FGameplayAbilitySpec Spec(AbilitySet.AbilityToGrant);
 		Spec.SourceObject = ASC->GetAvatarActor();
 		Spec.Level = Level;
-		// InputTag를 동적 스펙 태그로 기록해 입력과 능력 매핑에 사용
+		// Spec과 Tag를 매핑
 		Spec.GetDynamicSpecSourceTags().AddTag(AbilitySet.InputTag);
 		
+		// ASC에 어빌리티 부여
 		ASC->GiveAbility(Spec);
 	}
 }

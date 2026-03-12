@@ -78,34 +78,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Fire")
 	FName MuzzleSocketName = TEXT("Muzzle");
 
-	// 점프/낙하 중 스프레드 배율
-	UPROPERTY(EditDefaultsOnly, Category = "Fire|Spread|State", meta = (ClampMin = "0.0"))
-	float JumpSpreadMultiplier = 2.4f;
-
-	// 뛰기(스프린트) 중 스프레드 배율
-	UPROPERTY(EditDefaultsOnly, Category = "Fire|Spread|State", meta = (ClampMin = "0.0"))
-	float SprintSpreadMultiplier = 1.6f;
-
-	// 일반 이동 중 스프레드 배율
-	UPROPERTY(EditDefaultsOnly, Category = "Fire|Spread|State", meta = (ClampMin = "0.0"))
-	float MovingSpreadMultiplier = 1.3f;
-
-	// 걷기(워크) 중 스프레드 배율
-	UPROPERTY(EditDefaultsOnly, Category = "Fire|Spread|State", meta = (ClampMin = "0.0"))
-	float WalkSpreadMultiplier = 1.1f;
-
-	// 웅크린 상태 스프레드 배율(1.0 미만이면 감소)
-	UPROPERTY(EditDefaultsOnly, Category = "Fire|Spread|State", meta = (ClampMin = "0.0"))
-	float CrouchSpreadMultiplier = 0.7f;
-
-	// 조준(ADS) 상태 스프레드 배율(1.0 미만이면 감소)
-	UPROPERTY(EditDefaultsOnly, Category = "Fire|Spread|State", meta = (ClampMin = "0.0"))
-	float AimSpreadMultiplier = 0.65f;
-
-	// 이동 상태 판정을 위한 최소 수평 속도
-	UPROPERTY(EditDefaultsOnly, Category = "Fire|Spread|State", meta = (ClampMin = "0.0"))
-	float MinMovingSpeedForSpread = 10.f;
-
 	float CurrentSpreadRadius = 0.f; // 현재 탄착군 반경
 	float CurrentFireInterval = 0.12f; // 현재 연사 간격
 	FTimerHandle AutoFireTimerHandle; // 자동연사 타이머

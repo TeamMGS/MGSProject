@@ -52,7 +52,7 @@ void UPlayerHUDPresenterComponent::RefreshHUDDataBindings()
 	CachedWeaponAttributeSet = PlayerCharacter->GetWeaponAttributeSet();
 	CachedPlayerCombatComponent = PlayerCharacter->GetPlayerCombatComponent();
 
-	if (!CachedASC || !CachedCharacterAttributeSet || !CachedWeaponAttributeSet)
+	if (!CachedASC || !CachedCharacterAttributeSet)
 	{
 		return;
 	}
@@ -60,17 +60,22 @@ void UPlayerHUDPresenterComponent::RefreshHUDDataBindings()
 	// Attribute 델리게이트 등록
 	BindAttributeChangedDelegate(UCharacterAttributeSet::GetCurrentHpAttribute(), CurrentHpChangedHandle, &ThisClass::HandleCurrentHpChanged);
 	BindAttributeChangedDelegate(UCharacterAttributeSet::GetMaxHpAttribute(), MaxHpChangedHandle, &ThisClass::HandleMaxHpChanged);
-	BindAttributeChangedDelegate(UWeaponAttributeSet::GetCurrentMagazineAmmoAttribute(), CurrentMagazineAmmoChangedHandle, &ThisClass::HandleAmmoAttributeChanged);
-	BindAttributeChangedDelegate(UWeaponAttributeSet::GetMaxMagazineAmmoAttribute(), MaxMagazineAmmoChangedHandle, &ThisClass::HandleAmmoAttributeChanged);
-	BindAttributeChangedDelegate(UWeaponAttributeSet::GetCurrentCarriedAmmoAttribute(), CurrentCarriedAmmoChangedHandle, &ThisClass::HandleAmmoAttributeChanged);
-	BindAttributeChangedDelegate(UWeaponAttributeSet::GetCurrentSpreadRadiusAttribute(), CurrentSpreadRadiusChangedHandle, &ThisClass::HandleSpreadAttributeChanged);
-	BindAttributeChangedDelegate(UWeaponAttributeSet::GetMaxSpreadRadiusAttribute(), MaxSpreadRadiusChangedHandle, &ThisClass::HandleSpreadAttributeChanged);
+	if (CachedWeaponAttributeSet)
+	{
+		BindAttributeChangedDelegate(UWeaponAttributeSet::GetCurrentMagazineAmmoAttribute(), CurrentMagazineAmmoChangedHandle, &ThisClass::HandleAmmoAttributeChanged);
+		BindAttributeChangedDelegate(UWeaponAttributeSet::GetMaxMagazineAmmoAttribute(), MaxMagazineAmmoChangedHandle, &ThisClass::HandleAmmoAttributeChanged);
+		BindAttributeChangedDelegate(UWeaponAttributeSet::GetCurrentCarriedAmmoAttribute(), CurrentCarriedAmmoChangedHandle, &ThisClass::HandleAmmoAttributeChanged);
+		BindAttributeChangedDelegate(UWeaponAttributeSet::GetCurrentSpreadRadiusAttribute(), CurrentSpreadRadiusChangedHandle, &ThisClass::HandleSpreadAttributeChanged);
+		BindAttributeChangedDelegate(UWeaponAttributeSet::GetMaxSpreadRadiusAttribute(), MaxSpreadRadiusChangedHandle, &ThisClass::HandleSpreadAttributeChanged);
+	}
 
 	// 무기 장착 변경 델리게이트 등록
 	if (CachedPlayerCombatComponent)
 	{
 		EquippedWeaponChangedHandle = CachedPlayerCombatComponent->GetOnEquippedWeaponChangedDelegate()
 			.AddUObject(this, &ThisClass::HandleEquippedWeaponChanged);
+		NearbyDroppedWeaponChangedHandle = CachedPlayerCombatComponent->GetOnNearbyDroppedWeaponChangedDelegate()
+			.AddUObject(this, &ThisClass::HandleNearbyDroppedWeaponChanged);
 	}
 
 	// 초기값 HUD 푸시 
@@ -93,6 +98,12 @@ void UPlayerHUDPresenterComponent::ClearHUDDataBindings()
 	{
 		CachedPlayerCombatComponent->GetOnEquippedWeaponChangedDelegate().Remove(EquippedWeaponChangedHandle);
 		EquippedWeaponChangedHandle.Reset();
+	}
+
+	if (CachedPlayerCombatComponent && NearbyDroppedWeaponChangedHandle.IsValid())
+	{
+		CachedPlayerCombatComponent->GetOnNearbyDroppedWeaponChangedDelegate().Remove(NearbyDroppedWeaponChangedHandle);
+		NearbyDroppedWeaponChangedHandle.Reset();
 	}
 
 	// 캐시 nullptr 정리
@@ -160,6 +171,10 @@ void UPlayerHUDPresenterComponent::PushInitialHUDValues() const
 	UpdateAmmoOnHUD();
 	UpdateSpreadOnHUD();
 	UpdateWeaponInfoVisibility();
+	const ABaseWeapon* NearbyDroppedWeapon = CachedPlayerCombatComponent
+		? CachedPlayerCombatComponent->GetNearbyDroppedWeapon()
+		: nullptr;
+	UpdatePickupWeaponPrompt(NearbyDroppedWeapon);
 }
 
 void UPlayerHUDPresenterComponent::UpdateWeaponInfoVisibility() const
@@ -178,6 +193,35 @@ void UPlayerHUDPresenterComponent::UpdateWeaponInfoVisibility() const
 	}
 
 	PlayerStatusWidget->UpdateWeaponInfo(bHasEquippedWeapon, WeaponInfoImage);
+}
+
+void UPlayerHUDPresenterComponent::UpdatePickupWeaponPrompt(const ABaseWeapon* NearbyDroppedWeapon) const
+{
+	if (!PlayerStatusWidget)
+	{
+		return;
+	}
+
+	const bool bHasNearbyDroppedWeapon = NearbyDroppedWeapon != nullptr;
+
+	FText PickupWeaponName;
+	UTexture2D* PickupWeaponInfoImage = nullptr;
+	if (NearbyDroppedWeapon)
+	{
+		const FPlayerWeaponData& NearbyWeaponData = NearbyDroppedWeapon->GetWeaponData();
+		PickupWeaponName = NearbyWeaponData.WeaponDisplayName;
+		PickupWeaponInfoImage = NearbyWeaponData.WeaponInfoImage;
+
+		if (PickupWeaponName.IsEmpty())
+		{
+			const FGameplayTag NearbyWeaponTag = NearbyDroppedWeapon->GetWeaponTag();
+			PickupWeaponName = NearbyWeaponTag.IsValid()
+				? FText::FromName(NearbyWeaponTag.GetTagName())
+				: FText::FromString(TEXT("Weapon"));
+		}
+	}
+
+	PlayerStatusWidget->UpdatePickupWeaponPrompt(bHasNearbyDroppedWeapon, PickupWeaponName, PickupWeaponInfoImage);
 }
 
 void UPlayerHUDPresenterComponent::UpdateAmmoOnHUD() const
@@ -242,4 +286,9 @@ void UPlayerHUDPresenterComponent::HandleEquippedWeaponChanged(FGameplayTag /*Pr
 	UpdateWeaponInfoVisibility();
 	UpdateAmmoOnHUD();
 	UpdateSpreadOnHUD();
+}
+
+void UPlayerHUDPresenterComponent::HandleNearbyDroppedWeaponChanged(const ABaseWeapon* NearbyDroppedWeapon)
+{
+	UpdatePickupWeaponPrompt(NearbyDroppedWeapon);
 }
