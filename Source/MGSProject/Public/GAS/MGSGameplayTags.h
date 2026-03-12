@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 김동석
- * 수정일 : 2026-03-11
+ * 수정일 : 2026-03-12
  */
 
 #pragma once
@@ -64,6 +64,7 @@ namespace MGSGameplayTags
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Player_Crouching)
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Player_Aiming)
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Player_CombatReady)
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Player_Reloading)
 	
 	// 상태 태그 (gait)
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Player_Gait_Walk)
@@ -79,7 +80,11 @@ namespace MGSGameplayTags
 	// 상태 태그 (MovementMode)
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Player_Mode_OnGround)
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Player_Mode_InAir)
-
+	
+	// (임시) 액션중 다른 태그를 막기 위한 state 태그
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Action_Equipping)
+	
+	
 	// 카메라와의 거리에 따른 태그(플레이어는 Dense)
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Player_LOD_Dense)        
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Player_LOD_Sparse)       
@@ -96,7 +101,10 @@ namespace MGSGameplayTags
 	
 	// Event tags: gameplay event payload trigger
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Player_Interact)
-
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Player_Weapon_Reload_Ammo_Refill)
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Player_Weapon_Equip_Detach)
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Player_Weapon_Equip_Attach)
+	
 	// SetByCaller data tags
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Damage)
 }

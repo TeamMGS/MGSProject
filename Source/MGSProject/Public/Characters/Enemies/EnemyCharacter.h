@@ -23,7 +23,7 @@ class UAIPerceptionStimuliSourceComponent;
 struct FOnAttributeChangeData;
 
 UCLASS()
-class MGSPROJECT_API AEnemyCharacter : public ABaseCharacter, public IAbilitySystemInterface
+class MGSPROJECT_API AEnemyCharacter : public ABaseCharacter
 {
 	GENERATED_BODY()
 	

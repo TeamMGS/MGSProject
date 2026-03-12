@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
  * 수정자 : 김동석
- * 수정일 : 2026-03-11
+ * 수정일 : 2026-03-12
  */
 
 #pragma once
@@ -55,13 +55,29 @@ struct FPlayerWeaponData
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (TitleProperty = "InputTag"))
 	TArray<FPlayerAbilitySet> WeaponAbilities;
 	
-	// 무기 장착시 사용할 애니메이션 레이어 (03.11 김동석 수정)
+	// 무기 장착시 사용할 애니메이션 레이어
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
 	TSubclassOf<UAnimInstance> WeaponAnimLayer;
 	
-	// 이 무기가 어떤 종류인지 나타내는 태그 (03.11 김동석 수정)
+	// 이 무기가 어떤 종류인지 나타내는 태그
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
 	FGameplayTag WeaponEquippedTag;
+	
+	// 무기 장전 애니메이션
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
+	TObjectPtr<UAnimMontage> ReloadMontage;
+	
+	// 무기 발사 애니메이션
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
+	TObjectPtr<UAnimMontage> FireMontage;
+	
+	// 무기 장착 애니메이션
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
+	TObjectPtr<UAnimMontage> EquipMontage;
+	
+	// 오른손 기준 왼손이 잡아야 할 위치
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IK")
+	FVector LeftHandIKOffset;
 };
 
 // 런타임 중 무기 탄약/탄창 데이터
