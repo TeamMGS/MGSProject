@@ -79,5 +79,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MGS|Settings")
 	FMGSProceduralSettings ProceduralSettings;
 	
+	// 새로운 무기 상태 구조체
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MGS|Animation")
+	FMGSWeaponState WeaponState;
+	
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 };

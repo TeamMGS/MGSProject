@@ -2,8 +2,8 @@
  * 파일명 : PlayerReloadGameplayAbility.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-04
- * 수정자 : 장대한
- * 수정일 : 2026-03-09
+ * 수정자 : 김동석
+ * 수정일 : 2026-03-12
  */
 
 #pragma once
@@ -37,4 +37,7 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Debug")
 	bool bEnableReloadLog = true;
 	
+	// 이벤트 수신시 발생할 장전 함수 실행
+	UFUNCTION()
+	void OnAmmoRefillEventReceived(FGameplayEventData Payload);
 };

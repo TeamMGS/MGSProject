@@ -19,6 +19,8 @@
 #include "AnimExecutionContextLibrary.h"
 #include "Animation/AnimSubsystem_Tag.h"
 #include "Animation/AnimNodeReference.h"
+#include "Components/Combat/PawnCombatComponent.h"
+#include "Weapon/BaseWeapon.h"
 
 void FMGSCharacterDataProxy::Update(class ABaseCharacter* Character)
 {
@@ -412,4 +414,30 @@ bool FMGSLocomotionState::CheckIsPivoting(const FMGSCharacterDataProxy& Data, co
 	bool bIsPivoting = TurnAngle > AngleThreshold;
 
 	return bIsPivoting;
+}
+
+void FMGSWeaponState::Update(const class ABaseCharacter* Character, bool bIsWeaponEquipped, bool bIsSprinting, bool bIsReloading, bool bIsWeaponEquipping, float DeltaSeconds)
+{
+	if (!Character) return;
+
+	if (!Character) return;
+	
+	// 목표가 되는 Alpha 값 (Target Alpha)
+	float TargetAlpha = (bIsWeaponEquipped && !bIsSprinting && !bIsReloading && !bIsWeaponEquipping) ? 1.0f : 0.0f;
+
+	// 현재 Alpha에서 목표 Alpha로 부드럽게 보간
+	// InterpSpeed를 5.0~8.0 정도로 잡으면 애니메이션 블렌드 시간(0.2~0.3초)과 비슷하게 맞아떨어집니다.
+	FinalIKAlpha = FMath::FInterpTo(FinalIKAlpha, TargetAlpha, DeltaSeconds, 3.0f);
+
+	// 무기 데이터 업데이트 로직 (기존과 동일)
+	if (bIsWeaponEquipped)
+	{
+		if (UPawnCombatComponent* CombatComp = Character->GetPawnCombatComponent())
+		{
+			if (ABaseWeapon* CurrentWeapon = CombatComp->GetCharacterCurrentEquippedWeapon())
+			{
+				LeftHandIKOffset = CurrentWeapon->GetWeaponData().LeftHandIKOffset;
+			}
+		}
+	}
 }

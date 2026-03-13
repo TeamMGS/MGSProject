@@ -2,8 +2,8 @@
  * 파일명 : PlayerFireGameplayAbility.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-04
- * 수정자 : 장대한
- * 수정일 : 2026-03-09
+ * 수정자 : 김동석
+ * 수정일 : 2026-03-12
  */
 
 #include "GAS/GA/PlayerFireGameplayAbility.h"
@@ -215,6 +215,12 @@ bool UPlayerFireGameplayAbility::FireSingleShot()
 		return false;
 	}
 
+	// 발사 몽타쥬 재생
+	if (UAnimMontage* MontageToPlay = EquippedGun->GetWeaponData().FireMontage)
+	{
+		PlayerCharacter->PlayAnimMontage(MontageToPlay);
+	}
+	
 	// 스프레드 보정값 계산
 	const float StateSpreadMultiplier = CalculateStateSpreadMultiplier(PlayerCharacter);
 	// 최종 스프레드 = 총기 스프레드 초기값 * 스프레드 보정값
