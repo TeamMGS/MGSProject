@@ -74,6 +74,11 @@ UWeaponAttributeSet* ABaseCharacter::GetWeaponAttributeSet() const
 	return nullptr;
 }
 
+float ABaseCharacter::GetDamageMultiplierForHit(const FHitResult& Hit) const
+{
+	return 1.0f;
+}
+
 UAbilitySystemComponent* ABaseCharacter::GetAbilitySystemComponent() const
 {
 	// playerstate가 인터페이스를 구현하고 있으니 요청을 넘김

@@ -11,16 +11,16 @@
 
 UWeaponAttributeSet::UWeaponAttributeSet()
 {
-	InitCurrentMagazineAmmo(30.f);
-	InitMaxMagazineAmmo(30.f);
-	InitCurrentCarriedAmmo(120.f);
-	InitMaxCarriedAmmo(120.f);
-	InitAimReferenceDistance(12000.f);
-	InitBaseDamage(20.f);
+	InitMaxMagazineAmmo(30.0f);
+	InitCurrentMagazineAmmo(30.0f);
+	InitMaxCarriedAmmo(210.f);
+	InitCurrentCarriedAmmo(210.f);
+	InitBaseDamage(20.0f);
+	InitAimReferenceDistance(12000.0f);
 	InitFireInterval(0.12f);
-	InitBaseSpreadRadius(0.f);
-	InitCurrentSpreadRadius(0.f);
-	InitMaxSpreadRadius(120.f);
-	InitSpreadRadiusIncreasePerShot(6.f);
-	InitAimFOV(65.f);
+	InitBaseSpreadRadius(0.0f);
+	InitCurrentSpreadRadius(0.0f);
+	InitMaxSpreadRadius(50.0f);
+	InitSpreadRadiusIncreasePerShot(2.0f);
+	InitAimFOV(65.0f);
 }

@@ -2,8 +2,8 @@
  * 파일명 : PlayerHUDPresenterComponent.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-05
- * 수정자 :  장대한
- * 수정일 :  2026-03-05
+ * 수정자 : 장대한
+ * 수정일 : 2026-03-12
  */
 
 #include "Components/UI/PlayerHUDPresenterComponent.h"
@@ -20,8 +20,8 @@
 
 UPlayerHUDPresenterComponent::UPlayerHUDPresenterComponent()
 {
+	// Tick 사용 안함
 	PrimaryComponentTick.bCanEverTick = false;
-	PrimaryComponentTick.bStartWithTickEnabled = false;
 }
 
 void UPlayerHUDPresenterComponent::SetPlayerStatusWidgetClass(TSubclassOf<UMGSPlayerStatusWidget> InWidgetClass)
@@ -37,8 +37,10 @@ void UPlayerHUDPresenterComponent::RefreshHUDDataBindings()
 		return;
 	}
 
-	CreatePlayerStatusWidget(); // 위젯 생성
-	ClearHUDDataBindings(); // 기존 바인딩 정리
+	// Create and Add widget
+	CreatePlayerStatusWidget();
+	// Clear data
+	ClearHUDDataBindings();
 
 	const APlayerCharacter* PlayerCharacter = PlayerController->GetPawn<APlayerCharacter>();
 	if (!PlayerCharacter)
@@ -46,7 +48,7 @@ void UPlayerHUDPresenterComponent::RefreshHUDDataBindings()
 		return;
 	}
 
-	// 캐싱
+	// Cache
 	CachedASC = PlayerCharacter->GetMGSAbilitySystemComponent();
 	CachedCharacterAttributeSet = PlayerCharacter->GetCharacterAttributeSet();
 	CachedWeaponAttributeSet = PlayerCharacter->GetWeaponAttributeSet();
@@ -57,60 +59,39 @@ void UPlayerHUDPresenterComponent::RefreshHUDDataBindings()
 		return;
 	}
 
-	// Attribute 델리게이트 등록
-	BindAttributeChangedDelegate(UCharacterAttributeSet::GetCurrentHpAttribute(), CurrentHpChangedHandle, &ThisClass::HandleCurrentHpChanged);
+	// Bind function
+	// Character AttributeSet
+	// Max hp
 	BindAttributeChangedDelegate(UCharacterAttributeSet::GetMaxHpAttribute(), MaxHpChangedHandle, &ThisClass::HandleMaxHpChanged);
+	// Current hp
+	BindAttributeChangedDelegate(UCharacterAttributeSet::GetCurrentHpAttribute(), CurrentHpChangedHandle, &ThisClass::HandleCurrentHpChanged);
+	// Weapon AttributeSet
 	if (CachedWeaponAttributeSet)
 	{
-		BindAttributeChangedDelegate(UWeaponAttributeSet::GetCurrentMagazineAmmoAttribute(), CurrentMagazineAmmoChangedHandle, &ThisClass::HandleAmmoAttributeChanged);
+		// Max ammo
 		BindAttributeChangedDelegate(UWeaponAttributeSet::GetMaxMagazineAmmoAttribute(), MaxMagazineAmmoChangedHandle, &ThisClass::HandleAmmoAttributeChanged);
+		// Current ammo
+		BindAttributeChangedDelegate(UWeaponAttributeSet::GetCurrentMagazineAmmoAttribute(), CurrentMagazineAmmoChangedHandle, &ThisClass::HandleAmmoAttributeChanged);
+		// Current carried ammo
 		BindAttributeChangedDelegate(UWeaponAttributeSet::GetCurrentCarriedAmmoAttribute(), CurrentCarriedAmmoChangedHandle, &ThisClass::HandleAmmoAttributeChanged);
-		BindAttributeChangedDelegate(UWeaponAttributeSet::GetCurrentSpreadRadiusAttribute(), CurrentSpreadRadiusChangedHandle, &ThisClass::HandleSpreadAttributeChanged);
+		// Max Spread
 		BindAttributeChangedDelegate(UWeaponAttributeSet::GetMaxSpreadRadiusAttribute(), MaxSpreadRadiusChangedHandle, &ThisClass::HandleSpreadAttributeChanged);
+		// Current Spread
+		BindAttributeChangedDelegate(UWeaponAttributeSet::GetCurrentSpreadRadiusAttribute(), CurrentSpreadRadiusChangedHandle, &ThisClass::HandleSpreadAttributeChanged);
 	}
-
-	// 무기 장착 변경 델리게이트 등록
+	// Combat Component
 	if (CachedPlayerCombatComponent)
 	{
+		// Equip
 		EquippedWeaponChangedHandle = CachedPlayerCombatComponent->GetOnEquippedWeaponChangedDelegate()
 			.AddUObject(this, &ThisClass::HandleEquippedWeaponChanged);
+		// Drop
 		NearbyDroppedWeaponChangedHandle = CachedPlayerCombatComponent->GetOnNearbyDroppedWeaponChangedDelegate()
 			.AddUObject(this, &ThisClass::HandleNearbyDroppedWeaponChanged);
 	}
 
-	// 초기값 HUD 푸시 
+	// Update HUD
 	PushInitialHUDValues();
-}
-
-void UPlayerHUDPresenterComponent::ClearHUDDataBindings()
-{
-	// 등록된 모든 Attribute 델리게이트 해제
-	UnbindAttributeChangedDelegate(UCharacterAttributeSet::GetCurrentHpAttribute(), CurrentHpChangedHandle);
-	UnbindAttributeChangedDelegate(UCharacterAttributeSet::GetMaxHpAttribute(), MaxHpChangedHandle);
-	UnbindAttributeChangedDelegate(UWeaponAttributeSet::GetCurrentMagazineAmmoAttribute(), CurrentMagazineAmmoChangedHandle);
-	UnbindAttributeChangedDelegate(UWeaponAttributeSet::GetMaxMagazineAmmoAttribute(), MaxMagazineAmmoChangedHandle);
-	UnbindAttributeChangedDelegate(UWeaponAttributeSet::GetCurrentCarriedAmmoAttribute(), CurrentCarriedAmmoChangedHandle);
-	UnbindAttributeChangedDelegate(UWeaponAttributeSet::GetCurrentSpreadRadiusAttribute(), CurrentSpreadRadiusChangedHandle);
-	UnbindAttributeChangedDelegate(UWeaponAttributeSet::GetMaxSpreadRadiusAttribute(), MaxSpreadRadiusChangedHandle);
-
-	// 무기 장착 델리게이트 해제
-	if (CachedPlayerCombatComponent && EquippedWeaponChangedHandle.IsValid())
-	{
-		CachedPlayerCombatComponent->GetOnEquippedWeaponChangedDelegate().Remove(EquippedWeaponChangedHandle);
-		EquippedWeaponChangedHandle.Reset();
-	}
-
-	if (CachedPlayerCombatComponent && NearbyDroppedWeaponChangedHandle.IsValid())
-	{
-		CachedPlayerCombatComponent->GetOnNearbyDroppedWeaponChangedDelegate().Remove(NearbyDroppedWeaponChangedHandle);
-		NearbyDroppedWeaponChangedHandle.Reset();
-	}
-
-	// 캐시 nullptr 정리
-	CachedASC = nullptr;
-	CachedCharacterAttributeSet = nullptr;
-	CachedWeaponAttributeSet = nullptr;
-	CachedPlayerCombatComponent = nullptr;
 }
 
 void UPlayerHUDPresenterComponent::CreatePlayerStatusWidget()
@@ -130,26 +111,35 @@ void UPlayerHUDPresenterComponent::CreatePlayerStatusWidget()
 	PlayerStatusWidget->AddToPlayerScreen(1);
 }
 
-void UPlayerHUDPresenterComponent::BindAttributeChangedDelegate(const FGameplayAttribute& Attribute, FDelegateHandle& Handle, FAttributeChangedHandler Handler)
+void UPlayerHUDPresenterComponent::ClearHUDDataBindings()
 {
-	if (!CachedASC)
+	// Unbind function
+	// Character AttributeSet
+	UnbindAttributeChangedDelegate(UCharacterAttributeSet::GetCurrentHpAttribute(), CurrentHpChangedHandle);
+	UnbindAttributeChangedDelegate(UCharacterAttributeSet::GetMaxHpAttribute(), MaxHpChangedHandle);
+	// Weapon AttributeSet
+	UnbindAttributeChangedDelegate(UWeaponAttributeSet::GetCurrentMagazineAmmoAttribute(), CurrentMagazineAmmoChangedHandle);
+	UnbindAttributeChangedDelegate(UWeaponAttributeSet::GetMaxMagazineAmmoAttribute(), MaxMagazineAmmoChangedHandle);
+	UnbindAttributeChangedDelegate(UWeaponAttributeSet::GetCurrentCarriedAmmoAttribute(), CurrentCarriedAmmoChangedHandle);
+	UnbindAttributeChangedDelegate(UWeaponAttributeSet::GetCurrentSpreadRadiusAttribute(), CurrentSpreadRadiusChangedHandle);
+	UnbindAttributeChangedDelegate(UWeaponAttributeSet::GetMaxSpreadRadiusAttribute(), MaxSpreadRadiusChangedHandle);
+	// Combat Component
+	if (CachedPlayerCombatComponent && EquippedWeaponChangedHandle.IsValid())
 	{
-		return;
+		CachedPlayerCombatComponent->GetOnEquippedWeaponChangedDelegate().Remove(EquippedWeaponChangedHandle);
+		EquippedWeaponChangedHandle.Reset();
+	}
+	if (CachedPlayerCombatComponent && NearbyDroppedWeaponChangedHandle.IsValid())
+	{
+		CachedPlayerCombatComponent->GetOnNearbyDroppedWeaponChangedDelegate().Remove(NearbyDroppedWeaponChangedHandle);
+		NearbyDroppedWeaponChangedHandle.Reset();
 	}
 
-	UnbindAttributeChangedDelegate(Attribute, Handle);
-	Handle = CachedASC->GetGameplayAttributeValueChangeDelegate(Attribute).AddUObject(this, Handler);
-}
-
-void UPlayerHUDPresenterComponent::UnbindAttributeChangedDelegate(const FGameplayAttribute& Attribute, FDelegateHandle& Handle)
-{
-	if (!CachedASC || !Handle.IsValid())
-	{
-		return;
-	}
-
-	CachedASC->GetGameplayAttributeValueChangeDelegate(Attribute).Remove(Handle);
-	Handle.Reset();
+	// Cache
+	CachedASC = nullptr;
+	CachedCharacterAttributeSet = nullptr;
+	CachedWeaponAttributeSet = nullptr;
+	CachedPlayerCombatComponent = nullptr;
 }
 
 void UPlayerHUDPresenterComponent::PushInitialHUDValues() const
@@ -159,22 +149,66 @@ void UPlayerHUDPresenterComponent::PushInitialHUDValues() const
 		return;
 	}
 
+	// Update HP
+	UpdateHpOnHUD();
+	// Update ammo
+	UpdateAmmoOnHUD();
+	// Update spread
+	UpdateSpreadOnHUD();
+	// Update weapon image
+	UpdateWeaponInfoVisibility();
+	// Update drop weapon
+	const ABaseWeapon* NearbyDroppedWeapon = CachedPlayerCombatComponent
+		? CachedPlayerCombatComponent->GetNearbyDroppedWeapon()
+		: nullptr;
+	UpdatePickupWeaponPrompt(NearbyDroppedWeapon);
+}
+
+void UPlayerHUDPresenterComponent::UpdateHpOnHUD() const
+{
 	if (CachedCharacterAttributeSet)
 	{
 		PlayerStatusWidget->UpdateHealth(CachedCharacterAttributeSet->GetCurrentHp(), CachedCharacterAttributeSet->GetMaxHp());
 	}
 	else
 	{
-		PlayerStatusWidget->UpdateHealth(0.f, 0.f);
+		PlayerStatusWidget->UpdateHealth(0.0f, 0.0f);
+	}
+}
+
+void UPlayerHUDPresenterComponent::UpdateAmmoOnHUD() const
+{
+	if (!PlayerStatusWidget || !CachedWeaponAttributeSet)
+	{
+		return;
 	}
 
-	UpdateAmmoOnHUD();
-	UpdateSpreadOnHUD();
-	UpdateWeaponInfoVisibility();
-	const ABaseWeapon* NearbyDroppedWeapon = CachedPlayerCombatComponent
-		? CachedPlayerCombatComponent->GetNearbyDroppedWeapon()
-		: nullptr;
-	UpdatePickupWeaponPrompt(NearbyDroppedWeapon);
+	if (!GetEquippedWeapon())
+	{
+		return;
+	}
+
+	PlayerStatusWidget->UpdateAmmo(
+		FMath::Max(0, FMath::RoundToInt(CachedWeaponAttributeSet->GetCurrentMagazineAmmo())),
+		FMath::Max(0, FMath::RoundToInt(CachedWeaponAttributeSet->GetMaxMagazineAmmo())),
+		FMath::Max(0, FMath::RoundToInt(CachedWeaponAttributeSet->GetCurrentCarriedAmmo())));
+}
+
+void UPlayerHUDPresenterComponent::UpdateSpreadOnHUD() const
+{
+	if (!PlayerStatusWidget || !CachedWeaponAttributeSet)
+	{
+		return;
+	}
+
+	if (!GetEquippedWeapon())
+	{
+		return;
+	}
+
+	PlayerStatusWidget->UpdateSpread(
+		FMath::Max(0.f, CachedWeaponAttributeSet->GetCurrentSpreadRadius()),
+		FMath::Max(0.f, CachedWeaponAttributeSet->GetMaxSpreadRadius()));
 }
 
 void UPlayerHUDPresenterComponent::UpdateWeaponInfoVisibility() const
@@ -184,7 +218,7 @@ void UPlayerHUDPresenterComponent::UpdateWeaponInfoVisibility() const
 		return;
 	}
 
-	const ABaseWeapon* EquippedWeapon = CachedPlayerCombatComponent ? CachedPlayerCombatComponent->GetCharacterCurrentEquippedWeapon() : nullptr;
+	const ABaseWeapon* EquippedWeapon = GetEquippedWeapon();
 	const bool bHasEquippedWeapon = EquippedWeapon != nullptr;
 	UTexture2D* WeaponInfoImage = nullptr;
 	if (EquippedWeapon)
@@ -224,40 +258,34 @@ void UPlayerHUDPresenterComponent::UpdatePickupWeaponPrompt(const ABaseWeapon* N
 	PlayerStatusWidget->UpdatePickupWeaponPrompt(bHasNearbyDroppedWeapon, PickupWeaponName, PickupWeaponInfoImage);
 }
 
-void UPlayerHUDPresenterComponent::UpdateAmmoOnHUD() const
+const ABaseWeapon* UPlayerHUDPresenterComponent::GetEquippedWeapon() const
 {
-	if (!PlayerStatusWidget || !CachedWeaponAttributeSet)
-	{
-		return;
-	}
-
-	PlayerStatusWidget->UpdateAmmo(
-		FMath::Max(0, FMath::RoundToInt(CachedWeaponAttributeSet->GetCurrentMagazineAmmo())),
-		FMath::Max(0, FMath::RoundToInt(CachedWeaponAttributeSet->GetMaxMagazineAmmo())),
-		FMath::Max(0, FMath::RoundToInt(CachedWeaponAttributeSet->GetCurrentCarriedAmmo())));
+	return CachedPlayerCombatComponent ? CachedPlayerCombatComponent->GetCharacterCurrentEquippedWeapon() : nullptr;
 }
 
-void UPlayerHUDPresenterComponent::UpdateSpreadOnHUD() const
+void UPlayerHUDPresenterComponent::BindAttributeChangedDelegate(const FGameplayAttribute& Attribute, FDelegateHandle& Handle, FAttributeChangedHandler Handler)
 {
-	if (!PlayerStatusWidget || !CachedWeaponAttributeSet)
+	if (!CachedASC)
 	{
 		return;
 	}
 
-	PlayerStatusWidget->UpdateSpread(
-		FMath::Max(0.f, CachedWeaponAttributeSet->GetCurrentSpreadRadius()),
-		FMath::Max(0.f, CachedWeaponAttributeSet->GetMaxSpreadRadius()));
+	// Clear bind
+	UnbindAttributeChangedDelegate(Attribute, Handle);
+	// Bind
+	Handle = CachedASC->GetGameplayAttributeValueChangeDelegate(Attribute).AddUObject(this, Handler);
 }
 
-void UPlayerHUDPresenterComponent::HandleCurrentHpChanged(const FOnAttributeChangeData& AttributeChangeData)
+void UPlayerHUDPresenterComponent::UnbindAttributeChangedDelegate(const FGameplayAttribute& Attribute, FDelegateHandle& Handle)
 {
-	if (!PlayerStatusWidget)
+	if (!CachedASC || !Handle.IsValid())
 	{
 		return;
 	}
 
-	const float MaxHp = CachedCharacterAttributeSet ? CachedCharacterAttributeSet->GetMaxHp() : 0.f;
-	PlayerStatusWidget->UpdateHealth(AttributeChangeData.NewValue, MaxHp);
+	// Unbind
+	CachedASC->GetGameplayAttributeValueChangeDelegate(Attribute).Remove(Handle);
+	Handle.Reset();
 }
 
 void UPlayerHUDPresenterComponent::HandleMaxHpChanged(const FOnAttributeChangeData& AttributeChangeData)
@@ -267,8 +295,19 @@ void UPlayerHUDPresenterComponent::HandleMaxHpChanged(const FOnAttributeChangeDa
 		return;
 	}
 
-	const float CurrentHp = CachedCharacterAttributeSet ? CachedCharacterAttributeSet->GetCurrentHp() : 0.f;
+	const float CurrentHp = CachedCharacterAttributeSet ? CachedCharacterAttributeSet->GetCurrentHp() : 0.0f;
 	PlayerStatusWidget->UpdateHealth(CurrentHp, AttributeChangeData.NewValue);
+}
+
+void UPlayerHUDPresenterComponent::HandleCurrentHpChanged(const FOnAttributeChangeData& AttributeChangeData)
+{
+	if (!PlayerStatusWidget)
+	{
+		return;
+	}
+
+	const float MaxHp = CachedCharacterAttributeSet ? CachedCharacterAttributeSet->GetMaxHp() : 0.0f;
+	PlayerStatusWidget->UpdateHealth(AttributeChangeData.NewValue, MaxHp);
 }
 
 void UPlayerHUDPresenterComponent::HandleAmmoAttributeChanged(const FOnAttributeChangeData& /*AttributeChangeData*/)
@@ -283,9 +322,9 @@ void UPlayerHUDPresenterComponent::HandleSpreadAttributeChanged(const FOnAttribu
 
 void UPlayerHUDPresenterComponent::HandleEquippedWeaponChanged(FGameplayTag /*PreviousWeaponTag*/, FGameplayTag /*CurrentWeaponTag*/)
 {
-	UpdateWeaponInfoVisibility();
 	UpdateAmmoOnHUD();
 	UpdateSpreadOnHUD();
+	UpdateWeaponInfoVisibility();
 }
 
 void UPlayerHUDPresenterComponent::HandleNearbyDroppedWeaponChanged(const ABaseWeapon* NearbyDroppedWeapon)

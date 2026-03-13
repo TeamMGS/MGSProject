@@ -2,13 +2,14 @@
  * 파일명 : PawnCombatComponent.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
- * 수정자 : 김동석
- * 수정일 : 2026-03-11
+ * 수정자 : 장대한
+ * 수정일 : 2026-03-12
  */
 
 #include "Components/Combat/PawnCombatComponent.h"
 
 #include "Characters/BaseCharacter.h"
+#include "Characters/Player/PlayerCharacter.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Engine/LocalPlayer.h"
@@ -17,6 +18,7 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/PlayerController.h"
 #include "MGSStructType.h"
+#include "Subsystems/ProjectilePoolWorldSubsystem.h"
 #include "Weapon/BaseGun.h"
 #include "Weapon/BaseWeapon.h"
 
@@ -33,6 +35,14 @@ void UPawnCombatComponent::RegisterSpawnedWeapon(FGameplayTag WeaponTag, ABaseWe
 	{
 		// 총기면 기본 탄약 상태를 런타임 맵에 초기 저장
 		CharacterCarriedWeaponRuntimeStateMap.FindOrAdd(WeaponTag) = SpawnedGun->MakeDefaultRuntimeState();
+
+		if (UWorld* World = SpawnedGun->GetWorld())
+		{
+			if (UMGSProjectilePoolWorldSubsystem* ProjectilePoolSubsystem = World->GetSubsystem<UMGSProjectilePoolWorldSubsystem>())
+			{
+				ProjectilePoolSubsystem->PrewarmProjectileClass(SpawnedGun->GetProjectileClass());
+			}
+		}
 	}
 
 	// 기본 등록 시에는 홀스터 소켓으로 붙여두고, 장착 등록이면 즉시 장착합니다.
@@ -307,17 +317,20 @@ void UPawnCombatComponent::RemoveWeaponInputMappingContext(ABaseWeapon* Weapon) 
 
 void UPawnCombatComponent::ApplyWeaponAbilities(ABaseWeapon* Weapon) const
 {
-	const ABaseCharacter* OwningCharacter = Cast<ABaseCharacter>(GetOwningPawn());
+	ABaseCharacter* OwningCharacter = Cast<ABaseCharacter>(GetOwningPawn());
 	UMGSAbilitySystemComponent* ASC = OwningCharacter ? OwningCharacter->GetMGSAbilitySystemComponent() : nullptr;
 	if (!ASC || !Weapon)
 	{
 		return;
 	}
 
-	TArray<FGameplayAbilitySpecHandle> GrantedHandles;
-	ASC->GrantWeaponAbilities(Weapon->GetWeaponData().WeaponAbilities, 1, GrantedHandles);
-	Weapon->AssignGrantedAbilitySpecHandles(GrantedHandles);
-	AddWeaponInputMappingContext(Weapon);
+	if (Cast<APlayerCharacter>(OwningCharacter))
+	{
+		TArray<FGameplayAbilitySpecHandle> GrantedHandles;
+		ASC->GrantWeaponAbilities(Weapon->GetWeaponData().WeaponAbilities, 1, GrantedHandles);
+		Weapon->AssignGrantedAbilitySpecHandles(GrantedHandles);
+		AddWeaponInputMappingContext(Weapon);
+	}
 	
 	// 무기데이터에 저장된 태그 부여
 	FGameplayTag EquipTag = Weapon->GetWeaponData().WeaponEquippedTag;
@@ -329,17 +342,20 @@ void UPawnCombatComponent::ApplyWeaponAbilities(ABaseWeapon* Weapon) const
 
 void UPawnCombatComponent::RemoveWeaponAbilities(ABaseWeapon* Weapon) const
 {
-	const ABaseCharacter* OwningCharacter = Cast<ABaseCharacter>(GetOwningPawn());
+	ABaseCharacter* OwningCharacter = Cast<ABaseCharacter>(GetOwningPawn());
 	UMGSAbilitySystemComponent* ASC = OwningCharacter ? OwningCharacter->GetMGSAbilitySystemComponent() : nullptr;
 	if (!ASC || !Weapon)
 	{
 		return;
 	}
 
-	RemoveWeaponInputMappingContext(Weapon);
-	TArray<FGameplayAbilitySpecHandle> SpecHandlesToRemove;
-	Weapon->ConsumeGrantedAbilitySpecHandles(SpecHandlesToRemove);
-	ASC->RemoveGrantedWeaponAbilities(SpecHandlesToRemove);
+	if (Cast<APlayerCharacter>(OwningCharacter))
+	{
+		RemoveWeaponInputMappingContext(Weapon);
+		TArray<FGameplayAbilitySpecHandle> SpecHandlesToRemove;
+		Weapon->ConsumeGrantedAbilitySpecHandles(SpecHandlesToRemove);
+		ASC->RemoveGrantedWeaponAbilities(SpecHandlesToRemove);
+	}
 	
 	// 무기데이터에 저장된 태그 해제
 	FGameplayTag EquipTag = Weapon->GetWeaponData().WeaponEquippedTag;

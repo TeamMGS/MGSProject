@@ -33,6 +33,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "AI|Detection")
 	bool HasLastSeenLocation() const { return bHasLastSeenLocation; }
 
+	UFUNCTION(BlueprintPure, Category = "AI|Detection")
+	AActor* GetCurrentTargetActor() const { return CurrentTargetActor.Get(); }
+
 protected:
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void OnUnPossess() override;
