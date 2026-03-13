@@ -78,7 +78,7 @@ void FMGSEssentialValues::Update(UAnimInstance* AnimInstance, const FMGSCharacte
 {
 	if (DeltaSeconds <= 0.f) return;
 
-	// 1. 기초 물리 계산
+	// 기초 물리 계산
 	const float AccelSize = Data.InputAcceleration.Size();
 	AccelerationAmount = (Data.MaxAcceleration > 0.f) ? (AccelSize / Data.MaxAcceleration) : 0.f;
 	bHasAcceleration = AccelerationAmount > 0.f;
@@ -88,10 +88,10 @@ void FMGSEssentialValues::Update(UAnimInstance* AnimInstance, const FMGSCharacte
 	const FVector VelocityAcceleration = (Data.Velocity - Velocity_LastFrame) / DeltaSeconds;
 	Velocity_LastFrame = Data.Velocity;
 	
-	// [2] 기준점 설정 (여기서 모든 삽질을 끝냅니다)
-	// 'body'의 기준을 월드 0점이 아닌, 현재 '캡슐(Actor)의 Yaw'로 먼저 잡습니다.
+	// 기준점 설정 
+	// body의 기준을 캡슐(Actor)의 Yaw로 잡습니다.
 	float BaseActorYaw = Data.ActorTransform.Rotator().Yaw;
-	float MeshTwistYaw = 0.0f; // 메쉬가 캡슐 대비 얼마나 뒤처졌는가?
+	float MeshTwistYaw = 0.0f; 
 
 	if (AnimInstance)
 	{
@@ -113,28 +113,26 @@ void FMGSEssentialValues::Update(UAnimInstance* AnimInstance, const FMGSCharacte
 		}
 	}
 
-	// [3] 진짜 몸통 방향(Body) 결정
-	// 캡슐 방향에 메쉬의 지연(Twist)을 더합니다. 이제 body는 0이 아니라 캐릭터가 보는 방향을 가리킵니다!
+	// 몸통 방향(Body)
 	float CurrentBodyWorldYaw;
 	float TargetBodyYaw = FRotator::NormalizeAxis(BaseActorYaw + MeshTwistYaw);
 
-	// 2. 이동 중인지 판정 (속도가 5 이상일 때만 몸통이 회전한다고 가정)
+	// 이동 중인지 판정 
 	if (Speed2D > 5.0f)
 	{
-		// 이동 중이면 몸통이 진행 방향(캡슐)을 자연스럽게 따라갑니다.
+		// 이동 중이면 몸통이 진행 방향을 자연스럽게 따라갑니다.
 		CurrentBodyWorldYaw = TargetBodyYaw;
 	}
 	else
 	{
-		// [핵심] 멈춰있을 때는 이전 프레임의 몸통 방향을 그대로 유지합니다.
-		// 이렇게 해야 카메라만 돌아갈 때 몸통과의 차이(AOValue)가 발생합니다.
+		// 멈춰있을 때는 이전 프레임의 몸통 방향을 그대로 유지
 		CurrentBodyWorldYaw = LastBodyWorldYaw;
 	}
 
-	// 3. 다음 프레임을 위해 현재 값을 저장
+	// 다음 프레임을 위해 현재 값을 저장
 	LastBodyWorldYaw = CurrentBodyWorldYaw;
 	
-	// [4] 에임 오프셋 계산 (카메라 vs 진짜 몸통)
+	// 에임 오프셋 계산
 	if (AnimInstance)
 	{
 		float CameraYaw = Data.AimingRotation.Yaw;
@@ -143,8 +141,12 @@ void FMGSEssentialValues::Update(UAnimInstance* AnimInstance, const FMGSCharacte
 		// 대부분의 UE 캐릭터는 -90도가 정면입니다.
 		// 만약 고개가 정면에서 90도 꺾여 보인다면 아래 -90.0f를 0.0f나 +90.0f로 바꾸세요.
 		float FinalYaw = FRotator::NormalizeAxis(CameraYaw - (CurrentBodyWorldYaw));
-
-		float FinalPitch = FRotator::NormalizeAxis(Data.AimingRotation.Pitch);
+		float PitchOffset = 0.0f;
+		if (Data.GameplayTags.HasTag(FGameplayTag::RequestGameplayTag("State.Character.WeaponEquipped.Primary")))
+		{
+			PitchOffset = 0.0f; // 총구가 너무 위를 보면 이 값을 더 낮추세요.
+		}
+		float FinalPitch = FRotator::NormalizeAxis(Data.AimingRotation.Pitch + PitchOffset);
 		float DisableAO = AnimInstance->GetCurveValue(FName("Disable_AO"));
 
 		// 최종 대입
@@ -152,20 +154,17 @@ void FMGSEssentialValues::Update(UAnimInstance* AnimInstance, const FMGSCharacte
 		AOValue.Y = FMath::Lerp(FinalPitch, 0.0f, DisableAO);
 	}
 
-	// [5] 시각적 보정 (RootTransform 업데이트)
-	// 위에서 구한 논리를 트랜스폼으로 복원합니다.
+	// 시각적 보정 (RootTransform 업데이트)
 	FRotator VisualRot = FRotator(0, CurrentBodyWorldYaw, 0);
 	RootTransform.SetLocation(Data.ActorTransform.GetLocation());
 	RootTransform.SetRotation(VisualRot.Quaternion());
 
-	// [6] 상대 가속도(Lean) 계산
-	// 보정된 RootTransform(+90도) 기준으로 가속도를 Unrotate 합니다.
+	// 상대 가속도 계산
 	FRotator LeanRefRot = VisualRot;
 	LeanRefRot.Yaw = FRotator::NormalizeAxis(LeanRefRot.Yaw + 90.0f);
 	RelativeAcceleration = LeanRefRot.Quaternion().UnrotateVector(VelocityAcceleration);
 	
 	LastFrameActorYaw = Data.ActorTransform.Rotator().Yaw;
-	// RelativeAccelerationAmount 및 Lean 계산 (기존 로직 유지)
 	FVector RelativeAccelAmt = FVector::ZeroVector;
 	if (Data.MaxAcceleration > 0.f)
 	{
@@ -177,7 +176,7 @@ void FMGSEssentialValues::Update(UAnimInstance* AnimInstance, const FMGSCharacte
 
 	if (bHasVelocity) LastNonZeroVelocity = Data.Velocity;
 
-	// 5. 공중 체류 시간 (기존 로직 유지)
+	// 공중 체류 시간
 	const bool bIsAirborne = Data.GameplayTags.HasTag(MGSGameplayTags::State_Player_Mode_InAir) ||
 		Data.GameplayTags.HasTag(MGSGameplayTags::State_Player_Movement_Falling);
 	InAirTime = bIsAirborne ? (InAirTime + DeltaSeconds) : 0.f;
