@@ -30,11 +30,6 @@ void UMGSPlayerStatusWidget::UpdateSpread(float InCurrentSpreadRadius, float InM
 	BP_OnSpreadUpdated(CurrentSpreadRadius, MaxSpreadRadius, GetSpreadPercent());
 }
 
-void UMGSPlayerStatusWidget::SetWeaponInfoVisible(bool bInVisible)
-{
-	UpdateWeaponInfo(bInVisible, CurrentWeaponInfoImage.Get());
-}
-
 void UMGSPlayerStatusWidget::UpdateWeaponInfo(bool bInVisible, UTexture2D* InWeaponInfoImage)
 {
 	bWeaponInfoVisible = bInVisible;
@@ -83,4 +78,9 @@ FText UMGSPlayerStatusWidget::GetPickupWeaponPromptName() const
 UTexture2D* UMGSPlayerStatusWidget::GetPickupWeaponPromptImage() const
 {
 	return PickupWeaponPromptImage.Get();
+}
+
+void UMGSPlayerStatusWidget::SetWeaponInfoVisible(bool bInVisible)
+{
+	UpdateWeaponInfo(bInVisible, CurrentWeaponInfoImage.Get());
 }

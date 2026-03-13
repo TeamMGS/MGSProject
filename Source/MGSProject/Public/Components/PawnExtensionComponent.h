@@ -34,6 +34,7 @@ protected:
 	template<class T>
 	T* GetOwningController() const
 	{
+		// 템플릿 타입 T는 반드시 APawn을 상속한 타입이어야 한다.
 		static_assert(TPointerIsConvertibleFromTo<T, AController>::Value, "'T' Template Parameter get GetController must be derived from AController");
 		return GetOwningPawn<APawn>()->GetController();
 	}
@@ -44,5 +45,3 @@ protected:
 	}
 	
 };
-
-

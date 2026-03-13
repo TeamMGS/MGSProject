@@ -2,8 +2,8 @@
  * 파일명 : ProjectilePoolWorldSubsystem.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-10
- * 수정자 : 장대한 
- * 수정일 : 2026-03-10
+ * 수정자 : 장대한
+ * 수정일 : 2026-03-12
  */
 
 #include "Subsystems/ProjectilePoolWorldSubsystem.h"
@@ -13,6 +13,28 @@
 #include "Projectiles/BaseProjectile.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogProjectilePool, Log, All);
+
+void UMGSProjectilePoolWorldSubsystem::PrewarmProjectileClass(TSubclassOf<ABaseProjectile> ProjectileClass)
+{
+	UClass* ProjectileClassPtr = ProjectileClass.Get();
+	if (!ProjectileClassPtr)
+	{
+		return;
+	}
+
+	FProjectilePoolBucket& PoolBucket = ProjectilePools.FindOrAdd(ProjectileClassPtr);
+	if (PoolBucket.bHasBeenPrewarmed)
+	{
+		return;
+	}
+
+	PrewarmPool(ProjectileClassPtr);
+	PoolBucket.bHasBeenPrewarmed = true;
+	UE_LOG(LogProjectilePool, Log, TEXT("[ProjectilePool][PrewarmComplete] Class=%s Available=%d Total=%d"),
+		*GetNameSafe(ProjectileClassPtr),
+		PoolBucket.AvailableProjectiles.Num(),
+		PoolBucket.AllProjectiles.Num());
+}
 
 ABaseProjectile* UMGSProjectilePoolWorldSubsystem::AcquireProjectile(
 	TSubclassOf<ABaseProjectile> ProjectileClass,
@@ -29,12 +51,7 @@ ABaseProjectile* UMGSProjectilePoolWorldSubsystem::AcquireProjectile(
 	FProjectilePoolBucket& PoolBucket = ProjectilePools.FindOrAdd(ProjectileClassPtr);
 	if (!PoolBucket.bHasBeenPrewarmed)
 	{
-		PrewarmPool(ProjectileClassPtr);
-		PoolBucket.bHasBeenPrewarmed = true;
-		UE_LOG(LogProjectilePool, Log, TEXT("[ProjectilePool][PrewarmComplete] Class=%s Available=%d Total=%d"),
-			*GetNameSafe(ProjectileClassPtr),
-			PoolBucket.AvailableProjectiles.Num(),
-			PoolBucket.AllProjectiles.Num());
+		PrewarmProjectileClass(ProjectileClassPtr);
 	}
 
 	ABaseProjectile* Projectile = nullptr;

@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-04
  * 수정자 : 장대한
- * 수정일 : 2026-03-09
+ * 수정일 : 2026-03-12
  */
 
 #include "GAS/GA/PlayerAimGameplayAbility.h"
@@ -40,6 +40,7 @@ bool UPlayerAimGameplayAbility::CanActivateAbility(const FGameplayAbilitySpecHan
 		return false;
 	}
 
+	// 장착한 무기가 없으면 발동하지 않음
 	const ABaseGun* EquippedGun = Cast<ABaseGun>(PlayerCombatComponent->GetCharacterCurrentEquippedWeapon());
 	return EquippedGun != nullptr;
 }
@@ -73,13 +74,20 @@ void UPlayerAimGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle
 
 	if (APlayerCharacter* PlayerCharacter = GetPlayerCharacterFromActorInfo())
 	{
-		if (USpringArmComponent* CameraBoom = PlayerCharacter->FindComponentByClass<USpringArmComponent>())
+		if (USpringArmComponent* CameraBoom = PlayerCharacter->GetCameraBoom())
 		{
 			// 카메라 오프셋 캐싱 및 조준 오프셋 변경
 			CachedCameraSocketOffset = CameraBoom->SocketOffset;
 			bHasCachedCameraSocketOffset = true;
 			CameraBoom->SocketOffset = EquippedGun->GetAimCameraSocketOffset();
+
+			// 조준 중에는 벽 근처에서 카메라가 급격히 앞으로 당겨지지 않도록 충돌 테스트 비활성화
+			bCachedCameraCollisionTest = CameraBoom->bDoCollisionTest;
+			bHasCachedCameraCollisionTest = true;
+			CameraBoom->bDoCollisionTest = false;
 		}
+
+		PlayerCharacter->StartAimObstructionTrace();
 	}
 }
 
@@ -115,15 +123,27 @@ void UPlayerAimGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Hand
 	{
 		if (APlayerCharacter* PlayerCharacter = GetPlayerCharacterFromActorInfo())
 		{
-			if (USpringArmComponent* CameraBoom = PlayerCharacter->FindComponentByClass<USpringArmComponent>())
+			if (USpringArmComponent* CameraBoom = PlayerCharacter->GetCameraBoom())
 			{
 				// 카메라 오프셋 복원
 				CameraBoom->SocketOffset = CachedCameraSocketOffset;
+
+				if (bHasCachedCameraCollisionTest)
+				{
+					CameraBoom->bDoCollisionTest = bCachedCameraCollisionTest;
+				}
 			}
 		}
 
 		bHasCachedCameraSocketOffset = false;
 	}
+
+	if (APlayerCharacter* PlayerCharacter = GetPlayerCharacterFromActorInfo())
+	{
+		PlayerCharacter->StopAimObstructionTrace();
+	}
+
+	bHasCachedCameraCollisionTest = false;
 
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }

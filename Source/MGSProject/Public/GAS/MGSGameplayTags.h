@@ -2,8 +2,8 @@
  * 파일명 : MGSGameplayTags.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
- * 수정자 : 김동석
- * 수정일 : 2026-03-11
+ * 수정자 : 장대한
+ * 수정일 : 2026-03-12
  */
 
 #pragma once
@@ -28,6 +28,7 @@ namespace MGSGameplayTags
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Weapon_Primary)
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Weapon_Secondary)
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Weapon_Throwable)
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Weapon_Unequip)
 
 	// Ability tags: identify gameplay abilities
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Player_Jump)
@@ -42,11 +43,17 @@ namespace MGSGameplayTags
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Player_Equip_Primary)
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Player_Equip_Secondary)
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Player_Equip_Throwable)
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Enemy_Equip_Primary)
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Enemy_Equip_Secondary)
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Enemy_DefaultMovement)
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Enemy_Walk)
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Enemy_Sprint)
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Enemy_Crouch)
 
 	// Weapon tags: carried/equipped weapon identifier
-	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Weapon_Player_Primary)
-	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Weapon_Player_Secondary)
-	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Weapon_Player_Throwable)
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Weapon_Primary)
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Weapon_Secondary)
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Weapon_Throwable)
 
 	// State tags: runtime avatar state
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Player_Movement_Sprint)
@@ -89,6 +96,10 @@ namespace MGSGameplayTags
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Enemy_Suspicious)
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Enemy_Investigation)
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Enemy_Combat)
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Enemy_Crouching)
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Enemy_Movement_Default)
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Enemy_Movement_Walk)
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Enemy_Movement_Sprint)
 
 	// 무기 장착 여부 판정 태그
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Character_WeaponEquipped_Secondary)

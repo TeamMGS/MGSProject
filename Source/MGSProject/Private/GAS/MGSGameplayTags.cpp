@@ -2,8 +2,8 @@
  * 파일명 : MGSGameplayTags.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
- * 수정자 : 김동석
- * 수정일 : 2026-03-09
+ * 수정자 : 장대한
+ * 수정일 : 2026-03-12
  */
 
 #include "GAS/MGSGameplayTags.h"
@@ -26,6 +26,7 @@ namespace MGSGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_Weapon_Primary, "InputTag.Weapon.Primary")
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_Weapon_Secondary, "InputTag.Weapon.Secondary")
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_Weapon_Throwable, "InputTag.Weapon.Throwable")
+	UE_DEFINE_GAMEPLAY_TAG(InputTag_Weapon_Unequip, "InputTag.Weapon.Unequip")
 
 	// Ability
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Jump, "Ability.Player.Jump")
@@ -40,11 +41,17 @@ namespace MGSGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Equip_Primary, "Ability.Player.Equip.Primary")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Equip_Secondary, "Ability.Player.Equip.Secondary")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Equip_Throwable, "Ability.Player.Equip.Throwable")
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Enemy_Equip_Primary, "Ability.Enemy.Equip.Primary")
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Enemy_Equip_Secondary, "Ability.Enemy.Equip.Secondary")
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Enemy_DefaultMovement, "Ability.Enemy.DefaultMovement")
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Enemy_Walk, "Ability.Enemy.Walk")
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Enemy_Sprint, "Ability.Enemy.Sprint")
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Enemy_Crouch, "Ability.Enemy.Crouch")
 
 	// Weapon
-	UE_DEFINE_GAMEPLAY_TAG(Weapon_Player_Primary, "Weapon.Player.Primary")
-	UE_DEFINE_GAMEPLAY_TAG(Weapon_Player_Secondary, "Weapon.Player.Secondary")
-	UE_DEFINE_GAMEPLAY_TAG(Weapon_Player_Throwable, "Weapon.Player.Throwable")
+	UE_DEFINE_GAMEPLAY_TAG(Weapon_Primary, "Weapon.Primary")
+	UE_DEFINE_GAMEPLAY_TAG(Weapon_Secondary, "Weapon.Secondary")
+	UE_DEFINE_GAMEPLAY_TAG(Weapon_Throwable, "Weapon.Throwable")
 
 	// State
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Movement_Sprint, "State.Player.Movement.Sprint")
@@ -69,6 +76,10 @@ namespace MGSGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(State_Enemy_Suspicious, "State.Enemy.Suspicious")
 	UE_DEFINE_GAMEPLAY_TAG(State_Enemy_Investigation, "State.Enemy.Investigation")
 	UE_DEFINE_GAMEPLAY_TAG(State_Enemy_Combat, "State.Enemy.Combat")
+	UE_DEFINE_GAMEPLAY_TAG(State_Enemy_Crouching, "State.Enemy.Crouching")
+	UE_DEFINE_GAMEPLAY_TAG(State_Enemy_Movement_Default, "State.Enemy.Movement.Default")
+	UE_DEFINE_GAMEPLAY_TAG(State_Enemy_Movement_Walk, "State.Enemy.Movement.Walk")
+	UE_DEFINE_GAMEPLAY_TAG(State_Enemy_Movement_Sprint, "State.Enemy.Movement.Sprint")
 
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Gait_Walk, "State.Player.Gait.Walk")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Gait_Run, "State.Player.Gait.Run")

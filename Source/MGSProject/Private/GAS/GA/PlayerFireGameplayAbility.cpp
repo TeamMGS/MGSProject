@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-04
  * 수정자 : 장대한
- * 수정일 : 2026-03-09
+ * 수정일 : 2026-03-12
  */
 
 #include "GAS/GA/PlayerFireGameplayAbility.h"
@@ -422,8 +422,8 @@ bool UPlayerFireGameplayAbility::SpawnProjectileShot(APlayerCharacter* PlayerCha
 		return false;
 	}
 
-	AActor* DamageCauser = GetAvatarActorFromActorInfo();
-	APawn* InstigatorPawn = Cast<APawn>(DamageCauser);
+	AActor* DamageCauser = PlayerCharacter;
+	APawn* InstigatorPawn = PlayerCharacter;
 	
 	UWorld* World = PlayerCharacter->GetWorld();
 	if (!World)

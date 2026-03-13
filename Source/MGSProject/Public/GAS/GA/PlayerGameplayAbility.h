@@ -12,9 +12,9 @@
 #include "GAS/GA/BaseGameplayAbility.h"
 #include "PlayerGameplayAbility.generated.h"
 
-class UPlayerCombatComponent;
 class AMGSPlayerController;
 class APlayerCharacter;
+class UPlayerCombatComponent;
 
 UCLASS(Blueprintable, BlueprintType)
 class MGSPROJECT_API UPlayerGameplayAbility : public UBaseGameplayAbility

@@ -7,5 +7,3 @@
  */
 
 #include "Components/PawnExtensionComponent.h"
-
-

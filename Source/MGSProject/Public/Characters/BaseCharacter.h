@@ -2,8 +2,8 @@
  * 파일명 : BaseCharacter.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
- * 수정자 : 김동석
- * 수정일 : 2026-03-09
+ * 수정자 : 장대한
+ * 수정일 : 2026-03-12
  */
 
 #pragma once
@@ -41,6 +41,8 @@ public:
 	virtual UCharacterAttributeSet* GetCharacterAttributeSet() const;
 	// Get Weapon AttributeSet
 	virtual UWeaponAttributeSet* GetWeaponAttributeSet() const;
+	// 피격 부위에 따른 데미지 배율 조회
+	virtual float GetDamageMultiplierForHit(const FHitResult& Hit) const;
 	
 protected:
 	virtual void PossessedBy(AController* NewController) override;

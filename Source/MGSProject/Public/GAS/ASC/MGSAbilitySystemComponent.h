@@ -13,8 +13,8 @@
 #include "GameplayTagContainer.h"
 #include "MGSAbilitySystemComponent.generated.h"
 
-class UPawnCombatComponent;
 struct FPlayerAbilitySet;
+class UPawnCombatComponent;
 
 UCLASS()
 class MGSPROJECT_API UMGSAbilitySystemComponent : public UAbilitySystemComponent

@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
  * 수정자 : 장대한
- * 수정일 : 2026-03-02
+ * 수정일 : 2026-03-12
  */
 
 #include "GAS/GA/EnemyGameplayAbility.h"
@@ -12,6 +12,11 @@
 
 AEnemyCharacter* UEnemyGameplayAbility::GetEnemyCharacterFromActorInfo()
 {
+	if (!CurrentActorInfo)
+	{
+		return nullptr;
+	}
+
 	if (!CachedEnemyCharacter.IsValid())
 	{
 		CachedEnemyCharacter = Cast<AEnemyCharacter>(CurrentActorInfo->AvatarActor);
@@ -22,7 +27,10 @@ AEnemyCharacter* UEnemyGameplayAbility::GetEnemyCharacterFromActorInfo()
 
 UEnemyCombatComponent* UEnemyGameplayAbility::GetEnemyCombatComponentFromActorInfo()
 {
-	return GetEnemyCharacterFromActorInfo()->GetEnemyCombatComponent();
+	if (AEnemyCharacter* EnemyCharacter = GetEnemyCharacterFromActorInfo())
+	{
+		return EnemyCharacter->GetEnemyCombatComponent();
+	}
+
+	return nullptr;
 }
-
-

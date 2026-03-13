@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
  * 수정자 : 장대한
- * 수정일 : 2026-03-09
+ * 수정일 : 2026-03-12
  */
 
 #include "Characters/Enemies/EnemyCharacter.h"
@@ -19,6 +19,7 @@
 #include "GAS/MGSGameplayTags.h"
 #include "MGSDebugHelper.h"
 #include "AbilitySystemComponent.h"
+#include "Components/SphereComponent.h"
 #include "Components/InputComponent.h"
 #include "InputCoreTypes.h"
 #include "Engine/Engine.h"
@@ -30,29 +31,49 @@
 AEnemyCharacter::AEnemyCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
+	// Controller
 	AIControllerClass = AEnemyAIController::StaticClass();
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
-	
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationRoll = false;
 	bUseControllerRotationYaw = false;
 	
+	// Movement
 	GetCharacterMovement()->bUseControllerDesiredRotation = false;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
-	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
-	GetCharacterMovement()->MaxWalkSpeed = 450.0f;
+	GetCharacterMovement()->GetNavAgentPropertiesRef().bCanCrouch = true;
+	GetCharacterMovement()->MaxWalkSpeed = DefaultMovementSpeed;
+	GetCharacterMovement()->MaxWalkSpeedCrouched = CrouchMovementSpeed;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.0f;
+	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
 
+	// ASC
 	MGSAbilitySystemComponent = CreateDefaultSubobject<UMGSAbilitySystemComponent>(TEXT("MGSAbilitySystemComponent"));
 	MGSAbilitySystemComponent->SetIsReplicated(true);
+	
+	// Character AttributeSet
 	CharacterAttributeSet = CreateDefaultSubobject<UCharacterAttributeSet>(TEXT("CharacterAttributeSet"));
 	
+	// Combat Component
 	EnemyCombatComponent = CreateDefaultSubobject<UEnemyCombatComponent>(TEXT("EnemyCombatComponent"));
+	
+	// Head Collision
+	HeadHitSphere = CreateDefaultSubobject<USphereComponent>(TEXT("HeadHitSphere"));
+	HeadHitSphere->SetupAttachment(GetMesh(), TEXT("head"));
+	HeadHitSphere->InitSphereRadius(HeadHitSphereRadius);
+	HeadHitSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	HeadHitSphere->SetCollisionObjectType(ECC_Pawn);
+	HeadHitSphere->SetCollisionResponseToAllChannels(ECR_Ignore);
+	HeadHitSphere->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Overlap);
+	HeadHitSphere->SetGenerateOverlapEvents(true);
+	HeadHitSphere->SetCanEverAffectNavigation(false);
 
+	// AI
 	PerceptionStimuliSource = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("PerceptionStimuliSource"));
 	PerceptionStimuliSource->RegisterForSense(UAISense_Sight::StaticClass());
 	PerceptionStimuliSource->RegisterForSense(UAISense_Hearing::StaticClass());
 
+	// Tag
 	DefaultEnemyStateTag = MGSGameplayTags::State_Enemy_Clear;
 }
 
@@ -63,7 +84,7 @@ UPawnCombatComponent* AEnemyCharacter::GetPawnCombatComponent() const
 
 UAbilitySystemComponent* AEnemyCharacter::GetAbilitySystemComponent() const
 {
-	return MGSAbilitySystemComponent;
+	return GetMGSAbilitySystemComponent();
 }
 
 UMGSAbilitySystemComponent* AEnemyCharacter::GetMGSAbilitySystemComponent() const
@@ -74,6 +95,192 @@ UMGSAbilitySystemComponent* AEnemyCharacter::GetMGSAbilitySystemComponent() cons
 UCharacterAttributeSet* AEnemyCharacter::GetCharacterAttributeSet() const
 {
 	return CharacterAttributeSet;
+}
+
+UWeaponAttributeSet* AEnemyCharacter::GetWeaponAttributeSet() const
+{
+	return WeaponAttributeSet;
+}
+
+float AEnemyCharacter::GetDamageMultiplierForHit(const FHitResult& Hit) const
+{
+	if (!HeadHitSphere)
+	{
+		return Super::GetDamageMultiplierForHit(Hit);
+	}
+
+	// Hit Head Sphere Collision
+	if (Hit.GetComponent() == HeadHitSphere)
+	{
+		return HeadshotDamageMultiplier;
+	}
+
+	// Hit Location : ImpactPoint(실제 표면 충돌 지점)->Location(트레이스 도형 중심 위치)
+	const FVector HitLocation = Hit.ImpactPoint.IsNearlyZero() ? Hit.Location : Hit.ImpactPoint;
+	if (HitLocation.IsNearlyZero())
+	{
+		return Super::GetDamageMultiplierForHit(Hit);
+	}
+
+	// Hit Location이 Head Sphere 중심 반경 안에 있는지 검사
+	const float HeadRadius = HeadHitSphere->GetScaledSphereRadius();
+	const float DistanceSquaredToHead = FVector::DistSquared(HitLocation, HeadHitSphere->GetComponentLocation());
+	if (DistanceSquaredToHead <= FMath::Square(HeadRadius))
+	{
+		return HeadshotDamageMultiplier;
+	}
+
+	return Super::GetDamageMultiplierForHit(Hit);
+}
+
+void AEnemyCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+	
+	// AI
+	if (PerceptionStimuliSource)
+	{
+		PerceptionStimuliSource->RegisterWithPerceptionSystem();
+	}
+}
+
+void AEnemyCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+
+	if (MGSAbilitySystemComponent)
+	{
+		// Init ASC
+		MGSAbilitySystemComponent->InitAbilityActorInfo(this, this);
+	}
+
+	// Init
+	// AttributeSet
+	InitializeEnemyAttributes();
+	// Tag
+	SetEnemyStateTag(DefaultEnemyStateTag);
+	// DA_StartupEnemy
+	InitEnemyStartupData();
+	// MovementMode
+	SetDefaultMovementMode();
+	
+	// Debug
+	BindHpChangedDelegate();
+	
+	if (bEnableDebugStateInput)
+	{
+		BindDebugStateInputs();
+	}
+}
+
+void AEnemyCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	// UnBind
+	if (MGSAbilitySystemComponent && bHasBoundHpChangedDelegate)
+	{
+		MGSAbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UCharacterAttributeSet::GetCurrentHpAttribute())
+			.Remove(CurrentHpChangedDelegateHandle);
+		CurrentHpChangedDelegateHandle.Reset();
+		bHasBoundHpChangedDelegate = false;
+	}
+
+	Super::EndPlay(EndPlayReason);
+}
+
+void AEnemyCharacter::InitializeEnemyAttributes()
+{
+	if (!CharacterAttributeSet)
+	{
+		return;
+	}
+
+	// Init HP
+	const float MaxHp = FMath::Max(1.0f, DefaultMaxHp);
+	const float CurrentHp = FMath::Clamp(DefaultCurrentHp, 0.0f, MaxHp);
+	CharacterAttributeSet->SetMaxHp(MaxHp);
+	CharacterAttributeSet->SetCurrentHp(CurrentHp);
+}
+
+void AEnemyCharacter::SetEnemyStateTag(const FGameplayTag& NewStateTag)
+{
+	if (NewStateTag == CurrentEnemyStateTag)
+	{
+		return;
+	}
+
+	if (UMGSAbilitySystemComponent* ASC = GetMGSAbilitySystemComponent())
+	{
+		if (CurrentEnemyStateTag.IsValid())
+		{
+			// Clear current tag
+			ASC->RemoveLooseGameplayTag(CurrentEnemyStateTag);
+		}
+		if (NewStateTag.IsValid())
+		{
+			// Add tag
+			ASC->AddLooseGameplayTag(NewStateTag);
+		}
+	}
+
+	// Update current tag 
+	CurrentEnemyStateTag = NewStateTag;
+	
+	ApplyStateMaterial(NewStateTag);
+	DebugPrintOwnedTags();
+}
+
+bool AEnemyCharacter::SetDefaultMovementMode()
+{
+	return ApplyEnemyMovementMode(MGSGameplayTags::State_Enemy_Movement_Default, DefaultMovementSpeed);
+}
+
+bool AEnemyCharacter::SetWalkMovementMode()
+{
+	return ApplyEnemyMovementMode(MGSGameplayTags::State_Enemy_Movement_Walk, WalkMovementSpeed);
+}
+
+bool AEnemyCharacter::SetSprintMovementMode()
+{
+	return ApplyEnemyMovementMode(MGSGameplayTags::State_Enemy_Movement_Sprint, SprintMovementSpeed);
+}
+
+bool AEnemyCharacter::SetCrouchState(bool bShouldCrouch)
+{
+	UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
+	if (!MovementComponent)
+	{
+		return false;
+	}
+
+	// Set speed
+	MovementComponent->MaxWalkSpeedCrouched = FMath::Max(0.0f, CrouchMovementSpeed);
+
+	if (bShouldCrouch)
+	{
+		if (!bIsCrouched)
+		{
+			Crouch();
+		}
+	}
+	else if (bIsCrouched)
+	{
+		UnCrouch();
+	}
+
+	// Set state tag
+	if (UMGSAbilitySystemComponent* ASC = GetMGSAbilitySystemComponent())
+	{
+		if (bShouldCrouch)
+		{
+			ASC->AddLooseGameplayTag(MGSGameplayTags::State_Enemy_Crouching);
+		}
+		else
+		{
+			ASC->RemoveLooseGameplayTag(MGSGameplayTags::State_Enemy_Crouching);
+		}
+	}
+
+	return true;
 }
 
 void AEnemyCharacter::SetEnemyStateTagFromAI(const FGameplayTag& NewStateTag)
@@ -95,102 +302,6 @@ void AEnemyCharacter::DebugPrintOwnedTags() const
 	UE_LOG(LogTemp, Log, TEXT("[Enemy ASC Tags] %s"), *TagString);
 }
 
-void AEnemyCharacter::BeginPlay()
-{
-	Super::BeginPlay();
-
-	if (PerceptionStimuliSource)
-	{
-		PerceptionStimuliSource->RegisterWithPerceptionSystem();
-	}
-	InitializeEnemyAttributes();
-	BindHpChangedDelegate();
-
-	SetEnemyStateTag(DefaultEnemyStateTag);
-
-	if (bEnableDebugStateInput)
-	{
-		BindDebugStateInputs();
-	}
-}
-
-void AEnemyCharacter::PossessedBy(AController* NewController)
-{
-	Super::PossessedBy(NewController);
-
-	if (MGSAbilitySystemComponent)
-	{
-		MGSAbilitySystemComponent->InitAbilityActorInfo(this, this);
-	}
-
-	InitializeEnemyAttributes();
-	BindHpChangedDelegate();
-	
-	InitEnemyStartupData();
-}
-
-void AEnemyCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	if (MGSAbilitySystemComponent && bHasBoundHpChangedDelegate)
-	{
-		MGSAbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UCharacterAttributeSet::GetCurrentHpAttribute())
-			.Remove(CurrentHpChangedDelegateHandle);
-		CurrentHpChangedDelegateHandle.Reset();
-		bHasBoundHpChangedDelegate = false;
-	}
-
-	Super::EndPlay(EndPlayReason);
-}
-
-void AEnemyCharacter::InitializeEnemyAttributes()
-{
-	if (!CharacterAttributeSet)
-	{
-		return;
-	}
-
-	const float MaxHp = FMath::Max(1.f, DefaultMaxHp);
-	const float CurrentHp = FMath::Clamp(DefaultCurrentHp, 0.f, MaxHp);
-	CharacterAttributeSet->SetMaxHp(MaxHp);
-	CharacterAttributeSet->SetCurrentHp(CurrentHp);
-}
-
-void AEnemyCharacter::BindHpChangedDelegate()
-{
-	if (bHasBoundHpChangedDelegate || !MGSAbilitySystemComponent)
-	{
-		return;
-	}
-
-	CurrentHpChangedDelegateHandle = MGSAbilitySystemComponent
-		->GetGameplayAttributeValueChangeDelegate(UCharacterAttributeSet::GetCurrentHpAttribute())
-		.AddUObject(this, &ThisClass::HandleCurrentHpChanged);
-	bHasBoundHpChangedDelegate = true;
-}
-
-void AEnemyCharacter::HandleCurrentHpChanged(const FOnAttributeChangeData& AttributeChangeData)
-{
-	if (AttributeChangeData.NewValue >= AttributeChangeData.OldValue - KINDA_SMALL_NUMBER)
-	{
-		return;
-	}
-
-	const FString DamageMsg = FString::Printf(TEXT("[EnemyHP][GE] %s HP=%.1f->%.1f / %.1f"),
-		*GetName(),
-		AttributeChangeData.OldValue,
-		AttributeChangeData.NewValue,
-		GetMaxHp());
-	UE_LOG(LogTemp, Log, TEXT("%s"), *DamageMsg);
-	Debug::Print(DamageMsg, FColor::Yellow);
-
-	if (AttributeChangeData.NewValue <= KINDA_SMALL_NUMBER)
-	{
-		const FString DefeatedMsg = FString::Printf(TEXT("[EnemyHP] %s defeated"), *GetName());
-		UE_LOG(LogTemp, Warning, TEXT("%s"), *DefeatedMsg);
-		Debug::Print(DefeatedMsg, FColor::Red);
-	}
-}
-
 void AEnemyCharacter::InitEnemyStartupData()
 {
 	if (StartupData.IsNull())
@@ -198,7 +309,7 @@ void AEnemyCharacter::InitEnemyStartupData()
 		return;
 	}
 	
-	// StartupData 에셋을 비동기 로드로 불러온다.
+	// DA_StartupEnemy 에셋을 비동기 로드로 불러온다.
 	UAssetManager::GetStreamableManager().RequestAsyncLoad(
 		StartupData.ToSoftObjectPath(),
 		FStreamableDelegate::CreateLambda(
@@ -216,28 +327,74 @@ void AEnemyCharacter::InitEnemyStartupData()
 	);
 }
 
-void AEnemyCharacter::SetEnemyStateTag(const FGameplayTag& NewStateTag)
+bool AEnemyCharacter::ApplyEnemyMovementMode(const FGameplayTag& NewMovementStateTag, float NewMaxWalkSpeed)
 {
-	if (NewStateTag == CurrentEnemyStateTag)
+	UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
+	if (!MovementComponent)
+	{
+		return false;
+	}
+
+	// UnCrouch
+	SetCrouchState(false);
+
+	// Set speed
+	const float ClampedSpeed = FMath::Max(0.0f, NewMaxWalkSpeed);
+	MovementComponent->MaxWalkSpeed = ClampedSpeed;
+
+	// Set state tag
+	if (UMGSAbilitySystemComponent* ASC = GetMGSAbilitySystemComponent())
+	{
+		if (CurrentEnemyMovementStateTag.IsValid())
+		{
+			ASC->RemoveLooseGameplayTag(CurrentEnemyMovementStateTag);
+		}
+
+		if (NewMovementStateTag.IsValid())
+		{
+			ASC->AddLooseGameplayTag(NewMovementStateTag);
+		}
+	}
+
+	CurrentEnemyMovementStateTag = NewMovementStateTag;
+	return true;
+}
+
+void AEnemyCharacter::BindHpChangedDelegate()
+{
+	if (bHasBoundHpChangedDelegate || !MGSAbilitySystemComponent)
 	{
 		return;
 	}
 
-	if (UMGSAbilitySystemComponent* ASC = GetMGSAbilitySystemComponent())
+	// Bind Character AttributeSet
+	CurrentHpChangedDelegateHandle = MGSAbilitySystemComponent
+		->GetGameplayAttributeValueChangeDelegate(UCharacterAttributeSet::GetCurrentHpAttribute())
+		.AddUObject(this, &ThisClass::HandleCurrentHpChanged);
+	bHasBoundHpChangedDelegate = true;
+}
+
+void AEnemyCharacter::HandleCurrentHpChanged(const FOnAttributeChangeData& AttributeChangeData)
+{
+	if (AttributeChangeData.NewValue >= AttributeChangeData.OldValue - KINDA_SMALL_NUMBER)
 	{
-		if (CurrentEnemyStateTag.IsValid())
-		{
-			ASC->RemoveLooseGameplayTag(CurrentEnemyStateTag);
-		}
-		if (NewStateTag.IsValid())
-		{
-			ASC->AddLooseGameplayTag(NewStateTag);
-		}
+		return;
 	}
 
-	CurrentEnemyStateTag = NewStateTag;
-	ApplyStateMaterial(NewStateTag);
-	DebugPrintOwnedTags();
+	const FString DamageMsg = FString::Printf(TEXT("[EnemyHP][GE] %s HP=%.1f->%.1f / %.1f"),
+		*GetName(),
+		AttributeChangeData.OldValue,
+		AttributeChangeData.NewValue,
+		CharacterAttributeSet->GetCurrentHp());
+	UE_LOG(LogTemp, Log, TEXT("%s"), *DamageMsg);
+	Debug::Print(DamageMsg, FColor::Yellow);
+
+	if (AttributeChangeData.NewValue <= KINDA_SMALL_NUMBER)
+	{
+		const FString DefeatedMsg = FString::Printf(TEXT("[EnemyHP] %s defeated"), *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s"), *DefeatedMsg);
+		Debug::Print(DefeatedMsg, FColor::Red);
+	}
 }
 
 void AEnemyCharacter::ApplyStateMaterial(const FGameplayTag& NewStateTag)
@@ -339,5 +496,3 @@ void AEnemyCharacter::DebugSetStateCombat()
 	}
 	SetEnemyStateTag(MGSGameplayTags::State_Enemy_Combat);
 }
-
-

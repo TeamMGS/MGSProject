@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-09
+ * 수정일 : 2026-03-12
  */
 
 #include "GAS/ASC/MGSAbilitySystemComponent.h"
@@ -144,10 +144,34 @@ void UMGSAbilitySystemComponent::RemoveGrantedWeaponAbilities(const TArray<FGame
 
 	for (const FGameplayAbilitySpecHandle& SpecHandle : SpecHandlesToRemove)
 	{
-		if (SpecHandle.IsValid())
+		if (!SpecHandle.IsValid())
 		{
-			ClearAbility(SpecHandle);
+			continue;
 		}
+
+		FGameplayAbilitySpec* Spec = FindAbilitySpecFromHandle(SpecHandle);
+		if (!Spec)
+		{
+			continue;
+		}
+
+		for (const FGameplayTag& InputTag : Spec->GetDynamicSpecSourceTags())
+		{
+			PressedAbilityInputTags.RemoveTag(InputTag);
+		}
+
+		if (Spec->IsActive())
+		{
+			// 무기 교체/해제 중에는 활성 무기 GA를 먼저 정상 종료시키고, 종료 후 제거되도록 예약합니다.
+			AbilitySpecInputReleased(*Spec);
+			if (Spec->IsActive())
+			{
+				SetRemoveAbilityOnEnd(SpecHandle);
+				continue;
+			}
+		}
+
+		ClearAbility(SpecHandle);
 	}
 }
 
