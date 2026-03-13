@@ -42,3 +42,13 @@ UENUM(BlueprintType)
 enum class EMGSMovementState : uint8 {
 	Idle, Moving
 };
+
+// 파쿠르 액션 타입 (GASP의 E_TraversalAction 대응)
+UENUM(BlueprintType)
+enum class EMGSTraversalActionType : uint8
+{
+	None,
+	Hurdle,  // 낮은 장애물
+	Vault,   // 중간 장애물
+	Mantle   // 높은 장애물
+};
