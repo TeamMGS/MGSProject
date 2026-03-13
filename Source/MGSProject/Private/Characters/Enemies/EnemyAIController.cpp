@@ -40,6 +40,8 @@ void AEnemyAIController::OnPossess(APawn* InPawn)
 	DetectionValue = 0.0f;
 	bIsTargetSensed = false;
 	bDetectionLocked = false;
+	bHasLastSeenLocation = false;
+	LastSeenLocation = FVector::ZeroVector;
 	CurrentTargetActor.Reset();
 
 	if (UWorld* World = GetWorld())
@@ -95,6 +97,11 @@ void AEnemyAIController::HandleTargetPerceptionUpdated(AActor* Actor, FAIStimulu
 
 	CurrentTargetActor = Actor;
 	bIsTargetSensed = Stimulus.WasSuccessfullySensed();
+	if (bIsTargetSensed)
+	{
+		LastSeenLocation = Stimulus.StimulusLocation;
+		bHasLastSeenLocation = true;
+	}
 }
 
 float AEnemyAIController::GetTargetLightMultiplier_Implementation(const AActor* Target) const

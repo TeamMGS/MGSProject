@@ -27,6 +27,12 @@ class MGSPROJECT_API AEnemyAIController : public AAICoreAIController
 public:
 	AEnemyAIController();
 
+	UFUNCTION(BlueprintPure, Category = "AI|Detection")
+	FVector GetLastSeenLocation() const { return LastSeenLocation; }
+
+	UFUNCTION(BlueprintPure, Category = "AI|Detection")
+	bool HasLastSeenLocation() const { return bHasLastSeenLocation; }
+
 protected:
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void OnUnPossess() override;
@@ -97,6 +103,12 @@ private:
 
 	UPROPERTY(VisibleInstanceOnly, Category = "AI|Detection")
 	bool bIsTargetSensed = false;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "AI|Detection", meta = (AllowPrivateAccess = true))
+	FVector LastSeenLocation = FVector::ZeroVector;
+
+	UPROPERTY(VisibleInstanceOnly, Category = "AI|Detection")
+	bool bHasLastSeenLocation = false;
 
 	UPROPERTY(VisibleInstanceOnly, Category = "AI|Detection")
 	bool bDetectionLocked = false;
