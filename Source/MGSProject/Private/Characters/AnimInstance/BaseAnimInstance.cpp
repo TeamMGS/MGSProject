@@ -3,7 +3,7 @@
  * 생성자 : 김동석
  * 생성일 : 2026-03-05
  * 수정자 : 김동석
- * 수정일 : 2026-03-09
+ * 수정일 : 2026-03-12
  */
 #include "Characters/AnimInstance/BaseAnimInstance.h"
 #include "Characters/BaseCharacter.h"
@@ -137,4 +137,12 @@ void UBaseAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	TrajectoryHandler.Update(this, EssentialValues, DeltaSeconds);
 	
 	LocomotionState.Update(this, CharacterData, EssentialValues, TrajectoryHandler, MMHandler);
+	
+	// 무기를 장착한 상태에서, 달릴때 ik해제를 위한 bool값 선언
+	bool bIsWeaponEquipped = HasLocomotionTag(FGameplayTag::RequestGameplayTag("State.Character.WeaponEquipped"));
+	bool bIsSprinting = HasLocomotionTag(FGameplayTag::RequestGameplayTag("State.Player.Movement.Sprint"));
+	bool bIsReloading = HasLocomotionTag(FGameplayTag::RequestGameplayTag("State.Player.Reloading"));
+	bool bIsWeaponEquipping = HasLocomotionTag(FGameplayTag::RequestGameplayTag("State.Action.Equipping"));
+	
+	WeaponState.Update(Character, bIsWeaponEquipped, bIsSprinting, bIsReloading, bIsWeaponEquipping, DeltaSeconds);
 }

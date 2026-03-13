@@ -2,12 +2,14 @@
  * 파일명 : BaseCharacter.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
- * 수정자 : 장대한
+ * 수정자 : 김동석
  * 수정일 : 2026-03-12
  */
 
 #include "Characters/BaseCharacter.h"
 
+#include "AbilitySystemComponent.h"
+#include "GAS/ASC/MGSAbilitySystemComponent.h"
 #include "Characters/Player/MGSPlayerState.h"
 #include "Components/MovementComponent/MGSCharacterMovementComponent.h"
 #include "Components/StateTag/MGSLocomotionComponent.h"
@@ -75,6 +77,18 @@ UWeaponAttributeSet* ABaseCharacter::GetWeaponAttributeSet() const
 float ABaseCharacter::GetDamageMultiplierForHit(const FHitResult& Hit) const
 {
 	return 1.0f;
+}
+
+UAbilitySystemComponent* ABaseCharacter::GetAbilitySystemComponent() const
+{
+	// playerstate가 인터페이스를 구현하고 있으니 요청을 넘김
+	if (IAbilitySystemInterface* ASI = GetPlayerState<IAbilitySystemInterface>())
+	{
+		return ASI->GetAbilitySystemComponent();
+	}
+
+	// 만약 AI 캐릭터라면 PlayerState가 없을 수 있으니, 컴포넌트가 있는지 마지막으로 확인
+	return Cast<UAbilitySystemComponent>(GetMGSAbilitySystemComponent());
 }
 
 void ABaseCharacter::PossessedBy(AController* NewController)

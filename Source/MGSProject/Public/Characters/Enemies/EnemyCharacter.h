@@ -24,7 +24,7 @@ class UMGSAbilitySystemComponent;
 class USphereComponent;
 
 UCLASS()
-class MGSPROJECT_API AEnemyCharacter : public ABaseCharacter, public IAbilitySystemInterface
+class MGSPROJECT_API AEnemyCharacter : public ABaseCharacter
 {
 	GENERATED_BODY()
 	

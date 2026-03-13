@@ -70,7 +70,9 @@ namespace MGSGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_JustLanded_Heavy, "State.Player.JustLanded.Heavy")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Crouching, "State.Player.Crouching")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Aiming, "State.Player.Aiming")
+	UE_DEFINE_GAMEPLAY_TAG(State_Player_Reloading, "State.Player.Reloading")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_CombatReady, "State.Player.CombatReady")
+	
 
 	UE_DEFINE_GAMEPLAY_TAG(State_Enemy_Clear, "State.Enemy.Clear")
 	UE_DEFINE_GAMEPLAY_TAG(State_Enemy_Suspicious, "State.Enemy.Suspicious")
@@ -88,6 +90,7 @@ namespace MGSGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Stance_Crouch, "State.Player.Stance.Crouch")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Mode_OnGround, "State.Player.Mode.OnGround")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Mode_InAir, "State.Player.Mode.InAir")
+	UE_DEFINE_GAMEPLAY_TAG(State_Action_Equipping, "State.Action.Equipping")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_LOD_Dense, "State.Player.LOD.Dense")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_LOD_Sparse, "State.Player.LOD.Sparse")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_LOD_ExtremeSparse, "State.Player.LOD.ExtremeSparse")
@@ -97,7 +100,10 @@ namespace MGSGameplayTags
 	
 	// Event
 	UE_DEFINE_GAMEPLAY_TAG(Event_Player_Interact, "Event.Player.Interact")
-
+	UE_DEFINE_GAMEPLAY_TAG(Event_Player_Weapon_Reload_Ammo_Refill, "Event.Player.Weapon.Reload.Ammo.Refill")
+	UE_DEFINE_GAMEPLAY_TAG(Event_Player_Weapon_Equip_Attach, "Event.Player.Weapon.Equip.Attach")
+	UE_DEFINE_GAMEPLAY_TAG(Event_Player_Weapon_Equip_Detach, "Event.Player.Weapon.Equip.Detach")
+	
 	// SetByCaller data
 	UE_DEFINE_GAMEPLAY_TAG(Data_Damage, "Data.Damage")
 }

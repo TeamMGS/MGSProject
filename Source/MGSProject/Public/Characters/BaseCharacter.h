@@ -2,7 +2,7 @@
  * 파일명 : BaseCharacter.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
- * 수정자 : 장대한
+ * 수정자 : 김동석
  * 수정일 : 2026-03-12
  */
 
@@ -11,6 +11,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Interfaces/PawnCombatInterface.h"
+#include "AbilitySystemInterface.h"
 #include "BaseCharacter.generated.h"
 
 class UMGSLocomotionComponent;
@@ -22,7 +23,7 @@ class UDA_StartupBase;
 class AMGSPlayerState;
 
 UCLASS()
-class MGSPROJECT_API ABaseCharacter : public ACharacter, public IPawnCombatInterface
+class MGSPROJECT_API ABaseCharacter : public ACharacter, public IPawnCombatInterface, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -43,6 +44,8 @@ public:
 	virtual UWeaponAttributeSet* GetWeaponAttributeSet() const;
 	// 피격 부위에 따른 데미지 배율 조회
 	virtual float GetDamageMultiplierForHit(const FHitResult& Hit) const;
+	// 어빌리티 시스템 인터페이스 전용
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	
 protected:
 	virtual void PossessedBy(AController* NewController) override;
