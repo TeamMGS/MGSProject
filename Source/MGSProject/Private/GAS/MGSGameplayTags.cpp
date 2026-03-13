@@ -41,12 +41,16 @@ namespace MGSGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Equip_Primary, "Ability.Player.Equip.Primary")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Equip_Secondary, "Ability.Player.Equip.Secondary")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Equip_Throwable, "Ability.Player.Equip.Throwable")
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Death, "Ability.Player.Death")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Enemy_Equip_Primary, "Ability.Enemy.Equip.Primary")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Enemy_Equip_Secondary, "Ability.Enemy.Equip.Secondary")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Enemy_DefaultMovement, "Ability.Enemy.DefaultMovement")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Enemy_Walk, "Ability.Enemy.Walk")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Enemy_Sprint, "Ability.Enemy.Sprint")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Enemy_Crouch, "Ability.Enemy.Crouch")
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Enemy_Fire, "Ability.Enemy.Fire")
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Enemy_Reload, "Ability.Enemy.Reload")
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Enemy_Death, "Ability.Enemy.Death")
 
 	// Weapon
 	UE_DEFINE_GAMEPLAY_TAG(Weapon_Primary, "Weapon.Primary")
@@ -72,12 +76,14 @@ namespace MGSGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Aiming, "State.Player.Aiming")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Reloading, "State.Player.Reloading")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_CombatReady, "State.Player.CombatReady")
+	UE_DEFINE_GAMEPLAY_TAG(State_Character_Dead, "State.Character.Dead")
 	
 
 	UE_DEFINE_GAMEPLAY_TAG(State_Enemy_Clear, "State.Enemy.Clear")
 	UE_DEFINE_GAMEPLAY_TAG(State_Enemy_Suspicious, "State.Enemy.Suspicious")
 	UE_DEFINE_GAMEPLAY_TAG(State_Enemy_Investigation, "State.Enemy.Investigation")
 	UE_DEFINE_GAMEPLAY_TAG(State_Enemy_Combat, "State.Enemy.Combat")
+	UE_DEFINE_GAMEPLAY_TAG(State_Enemy_Attacking, "State.Enemy.Attacking")
 	UE_DEFINE_GAMEPLAY_TAG(State_Enemy_Crouching, "State.Enemy.Crouching")
 	UE_DEFINE_GAMEPLAY_TAG(State_Enemy_Movement_Default, "State.Enemy.Movement.Default")
 	UE_DEFINE_GAMEPLAY_TAG(State_Enemy_Movement_Walk, "State.Enemy.Movement.Walk")

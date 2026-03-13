@@ -9,7 +9,7 @@
 #include "DataAssets/Startup/DA_StartupEnemy.h"
 
 #include "GAS/ASC/MGSAbilitySystemComponent.h"
-#include "GAS/GA/EnemyGameplayAbility.h"
+#include "GAS/GA/Enemy/EnemyGameplayAbility.h"
 
 void UDA_StartupEnemy::GiveToAbilitySystemComponent(UMGSAbilitySystemComponent* ASC, int32 Level)
 {

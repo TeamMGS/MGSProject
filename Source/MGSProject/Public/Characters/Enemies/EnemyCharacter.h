@@ -19,6 +19,7 @@ struct FOnAttributeChangeData;
 class UAbilitySystemComponent;
 class UAIPerceptionStimuliSourceComponent;
 class UCharacterAttributeSet;
+class UDA_SpreadSettings;
 class UEnemyCombatComponent;
 class UMGSAbilitySystemComponent;
 class USphereComponent;
@@ -44,6 +45,8 @@ public:
 	virtual UCharacterAttributeSet* GetCharacterAttributeSet() const override;
 	// Weapon Attribute
 	virtual UWeaponAttributeSet* GetWeaponAttributeSet() const override;
+	// Spread settings
+	const UDA_SpreadSettings* GetSpreadSettings() const;
 	// 피격 부위에 따른 데미지 배율 조회
 	virtual float GetDamageMultiplierForHit(const FHitResult& Hit) const override;
 	
@@ -56,10 +59,17 @@ public:
 	bool SetSprintMovementMode();
 	// Crouch
 	bool SetCrouchState(bool bShouldCrouch);
+	// Ability
+	UFUNCTION(BlueprintCallable, Category = "AI|Ability")
+	bool ActivateEnemyAbilityByTag(const FGameplayTag& AbilityTag);
+	UFUNCTION(BlueprintCallable, Category = "AI|Ability")
+	bool CancelEnemyAbilityByTag(const FGameplayTag& AbilityTag);
 	// Set Tag
 	void SetEnemyStateTagFromAI(const FGameplayTag& NewStateTag);
 	// Debug
 	void DebugPrintOwnedTags() const;
+	// Spread
+	void RequestSpreadRefreshNextTick();
 	
 protected:
 	virtual void BeginPlay() override;
@@ -77,6 +87,13 @@ protected:
 	// HP
 	void BindHpChangedDelegate();
 	void HandleCurrentHpChanged(const FOnAttributeChangeData& AttributeChangeData);
+	// Spread
+	UFUNCTION()
+	void HandleMovementUpdated(float DeltaSeconds, FVector OldLocation, FVector OldVelocity);
+	UFUNCTION()
+	void HandleEquippedWeaponChanged(FGameplayTag PreviousWeaponTag, FGameplayTag CurrentWeaponTag);
+	void UpdateCurrentSpreadFromState();
+	float CalculateCurrentSpreadStateMultiplier() const;
 	// Material
 	void ApplyStateMaterial(const FGameplayTag& NewStateTag);
 	// Log
@@ -97,6 +114,9 @@ protected:
 	// Weapon AttributeSet
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AbilitySystem", meta = (AllowPrivateAccess = true))
 	TObjectPtr<UWeaponAttributeSet> WeaponAttributeSet;
+	// Spread settings
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat|Spread", meta = (AllowPrivateAccess = true))
+	TObjectPtr<UDA_SpreadSettings> SpreadSettingsData;
 
 	// Component
 	// Combat
@@ -155,6 +175,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "AI|State")
 	bool bEnableDebugStateInput = false;
 	bool bDebugStateInputBound = false;
+	FDelegateHandle EquippedWeaponChangedHandle;
+	bool bPendingSpreadRefreshRequest = false;
 	// HP
 	FDelegateHandle CurrentHpChangedDelegateHandle;
 	bool bHasBoundHpChangedDelegate = false;

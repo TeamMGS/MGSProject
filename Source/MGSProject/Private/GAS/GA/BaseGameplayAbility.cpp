@@ -11,9 +11,11 @@
 #include "AbilitySystemComponent.h"
 #include "Components/Combat/PawnCombatComponent.h"
 #include "GAS/ASC/MGSAbilitySystemComponent.h"
+#include "GAS/MGSGameplayTags.h"
 
 UBaseGameplayAbility::UBaseGameplayAbility()
 {
+	ActivationBlockedTags.AddTag(MGSGameplayTags::State_Character_Dead);
 }
 
 void UBaseGameplayAbility::OnGiveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)

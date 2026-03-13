@@ -10,12 +10,13 @@
 
 #include "Characters/Enemies/EnemyAIController.h"
 #include "Components/Combat/EnemyCombatComponent.h"
+#include "DataAssets/Spread/DA_SpreadSettings.h"
 #include "DataAssets/Startup/DA_StartupBase.h"
-#include "Engine/AssetManager.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "GAS/ASC/MGSAbilitySystemComponent.h"
 #include "GAS/AttributeSets/CharacterAttributeSet.h"
+#include "GAS/AttributeSets/WeaponAttributeSet.h"
 #include "GAS/MGSGameplayTags.h"
 #include "MGSDebugHelper.h"
 #include "AbilitySystemComponent.h"
@@ -27,6 +28,8 @@
 #include "Perception/AIPerceptionStimuliSourceComponent.h"
 #include "Perception/AISense_Hearing.h"
 #include "Perception/AISense_Sight.h"
+#include "TimerManager.h"
+#include "Weapon/BaseGun.h"
 
 AEnemyCharacter::AEnemyCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -53,6 +56,7 @@ AEnemyCharacter::AEnemyCharacter(const FObjectInitializer& ObjectInitializer)
 	
 	// Character AttributeSet
 	CharacterAttributeSet = CreateDefaultSubobject<UCharacterAttributeSet>(TEXT("CharacterAttributeSet"));
+	WeaponAttributeSet = CreateDefaultSubobject<UWeaponAttributeSet>(TEXT("WeaponAttributeSet"));
 	
 	// Combat Component
 	EnemyCombatComponent = CreateDefaultSubobject<UEnemyCombatComponent>(TEXT("EnemyCombatComponent"));
@@ -102,6 +106,11 @@ UWeaponAttributeSet* AEnemyCharacter::GetWeaponAttributeSet() const
 	return WeaponAttributeSet;
 }
 
+const UDA_SpreadSettings* AEnemyCharacter::GetSpreadSettings() const
+{
+	return SpreadSettingsData ? SpreadSettingsData : GetDefault<UDA_SpreadSettings>();
+}
+
 float AEnemyCharacter::GetDamageMultiplierForHit(const FHitResult& Hit) const
 {
 	if (!HeadHitSphere)
@@ -136,6 +145,15 @@ float AEnemyCharacter::GetDamageMultiplierForHit(const FHitResult& Hit) const
 void AEnemyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	OnCharacterMovementUpdated.AddDynamic(this, &ThisClass::HandleMovementUpdated);
+
+	if (EnemyCombatComponent)
+	{
+		EquippedWeaponChangedHandle = EnemyCombatComponent->GetOnEquippedWeaponChangedDelegate().AddUObject(
+			this,
+			&ThisClass::HandleEquippedWeaponChanged);
+	}
 	
 	// AI
 	if (PerceptionStimuliSource)
@@ -163,6 +181,7 @@ void AEnemyCharacter::PossessedBy(AController* NewController)
 	InitEnemyStartupData();
 	// MovementMode
 	SetDefaultMovementMode();
+	RequestSpreadRefreshNextTick();
 	
 	// Debug
 	BindHpChangedDelegate();
@@ -175,6 +194,14 @@ void AEnemyCharacter::PossessedBy(AController* NewController)
 
 void AEnemyCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	OnCharacterMovementUpdated.RemoveDynamic(this, &ThisClass::HandleMovementUpdated);
+
+	if (EnemyCombatComponent && EquippedWeaponChangedHandle.IsValid())
+	{
+		EnemyCombatComponent->GetOnEquippedWeaponChangedDelegate().Remove(EquippedWeaponChangedHandle);
+		EquippedWeaponChangedHandle.Reset();
+	}
+
 	// UnBind
 	if (MGSAbilitySystemComponent && bHasBoundHpChangedDelegate)
 	{
@@ -280,7 +307,143 @@ bool AEnemyCharacter::SetCrouchState(bool bShouldCrouch)
 		}
 	}
 
+	RequestSpreadRefreshNextTick();
 	return true;
+}
+
+bool AEnemyCharacter::ActivateEnemyAbilityByTag(const FGameplayTag& AbilityTag)
+{
+	UMGSAbilitySystemComponent* ASC = GetMGSAbilitySystemComponent();
+	if (!ASC || !AbilityTag.IsValid())
+	{
+		return false;
+	}
+
+	FGameplayTagContainer AbilityTags;
+	AbilityTags.AddTag(AbilityTag);
+	return ASC->TryActivateAbilitiesByTag(AbilityTags, true);
+}
+
+bool AEnemyCharacter::CancelEnemyAbilityByTag(const FGameplayTag& AbilityTag)
+{
+	UMGSAbilitySystemComponent* ASC = GetMGSAbilitySystemComponent();
+	if (!ASC || !AbilityTag.IsValid())
+	{
+		return false;
+	}
+
+	FGameplayTagContainer AbilityTags;
+	AbilityTags.AddTag(AbilityTag);
+	ASC->CancelAbilities(&AbilityTags);
+	return true;
+}
+
+void AEnemyCharacter::HandleMovementUpdated(float DeltaSeconds, FVector OldLocation, FVector OldVelocity)
+{
+	(void)DeltaSeconds;
+	(void)OldLocation;
+	(void)OldVelocity;
+
+	RequestSpreadRefreshNextTick();
+}
+
+void AEnemyCharacter::HandleEquippedWeaponChanged(FGameplayTag PreviousWeaponTag, FGameplayTag CurrentWeaponTag)
+{
+	(void)PreviousWeaponTag;
+	(void)CurrentWeaponTag;
+
+	RequestSpreadRefreshNextTick();
+}
+
+void AEnemyCharacter::RequestSpreadRefreshNextTick()
+{
+	if (bPendingSpreadRefreshRequest)
+	{
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	bPendingSpreadRefreshRequest = true;
+	World->GetTimerManager().SetTimerForNextTick(this, &ThisClass::UpdateCurrentSpreadFromState);
+}
+
+void AEnemyCharacter::UpdateCurrentSpreadFromState()
+{
+	bPendingSpreadRefreshRequest = false;
+
+	UWeaponAttributeSet* CurrentWeaponAttributeSet = GetWeaponAttributeSet();
+	if (!CurrentWeaponAttributeSet || !EnemyCombatComponent)
+	{
+		return;
+	}
+
+	ABaseGun* EquippedGun = Cast<ABaseGun>(EnemyCombatComponent->GetCharacterCurrentEquippedWeapon());
+	if (!EquippedGun)
+	{
+		return;
+	}
+
+	const UMGSAbilitySystemComponent* ASC = GetMGSAbilitySystemComponent();
+	if (ASC && ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Enemy_Attacking))
+	{
+		return;
+	}
+
+	const float MaxSpread = FMath::Max(0.f, EquippedGun->GetMaxSpreadRadius());
+	const float BaseSpread = FMath::Clamp(EquippedGun->GetBaseSpreadRadius(), 0.f, MaxSpread);
+	const float StateSpread = FMath::Clamp(BaseSpread * CalculateCurrentSpreadStateMultiplier(), 0.f, MaxSpread);
+	if (!FMath::IsNearlyEqual(CurrentWeaponAttributeSet->GetCurrentSpreadRadius(), StateSpread))
+	{
+		CurrentWeaponAttributeSet->SetCurrentSpreadRadius(StateSpread);
+	}
+}
+
+float AEnemyCharacter::CalculateCurrentSpreadStateMultiplier() const
+{
+	const UDA_SpreadSettings* SpreadSettings = GetSpreadSettings();
+	const UMGSAbilitySystemComponent* ASC = GetMGSAbilitySystemComponent();
+	const UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
+
+	const bool bIsFalling = MovementComponent && MovementComponent->IsFalling();
+	const float HorizontalSpeed = MovementComponent
+		? FVector(MovementComponent->Velocity.X, MovementComponent->Velocity.Y, 0.f).Size()
+		: FVector(GetVelocity().X, GetVelocity().Y, 0.f).Size();
+	const bool bIsMoving = HorizontalSpeed > SpreadSettings->MovingSpeedThreshold;
+	const bool bIsSprint = ASC && ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Enemy_Movement_Sprint);
+	const bool bIsWalk = ASC && ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Enemy_Movement_Walk);
+	const bool bIsCrouching = bIsCrouched || (ASC && ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Enemy_Crouching));
+
+	float StateSpreadMultiplier = 1.f;
+	if (bIsFalling)
+	{
+		StateSpreadMultiplier = SpreadSettings->JumpMultiplier;
+	}
+	else if (bIsMoving)
+	{
+		if (bIsSprint)
+		{
+			StateSpreadMultiplier = SpreadSettings->SprintMultiplier;
+		}
+		else if (bIsWalk)
+		{
+			StateSpreadMultiplier = SpreadSettings->WalkMultiplier;
+		}
+		else
+		{
+			StateSpreadMultiplier = SpreadSettings->MovingMultiplier;
+		}
+	}
+	else if (bIsCrouching)
+	{
+		StateSpreadMultiplier = SpreadSettings->CrouchStillMultiplier;
+	}
+
+	return FMath::Max(0.f, StateSpreadMultiplier);
 }
 
 void AEnemyCharacter::SetEnemyStateTagFromAI(const FGameplayTag& NewStateTag)
@@ -308,23 +471,14 @@ void AEnemyCharacter::InitEnemyStartupData()
 	{
 		return;
 	}
-	
-	// DA_StartupEnemy 에셋을 비동기 로드로 불러온다.
-	UAssetManager::GetStreamableManager().RequestAsyncLoad(
-		StartupData.ToSoftObjectPath(),
-		FStreamableDelegate::CreateLambda(
-			[this]()
-			{
-				if (UDA_StartupBase* LoadedData = StartupData.Get())
-				{
-					if (UMGSAbilitySystemComponent* ASC = GetMGSAbilitySystemComponent())
-					{
-						LoadedData->GiveToAbilitySystemComponent(ASC);
-					}
-				}
-			}
-		)
-	);
+
+	if (UDA_StartupBase* LoadedData = StartupData.LoadSynchronous())
+	{
+		if (UMGSAbilitySystemComponent* ASC = GetMGSAbilitySystemComponent())
+		{
+			LoadedData->GiveToAbilitySystemComponent(ASC);
+		}
+	}
 }
 
 bool AEnemyCharacter::ApplyEnemyMovementMode(const FGameplayTag& NewMovementStateTag, float NewMaxWalkSpeed)
@@ -357,6 +511,7 @@ bool AEnemyCharacter::ApplyEnemyMovementMode(const FGameplayTag& NewMovementStat
 	}
 
 	CurrentEnemyMovementStateTag = NewMovementStateTag;
+	RequestSpreadRefreshNextTick();
 	return true;
 }
 
@@ -391,6 +546,13 @@ void AEnemyCharacter::HandleCurrentHpChanged(const FOnAttributeChangeData& Attri
 
 	if (AttributeChangeData.NewValue <= KINDA_SMALL_NUMBER)
 	{
+		if (MGSAbilitySystemComponent && !MGSAbilitySystemComponent->HasMatchingGameplayTag(MGSGameplayTags::State_Character_Dead))
+		{
+			FGameplayTagContainer AbilityTags;
+			AbilityTags.AddTag(MGSGameplayTags::Ability_Enemy_Death);
+			MGSAbilitySystemComponent->TryActivateAbilitiesByTag(AbilityTags, true);
+		}
+
 		const FString DefeatedMsg = FString::Printf(TEXT("[EnemyHP] %s defeated"), *GetName());
 		UE_LOG(LogTemp, Warning, TEXT("%s"), *DefeatedMsg);
 		Debug::Print(DefeatedMsg, FColor::Red);

@@ -13,6 +13,7 @@
 #include "Characters/BaseCharacter.h"
 #include "PlayerCharacter.generated.h"
 
+struct FOnAttributeChangeData;
 struct FInputActionValue;
 class UAIPerceptionStimuliSourceComponent;
 class UCameraComponent;
@@ -45,6 +46,8 @@ public:
 	void StartAimObstructionTrace();
 	// 플레이어와 카메라 사이 장애물 검사 종료 
 	void StopAimObstructionTrace();
+	// 현재 조준 중 임시로 숨긴 장애물 액터 목록 수집
+	void GetAimObstructionActorsToIgnore(TArray<AActor*>& OutActors) const;
 	
 protected:
 	virtual void BeginPlay() override;
@@ -59,6 +62,9 @@ protected:
 	// Crouch
 	virtual void OnStartCrouch(float HeightAdjust, float ScaledHeightAdjust) override;
 	virtual void OnEndCrouch(float HeightAdjust, float ScaledHeightAdjust) override;
+
+	void BindHpChangedDelegate();
+	void HandleCurrentHpChanged(const FOnAttributeChangeData& AttributeChangeData);
 	
 private:
 #pragma region Components
@@ -162,5 +168,7 @@ private:
 	FTimerHandle AimObstructionTraceTimerHandle;
 	// 조준 중 임시로 숨긴 컴포넌트들의 원래 가시성
 	TMap<TWeakObjectPtr<UPrimitiveComponent>, bool> HiddenAimObstructionComponents;
+	FDelegateHandle CurrentHpChangedDelegateHandle;
+	bool bHasBoundHpChangedDelegate = false;
 	
 };

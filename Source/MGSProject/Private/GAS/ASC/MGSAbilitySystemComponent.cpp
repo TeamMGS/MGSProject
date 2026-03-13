@@ -9,7 +9,7 @@
 #include "GAS/ASC/MGSAbilitySystemComponent.h"
 
 #include "Components/Combat/PawnCombatComponent.h"
-#include "GAS/GA/PlayerGameplayAbility.h"
+#include "GAS/GA/Player/PlayerGameplayAbility.h"
 #include "GAS/MGSGameplayTags.h"
 #include "MGSStructType.h"
 

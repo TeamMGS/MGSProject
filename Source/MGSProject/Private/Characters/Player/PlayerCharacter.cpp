@@ -12,6 +12,7 @@
 #include "Characters/Player/MGSPlayerState.h"
 #include "Components/Combat/PlayerCombatComponent.h"
 #include "DataAssets/Spread/DA_SpreadSettings.h"
+#include "GAS/AttributeSets/CharacterAttributeSet.h"
 #include "GAS/AttributeSets/WeaponAttributeSet.h"
 #include "DataAssets/Startup/DA_StartupBase.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -29,6 +30,7 @@
 #include "Weapon/BaseGun.h"
 #include "Engine/World.h"
 #include "Components/PrimitiveComponent.h"
+#include "GameplayEffectTypes.h"
 
 APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -124,6 +126,28 @@ void APlayerCharacter::StopAimObstructionTrace()
 	RestoreAimObstructionVisibility();
 }
 
+void APlayerCharacter::GetAimObstructionActorsToIgnore(TArray<AActor*>& OutActors) const
+{
+	OutActors.Reset();
+
+	for (const TPair<TWeakObjectPtr<UPrimitiveComponent>, bool>& HiddenComponentPair : HiddenAimObstructionComponents)
+	{
+		const UPrimitiveComponent* HiddenComponent = HiddenComponentPair.Key.Get();
+		AActor* HiddenActor = HiddenComponent ? HiddenComponent->GetOwner() : nullptr;
+		if (!IsValid(HiddenActor))
+		{
+			continue;
+		}
+
+		if (HiddenActor == this || HiddenActor->IsOwnedBy(this))
+		{
+			continue;
+		}
+
+		OutActors.AddUnique(HiddenActor);
+	}
+}
+
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -178,6 +202,8 @@ void APlayerCharacter::PossessedBy(AController* NewController)
 		}
 	}
 
+	BindHpChangedDelegate();
+
 	// ASC 초기화 이후 첫 프레임 공중 상태 태그 갱신
 	UpdateFallingStateTag();
 	// ASC 초기화, Tag부여 이후 상태가 변경될 수 있기 때문에 스프레드 재계산
@@ -194,6 +220,14 @@ void APlayerCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	{
 		PlayerCombatComponent->GetOnEquippedWeaponChangedDelegate().Remove(EquippedWeaponChangedHandle);
 		EquippedWeaponChangedHandle.Reset();
+	}
+
+	if (UMGSAbilitySystemComponent* ASC = GetMGSAbilitySystemComponent(); ASC && bHasBoundHpChangedDelegate)
+	{
+		ASC->GetGameplayAttributeValueChangeDelegate(UCharacterAttributeSet::GetCurrentHpAttribute())
+			.Remove(CurrentHpChangedDelegateHandle);
+		CurrentHpChangedDelegateHandle.Reset();
+		bHasBoundHpChangedDelegate = false;
 	}
 	
 	// 웅크리기 카메라 보간 타이머 핸들 정리
@@ -238,6 +272,42 @@ void APlayerCharacter::OnEndCrouch(float HeightAdjust, float ScaledHeightAdjust)
 	
 	// 웅크리기 끝날 때 위로 카메라 보간 시작
 	StartCrouchCameraBlend(CrouchCameraStandingOffsetZ);
+}
+
+void APlayerCharacter::BindHpChangedDelegate()
+{
+	if (bHasBoundHpChangedDelegate)
+	{
+		return;
+	}
+
+	UMGSAbilitySystemComponent* ASC = GetMGSAbilitySystemComponent();
+	if (!ASC)
+	{
+		return;
+	}
+
+	CurrentHpChangedDelegateHandle = ASC->GetGameplayAttributeValueChangeDelegate(UCharacterAttributeSet::GetCurrentHpAttribute())
+		.AddUObject(this, &ThisClass::HandleCurrentHpChanged);
+	bHasBoundHpChangedDelegate = true;
+}
+
+void APlayerCharacter::HandleCurrentHpChanged(const FOnAttributeChangeData& AttributeChangeData)
+{
+	if (AttributeChangeData.NewValue > KINDA_SMALL_NUMBER || AttributeChangeData.OldValue <= KINDA_SMALL_NUMBER)
+	{
+		return;
+	}
+
+	UMGSAbilitySystemComponent* ASC = GetMGSAbilitySystemComponent();
+	if (!ASC || ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Character_Dead))
+	{
+		return;
+	}
+
+	FGameplayTagContainer AbilityTags;
+	AbilityTags.AddTag(MGSGameplayTags::Ability_Player_Death);
+	ASC->TryActivateAbilitiesByTag(AbilityTags, true);
 }
 
 void APlayerCharacter::Input_Move(const FInputActionValue& InputActionValue)
