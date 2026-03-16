@@ -115,6 +115,18 @@ struct FMGSTraversalChooserInputs
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Traversal")
 	float Speed = 0.0f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Traversal|Location")
+	FVector FrontLedgeLocation = FVector::ZeroVector;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Traversal|Location")
+	FVector FrontLedgeNormal = FVector::ZeroVector;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Traversal|Location")
+	FVector BackLedgeLocation = FVector::ZeroVector;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Traversal|Location")
+	FVector BackFloorLocation = FVector::ZeroVector;
 };
 
 
@@ -128,19 +140,39 @@ public:
 
 	// GA_Traversal에서 호출할 핵심 입구
 	UFUNCTION(BlueprintCallable, Category = "MGS|Traversal")
-	bool CheckTraversal(struct FMGSTraversalChooserInputs& OutInputs);
+	bool CheckTraversal(FMGSTraversalChooserInputs& OutInputs);
+	
+	// Chooser가 읽어갈 수 있도록 데이터를 보관하는 변수
+	UPROPERTY(BlueprintReadOnly, Category = "MGS|Traversal")
+	FMGSTraversalChooserInputs CurrentTraversalInputs;
 
 protected:
 	virtual void BeginPlay() override;
 
 private:
+	// 전방 벽 확인
+	bool FindWall(FHitResult& OutWallHit, FVector& OutTraceDirection);
+	
+	// 디버깅?
+	UPROPERTY(EditAnywhere, Category = "MGS|Traversal|Debug")
+	bool bDrawDebug = true;
+	
+	// front ledge 확인
+	bool FindFrontLedge(const FHitResult& WallHit, const FVector& TraceDirection, FVector& OutLedgeLocation, FVector& OutLedgeNormal);
+	// back ledge 확인
+	bool FindBackLedge(const FVector& FrontLedgeLocation, const FVector& TraceDirection, FVector& OutBackLedgeLocation, float& OutObstacleDepth);
+	// back floor 확인
+	bool FindBackFloor(const FVector& BackLedgeLocation, const FVector& TraceDirection, FVector& OutBackFloorLocation, float& OutBackLedgeHeight);
+	// 장애물 위의 공간 확인
+	bool CheckTopRoom(const FVector& FrontLedge, const FVector& BackLedge, float Radius, float HalfHeight, FHitResult& OutHit);
+	
+	// 어떤 액션을 할것인지
+	EMGSTraversalActionType DetermineActionType(float Height, float Depth, bool bHasBackLedge, bool bHasBackFloor, float BackLedgeHeight) const;
+	
 	// 캐릭터 및 CMC 캐싱
 	UPROPERTY()
 	TObjectPtr<class ABaseCharacter> OwningCharacter;
 
 	UPROPERTY()
 	TObjectPtr<class UMGSCharacterMovementComponent> MGSMovementComponent;
-
-	// 내부 분석 함수들 (여기에 GASP 트레이스 로직 구현)
-	// struct FMGSTraversalTraceSettings GetTraceSettings() const;
 };
