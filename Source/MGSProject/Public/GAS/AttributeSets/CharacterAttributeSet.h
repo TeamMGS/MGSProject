@@ -30,16 +30,14 @@ public:
 	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
 	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
 	
-	// 현재 체력
-	UPROPERTY(BlueprintReadOnly, Category = "Status")
-	FGameplayAttributeData CurrentHp;
-	ATTRIBUTE_ACCESSORS(UCharacterAttributeSet, CurrentHp)
-	
-	// 최대 체력
+	// Max HP
 	UPROPERTY(BlueprintReadOnly, Category = "Status")
 	FGameplayAttributeData MaxHp;
 	ATTRIBUTE_ACCESSORS(UCharacterAttributeSet, MaxHp)
+	
+	// Current HP
+	UPROPERTY(BlueprintReadOnly, Category = "Status")
+	FGameplayAttributeData CurrentHp;
+	ATTRIBUTE_ACCESSORS(UCharacterAttributeSet, CurrentHp)
 		
 };
-
-

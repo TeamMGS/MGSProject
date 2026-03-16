@@ -42,6 +42,8 @@ public:
 	virtual UCharacterAttributeSet* GetCharacterAttributeSet() const;
 	// Get Weapon AttributeSet
 	virtual UWeaponAttributeSet* GetWeaponAttributeSet() const;
+	// 피격 부위에 따른 데미지 배율 조회
+	virtual float GetDamageMultiplierForHit(const FHitResult& Hit) const;
 	// 어빌리티 시스템 인터페이스 전용
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	

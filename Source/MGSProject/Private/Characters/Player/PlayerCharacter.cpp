@@ -2,8 +2,8 @@
  * 파일명 : PlayerCharacter.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
- * 수정자 : 김동석
- * 수정일 : 2026-03-11
+ * 수정자 : 장대한
+ * 수정일 : 2026-03-12
  */
 
 #include "Characters/Player/PlayerCharacter.h"
@@ -12,6 +12,7 @@
 #include "Characters/Player/MGSPlayerState.h"
 #include "Components/Combat/PlayerCombatComponent.h"
 #include "DataAssets/Spread/DA_SpreadSettings.h"
+#include "GAS/AttributeSets/CharacterAttributeSet.h"
 #include "GAS/AttributeSets/WeaponAttributeSet.h"
 #include "DataAssets/Startup/DA_StartupBase.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -27,6 +28,9 @@
 #include "TimerManager.h"
 #include "MotionWarpingComponent.h"
 #include "Weapon/BaseGun.h"
+#include "Engine/World.h"
+#include "Components/PrimitiveComponent.h"
+#include "GameplayEffectTypes.h"
 
 APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -40,6 +44,7 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 	CameraBoom->TargetArmLength = 300.0f;
 	CameraBoom->bUsePawnControlRotation = true;
 	CameraBoom->SocketOffset = FVector(0.0f, 55.0f, 90.0f);
+	CameraBoom->ProbeSize = 6.0f;
 
 	// Camera
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
@@ -64,10 +69,12 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 	// 모션워핑
 	MotionWarpingComponent = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("MotionWarpingComponent"));
 
+	// PerceptionStimuliSource component
 	PerceptionStimuliSource = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("PerceptionStimuliSource"));
 	PerceptionStimuliSource->RegisterForSense(UAISense_Sight::StaticClass());
 	PerceptionStimuliSource->RegisterForSense(UAISense_Hearing::StaticClass());
 	
+	// Controller
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationRoll = false;
 	bUseControllerRotationYaw = true;
@@ -89,14 +96,61 @@ void APlayerCharacter::RequestRestoreHeldMovementAbilityInputNextTick()
 	GetWorldTimerManager().SetTimerForNextTick(this, &ThisClass::TryRestoreHeldMovementAbilityInput);
 }
 
+void APlayerCharacter::StartAimObstructionTrace()
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	UpdateAimObstructionTrace();
+	if (!World->GetTimerManager().IsTimerActive(AimObstructionTraceTimerHandle))
+	{
+		World->GetTimerManager().SetTimer(
+			AimObstructionTraceTimerHandle,
+			this,
+			&ThisClass::UpdateAimObstructionTrace,
+			AimObstructionTraceTickInterval,
+			true);
+	}
+}
+
+void APlayerCharacter::StopAimObstructionTrace()
+{
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(AimObstructionTraceTimerHandle);
+	}
+
+	RestoreAimObstructionVisibility();
+}
+
+void APlayerCharacter::GetAimObstructionActorsToIgnore(TArray<AActor*>& OutActors) const
+{
+	OutActors.Reset();
+
+	for (const TPair<TWeakObjectPtr<UPrimitiveComponent>, bool>& HiddenComponentPair : HiddenAimObstructionComponents)
+	{
+		const UPrimitiveComponent* HiddenComponent = HiddenComponentPair.Key.Get();
+		AActor* HiddenActor = HiddenComponent ? HiddenComponent->GetOwner() : nullptr;
+		if (!IsValid(HiddenActor))
+		{
+			continue;
+		}
+
+		if (HiddenActor == this || HiddenActor->IsOwnedBy(this))
+		{
+			continue;
+		}
+
+		OutActors.AddUnique(HiddenActor);
+	}
+}
+
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
-	if (PerceptionStimuliSource)
-	{
-		PerceptionStimuliSource->RegisterWithPerceptionSystem();
-	}
 
 	// 카메라의 시작 상태를 현재 자세와 맞춤
 	// 웅크린 상태로 사작할 수도 있다는 가능성 + 카메라 보간용 내부 목표값을 실제 카메라 상태와 동기화
@@ -117,6 +171,12 @@ void APlayerCharacter::BeginPlay()
 			&ThisClass::HandleEquippedWeaponChanged);
 		// 근처 드랍 무기 후보 평가 : 첫 프레임 근처에 드랍 무기가 있을 수 있기 때문
 		PlayerCombatComponent->RefreshNearbyDroppedWeaponCandidate();
+	}
+	
+	// 플레이어 캐릭터를 AIPerception이 감지할 수 있는 객체로 등록
+	if (PerceptionStimuliSource)
+	{
+		PerceptionStimuliSource->RegisterWithPerceptionSystem();
 	}
 
 	// 다음 틱에 스프레드 갱신 : 첫 프레임 무기/이동 상태/조준 상태 기준으로 스프레드 동기화
@@ -142,6 +202,8 @@ void APlayerCharacter::PossessedBy(AController* NewController)
 		}
 	}
 
+	BindHpChangedDelegate();
+
 	// ASC 초기화 이후 첫 프레임 공중 상태 태그 갱신
 	UpdateFallingStateTag();
 	// ASC 초기화, Tag부여 이후 상태가 변경될 수 있기 때문에 스프레드 재계산
@@ -159,9 +221,19 @@ void APlayerCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		PlayerCombatComponent->GetOnEquippedWeaponChangedDelegate().Remove(EquippedWeaponChangedHandle);
 		EquippedWeaponChangedHandle.Reset();
 	}
+
+	if (UMGSAbilitySystemComponent* ASC = GetMGSAbilitySystemComponent(); ASC && bHasBoundHpChangedDelegate)
+	{
+		ASC->GetGameplayAttributeValueChangeDelegate(UCharacterAttributeSet::GetCurrentHpAttribute())
+			.Remove(CurrentHpChangedDelegateHandle);
+		CurrentHpChangedDelegateHandle.Reset();
+		bHasBoundHpChangedDelegate = false;
+	}
 	
 	// 웅크리기 카메라 보간 타이머 핸들 정리
 	GetWorldTimerManager().ClearTimer(CrouchCameraBlendTimerHandle);
+	GetWorldTimerManager().ClearTimer(AimObstructionTraceTimerHandle);
+	RestoreAimObstructionVisibility();
 
 	Super::EndPlay(EndPlayReason);
 }
@@ -189,6 +261,7 @@ void APlayerCharacter::Landed(const FHitResult& Hit)
 void APlayerCharacter::OnStartCrouch(float HeightAdjust, float ScaledHeightAdjust)
 {
 	Super::OnStartCrouch(HeightAdjust, ScaledHeightAdjust);
+	
 	// 웅크리기 시작할 때 아래로 카메라 보간 시작
 	StartCrouchCameraBlend(CrouchCameraCrouchedOffsetZ);
 }
@@ -196,8 +269,45 @@ void APlayerCharacter::OnStartCrouch(float HeightAdjust, float ScaledHeightAdjus
 void APlayerCharacter::OnEndCrouch(float HeightAdjust, float ScaledHeightAdjust)
 {
 	Super::OnEndCrouch(HeightAdjust, ScaledHeightAdjust);
+	
 	// 웅크리기 끝날 때 위로 카메라 보간 시작
 	StartCrouchCameraBlend(CrouchCameraStandingOffsetZ);
+}
+
+void APlayerCharacter::BindHpChangedDelegate()
+{
+	if (bHasBoundHpChangedDelegate)
+	{
+		return;
+	}
+
+	UMGSAbilitySystemComponent* ASC = GetMGSAbilitySystemComponent();
+	if (!ASC)
+	{
+		return;
+	}
+
+	CurrentHpChangedDelegateHandle = ASC->GetGameplayAttributeValueChangeDelegate(UCharacterAttributeSet::GetCurrentHpAttribute())
+		.AddUObject(this, &ThisClass::HandleCurrentHpChanged);
+	bHasBoundHpChangedDelegate = true;
+}
+
+void APlayerCharacter::HandleCurrentHpChanged(const FOnAttributeChangeData& AttributeChangeData)
+{
+	if (AttributeChangeData.NewValue > KINDA_SMALL_NUMBER || AttributeChangeData.OldValue <= KINDA_SMALL_NUMBER)
+	{
+		return;
+	}
+
+	UMGSAbilitySystemComponent* ASC = GetMGSAbilitySystemComponent();
+	if (!ASC || ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Character_Dead))
+	{
+		return;
+	}
+
+	FGameplayTagContainer AbilityTags;
+	AbilityTags.AddTag(MGSGameplayTags::Ability_Player_Death);
+	ASC->TryActivateAbilitiesByTag(AbilityTags, true);
 }
 
 void APlayerCharacter::Input_Move(const FInputActionValue& InputActionValue)
@@ -243,6 +353,7 @@ void APlayerCharacter::Input_AbilityInputPressed(FGameplayTag InputTag)
 		InputTag.MatchesTagExact(MGSGameplayTags::InputTag_Crouch) ||
 		InputTag.MatchesTagExact(MGSGameplayTags::InputTag_Walk) ||
 		InputTag.MatchesTagExact(MGSGameplayTags::InputTag_Sprint);
+	
 	if (bShouldRefreshSpread)
 	{
 		RequestSpreadRefreshNextTick();
@@ -264,6 +375,7 @@ void APlayerCharacter::Input_AbilityInputReleased(FGameplayTag InputTag)
 		InputTag.MatchesTagExact(MGSGameplayTags::InputTag_Crouch) ||
 		InputTag.MatchesTagExact(MGSGameplayTags::InputTag_Walk) ||
 		InputTag.MatchesTagExact(MGSGameplayTags::InputTag_Sprint);
+	
 	if (bShouldRefreshSpread)
 	{
 		RequestSpreadRefreshNextTick();
@@ -281,6 +393,7 @@ void APlayerCharacter::HandleMovementUpdated(float DeltaSeconds, FVector OldLoca
 		// 근처 드랍 무기 후보 평가
 		PlayerCombatComponent->RefreshNearbyDroppedWeaponCandidate();
 	}
+	
 	// 다음 틱에 스프레드 갱신
 	RequestSpreadRefreshNextTick();
 }
@@ -504,4 +617,101 @@ void APlayerCharacter::UpdateCrouchCameraBlend()
 		CameraBoom->TargetOffset = CurrentTargetOffset;
 		World->GetTimerManager().ClearTimer(CrouchCameraBlendTimerHandle);
 	}
+}
+
+void APlayerCharacter::UpdateAimObstructionTrace()
+{
+	if (!FollowCamera)
+	{
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(AimObstructionTrace), false, this);
+	QueryParams.AddIgnoredActor(this);
+	FCollisionObjectQueryParams ObjectQueryParams;
+	ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldStatic);
+	ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldDynamic);
+	ObjectQueryParams.AddObjectTypesToQuery(ECC_PhysicsBody);
+
+	TArray<FHitResult> HitResults;
+	const FVector TraceStart = FollowCamera->GetComponentLocation();
+	const FVector TraceEnd = GetActorLocation() + FVector(0.0f, 0.0f, BaseEyeHeight);
+	const FCollisionShape SweepShape = FCollisionShape::MakeSphere(AimObstructionSweepRadius);
+	// Sweep
+	World->SweepMultiByObjectType(
+		HitResults,
+		TraceStart,
+		TraceEnd,
+		FQuat::Identity,
+		ObjectQueryParams,
+		SweepShape,
+		QueryParams);
+
+	TSet<TWeakObjectPtr<UPrimitiveComponent>> CurrentHitComponents;
+	for (const FHitResult& HitResult : HitResults)
+	{
+		UPrimitiveComponent* HitComponent = HitResult.GetComponent();
+		AActor* HitActor = HitResult.GetActor();
+		if (!IsValid(HitComponent) || !IsValid(HitActor))
+		{
+			continue;
+		}
+
+		if (HitActor == this || HitActor->IsOwnedBy(this))
+		{
+			continue;
+		}
+
+		// 이번에 Hit된 컴포넌트의 원래 가시성 캐싱 후 가시성 비활성화
+		if (!HiddenAimObstructionComponents.Contains(HitComponent))
+		{
+			HiddenAimObstructionComponents.Add(HitComponent, HitComponent->IsVisible());
+			HitComponent->SetVisibility(false, true);
+		}
+
+		CurrentHitComponents.Add(HitComponent);
+	}
+
+	// 비활성화된 컴포넌트 중 이번에 Hit되지 않은 컴포넌트 찾음 
+	TArray<TWeakObjectPtr<UPrimitiveComponent>> ComponentsToRestore;
+	for (const TPair<TWeakObjectPtr<UPrimitiveComponent>, bool>& HiddenComponentPair : HiddenAimObstructionComponents)
+	{
+		if (!CurrentHitComponents.Contains(HiddenComponentPair.Key))
+		{
+			ComponentsToRestore.Add(HiddenComponentPair.Key);
+		}
+	}
+
+	// 원래 가시성으로 복원 후 캐시에서 제거
+	for (const TWeakObjectPtr<UPrimitiveComponent>& HiddenComponentKey : ComponentsToRestore)
+	{
+		if (bool* CachedVisibility = HiddenAimObstructionComponents.Find(HiddenComponentKey))
+		{
+			if (UPrimitiveComponent* HiddenComponent = HiddenComponentKey.Get())
+			{
+				HiddenComponent->SetVisibility(*CachedVisibility, true);
+			}
+		}
+
+		HiddenAimObstructionComponents.Remove(HiddenComponentKey);
+	}
+}
+
+void APlayerCharacter::RestoreAimObstructionVisibility()
+{
+	for (const TPair<TWeakObjectPtr<UPrimitiveComponent>, bool>& HiddenComponentPair : HiddenAimObstructionComponents)
+	{
+		if (UPrimitiveComponent* HiddenComponent = HiddenComponentPair.Key.Get())
+		{
+			HiddenComponent->SetVisibility(HiddenComponentPair.Value, true);
+		}
+	}
+
+	HiddenAimObstructionComponents.Reset();
 }

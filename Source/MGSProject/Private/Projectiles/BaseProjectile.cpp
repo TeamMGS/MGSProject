@@ -3,13 +3,14 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-06
  * 수정자 : 장대한
- * 수정일 : 2026-03-09
+ * 수정일 : 2026-03-12
  */
 
 #include "Projectiles/BaseProjectile.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "Characters/BaseCharacter.h"
 #include "Components/PrimitiveComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -170,8 +171,8 @@ void ABaseProjectile::CacheDamageFromWeapon(const ABaseGun* InSourceWeapon)
 
 void ABaseProjectile::ActivateFromPool(const FTransform& SpawnTransform, AActor* NewOwner, APawn* NewInstigator)
 {
-	SetOwner(NewOwner);
-	SetInstigator(NewInstigator);
+	SetOwner(IsValid(NewOwner) ? NewOwner : nullptr);
+	SetInstigator(IsValid(NewInstigator) ? NewInstigator : nullptr);
 	SetActorTransform(SpawnTransform, false, nullptr, ETeleportType::TeleportPhysics);
 
 	bHasProcessedImpact = false;
@@ -343,10 +344,27 @@ void ABaseProjectile::StartProjectileLifeSpanTimer()
 void ABaseProjectile::ApplyHitDamage(AActor* DirectHitActor, const FHitResult& Hit)
 {
 	AActor* HitActor = DirectHitActor ? DirectHitActor : Hit.GetActor();
-	const float DamageToApply = FMath::Max(0.f, CachedWeaponDamage);
+	const float BaseDamageToApply = FMath::Max(0.f, CachedWeaponDamage);
+	float DamageMultiplier = 1.0f;
+	if (const ABaseCharacter* HitCharacter = Cast<ABaseCharacter>(HitActor))
+	{
+		DamageMultiplier = HitCharacter->GetDamageMultiplierForHit(Hit);
+	}
+
+	const float DamageToApply = BaseDamageToApply * FMath::Max(0.0f, DamageMultiplier);
 	if (!HitActor || DamageToApply <= 0.f)
 	{
 		return;
+	}
+
+	if (DamageMultiplier > 1.0f)
+	{
+		UE_LOG(LogTemp, Log, TEXT("[Headshot] Target=%s Component=%s BaseDamage=%.1f Multiplier=%.2f FinalDamage=%.1f"),
+			*GetNameSafe(HitActor),
+			*GetNameSafe(Hit.GetComponent()),
+			BaseDamageToApply,
+			DamageMultiplier,
+			DamageToApply);
 	}
 
 	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(HitActor);

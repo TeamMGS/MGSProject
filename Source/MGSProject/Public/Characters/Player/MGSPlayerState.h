@@ -14,8 +14,8 @@
 #include "MGSPlayerState.generated.h"
 
 class UCharacterAttributeSet;
-class UWeaponAttributeSet;
 class UMGSAbilitySystemComponent;
+class UWeaponAttributeSet;
 
 UCLASS()
 class MGSPROJECT_API AMGSPlayerState : public APlayerState, public IAbilitySystemInterface

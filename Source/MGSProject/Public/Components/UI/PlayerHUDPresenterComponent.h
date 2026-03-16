@@ -2,8 +2,8 @@
  * 파일명 : PlayerHUDPresenterComponent.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-05
- * 수정자 :  장대한
- * 수정일 :  2026-03-05
+ * 수정자 : 장대한
+ * 수정일 : 2026-03-12
  */
 
 #pragma once
@@ -12,15 +12,15 @@
 #include "Components/ActorComponent.h"
 #include "PlayerHUDPresenterComponent.generated.h"
 
-class UMGSAbilitySystemComponent;
-class UCharacterAttributeSet;
-class UWeaponAttributeSet;
-class UPlayerCombatComponent;
-class UMGSPlayerStatusWidget;
-class ABaseWeapon;
 struct FGameplayAttribute;
 struct FGameplayTag;
 struct FOnAttributeChangeData;
+class ABaseWeapon;
+class UCharacterAttributeSet;
+class UMGSAbilitySystemComponent;
+class UMGSPlayerStatusWidget;
+class UPlayerCombatComponent;
+class UWeaponAttributeSet;
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class MGSPROJECT_API UPlayerHUDPresenterComponent : public UActorComponent
@@ -30,55 +30,99 @@ class MGSPROJECT_API UPlayerHUDPresenterComponent : public UActorComponent
 public:
 	UPlayerHUDPresenterComponent();
 
+	// Set widget class
 	void SetPlayerStatusWidgetClass(TSubclassOf<UMGSPlayerStatusWidget> InWidgetClass);
+	// Bind data
 	void RefreshHUDDataBindings();
+	// Clear data
 	void ClearHUDDataBindings();
 
 private:
 	using FAttributeChangedHandler = void (UPlayerHUDPresenterComponent::*)(const FOnAttributeChangeData&);
 
-	void CreatePlayerStatusWidget(); // 위젯 생성
-	void BindAttributeChangedDelegate(const FGameplayAttribute& Attribute, FDelegateHandle& Handle, FAttributeChangedHandler Handler); // 델리게이트 공통 바인딩
-	void UnbindAttributeChangedDelegate(const FGameplayAttribute& Attribute, FDelegateHandle& Handle); // 델리게이트 공통 바인딩 해제
-	void PushInitialHUDValues() const; // HUD 반영
-	void UpdateWeaponInfoVisibility() const; // 장착 무기 존재 여부로 패널 표시
-	void UpdatePickupWeaponPrompt(const ABaseWeapon* NearbyDroppedWeapon) const; // 근처 드랍 무기 프롬프트 반영
-	void UpdateAmmoOnHUD() const; // 탄창/최대/예비탄 반영
-	void UpdateSpreadOnHUD() const; // 현재/최대 탄착군 반영
-
-	void HandleCurrentHpChanged(const FOnAttributeChangeData& AttributeChangeData);
+	// Create and Add widget
+	void CreatePlayerStatusWidget();
+	
+	// Update HUD
+	void PushInitialHUDValues() const;
+	// Update
+	// HP
+	void UpdateHpOnHUD() const;
+	// Ammo
+	void UpdateAmmoOnHUD() const;
+	// Spread
+	void UpdateSpreadOnHUD() const;
+	// Weapon
+	void UpdateWeaponInfoVisibility() const;
+	// Drop
+	void UpdatePickupWeaponPrompt(const ABaseWeapon* NearbyDroppedWeapon) const;
+	const ABaseWeapon* GetEquippedWeapon() const;
+	
+	// Bind AttributeSet
+	void BindAttributeChangedDelegate(const FGameplayAttribute& Attribute, FDelegateHandle& Handle, FAttributeChangedHandler Handler);
+	// UnBind AttributeSet
+	void UnbindAttributeChangedDelegate(const FGameplayAttribute& Attribute, FDelegateHandle& Handle);
+	
+	// Handler
+	// Max HP
 	void HandleMaxHpChanged(const FOnAttributeChangeData& AttributeChangeData);
+	// Current HP
+	void HandleCurrentHpChanged(const FOnAttributeChangeData& AttributeChangeData);
+	// Ammo
 	void HandleAmmoAttributeChanged(const FOnAttributeChangeData& AttributeChangeData);
+	// Spread
 	void HandleSpreadAttributeChanged(const FOnAttributeChangeData& AttributeChangeData);
+	// Weapon
 	void HandleEquippedWeaponChanged(FGameplayTag PreviousWeaponTag, FGameplayTag CurrentWeaponTag);
+	// Drop
 	void HandleNearbyDroppedWeaponChanged(const ABaseWeapon* NearbyDroppedWeapon);
 
 private:
-	UPROPERTY(Transient)
-	TSubclassOf<UMGSPlayerStatusWidget> PlayerStatusWidgetClass; // 위젯 클래스
-
-	UPROPERTY(Transient)
-	TObjectPtr<UMGSPlayerStatusWidget> PlayerStatusWidget; // 위젯 
-
-	UPROPERTY(Transient)
-	TObjectPtr<UMGSAbilitySystemComponent> CachedASC; // ASC 캐시
-
-	UPROPERTY(Transient)
-	TObjectPtr<UCharacterAttributeSet> CachedCharacterAttributeSet; // Character AttribuetSet 캐시
-
-	UPROPERTY(Transient)
-	TObjectPtr<UWeaponAttributeSet> CachedWeaponAttributeSet; // Weapon AttribuetSet 캐시
-
-	UPROPERTY(Transient)
-	TObjectPtr<UPlayerCombatComponent> CachedPlayerCombatComponent; // CombatComponent 캐시
-
-	FDelegateHandle CurrentHpChangedHandle;
+	// Delegate Handle
+	// Character
+	// Max HP
 	FDelegateHandle MaxHpChangedHandle;
-	FDelegateHandle CurrentMagazineAmmoChangedHandle;
+	// Current HP
+	FDelegateHandle CurrentHpChangedHandle;
+	// Weapon
+	// Max Ammo
 	FDelegateHandle MaxMagazineAmmoChangedHandle;
+	// Current Ammo
+	FDelegateHandle CurrentMagazineAmmoChangedHandle;
+	// Current CarriedAmmo
 	FDelegateHandle CurrentCarriedAmmoChangedHandle;
-	FDelegateHandle CurrentSpreadRadiusChangedHandle;
+	// Max Spread
 	FDelegateHandle MaxSpreadRadiusChangedHandle;
+	// Current Spread
+	FDelegateHandle CurrentSpreadRadiusChangedHandle;
+	// Combat Component
+	// Equip
 	FDelegateHandle EquippedWeaponChangedHandle;
+	// Drop
 	FDelegateHandle NearbyDroppedWeaponChangedHandle;
+	
+	// Widget
+	// Class
+	UPROPERTY(Transient)
+	TSubclassOf<UMGSPlayerStatusWidget> PlayerStatusWidgetClass;
+	// Object
+	UPROPERTY(Transient)
+	TObjectPtr<UMGSPlayerStatusWidget> PlayerStatusWidget; 
+
+	// GAS
+	// ASC
+	UPROPERTY(Transient)
+	TObjectPtr<UMGSAbilitySystemComponent> CachedASC;
+	// Character AttributeSet
+	UPROPERTY(Transient)
+	TObjectPtr<UCharacterAttributeSet> CachedCharacterAttributeSet;
+	// Weapon AttributeSet
+	UPROPERTY(Transient)
+	TObjectPtr<UWeaponAttributeSet> CachedWeaponAttributeSet;
+	
+	// Component
+	// Combat Component
+	UPROPERTY(Transient)
+	TObjectPtr<UPlayerCombatComponent> CachedPlayerCombatComponent;
+	
 };

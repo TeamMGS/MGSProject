@@ -12,10 +12,10 @@
 #include "Abilities/GameplayAbility.h"
 #include "BaseGameplayAbility.generated.h"
 
-class UPawnCombatComponent;
 class UMGSAbilitySystemComponent;
+class UPawnCombatComponent;
 
-// GA 정책
+// GA Policy
 UENUM(BlueprintType)
 enum class EBaseAbilityActivationPolicy : uint8
 {

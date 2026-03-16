@@ -9,7 +9,7 @@
 #include "DataAssets/Startup/DA_StartupPlayer.h"
 
 #include "GAS/ASC/MGSAbilitySystemComponent.h"
-#include "GAS/GA/PlayerGameplayAbility.h"
+#include "GAS/GA/Player/PlayerGameplayAbility.h"
 #include "MGSStructType.h"
 
 void UDA_StartupPlayer::GiveToAbilitySystemComponent(UMGSAbilitySystemComponent* ASC, int32 Level)
