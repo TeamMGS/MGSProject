@@ -14,7 +14,9 @@
 
 UEnemyCrouchGameplayAbility::UEnemyCrouchGameplayAbility()
 {
-	AbilityTags.AddTag(MGSGameplayTags::Ability_Enemy_Crouch);
+	FGameplayTagContainer AbilityAssetTags;
+	AbilityAssetTags.AddTag(MGSGameplayTags::Ability_Enemy_Crouch);
+	SetAssetTags(AbilityAssetTags);
 	AbilityActivationPolicy = EBaseAbilityActivationPolicy::OnTriggered;
 	bClearAbilityOnEndWhenGiven = false;
 

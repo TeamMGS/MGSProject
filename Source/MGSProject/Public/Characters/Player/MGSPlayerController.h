@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-12
+ * 수정일 : 2026-03-17
  */
 
 #pragma once
@@ -53,6 +53,8 @@ private:
 	void Input_Look(const FInputActionValue& InputActionValue);
 	// 무기 장착 해제
 	void Input_UnequipWeapons();
+	// Map
+	void Input_Map();
 	
 	// Ability input
 	// Pressed

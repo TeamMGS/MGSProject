@@ -14,7 +14,9 @@
 
 UEnemySprintGameplayAbility::UEnemySprintGameplayAbility()
 {
-	AbilityTags.AddTag(MGSGameplayTags::Ability_Enemy_Sprint);
+	FGameplayTagContainer AbilityAssetTags;
+	AbilityAssetTags.AddTag(MGSGameplayTags::Ability_Enemy_Sprint);
+	SetAssetTags(AbilityAssetTags);
 	AbilityActivationPolicy = EBaseAbilityActivationPolicy::OnTriggered;
 	bClearAbilityOnEndWhenGiven = false;
 

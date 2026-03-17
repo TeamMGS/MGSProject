@@ -13,7 +13,9 @@
 
 UPlayerJumpGameplayAbility::UPlayerJumpGameplayAbility()
 {
-	AbilityTags.AddTag(MGSGameplayTags::Ability_Player_Jump);
+	FGameplayTagContainer AbilityAssetTags;
+	AbilityAssetTags.AddTag(MGSGameplayTags::Ability_Player_Jump);
+	SetAssetTags(AbilityAssetTags);
 	AbilityActivationPolicy = EBaseAbilityActivationPolicy::OnTriggered;
 	bClearAbilityOnEndWhenGiven = false;
 

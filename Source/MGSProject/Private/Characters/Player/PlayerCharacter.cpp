@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-12
+ * 수정일 : 2026-03-17
  */
 
 #include "Characters/Player/PlayerCharacter.h"
@@ -31,6 +31,9 @@
 #include "Engine/World.h"
 #include "Components/PrimitiveComponent.h"
 #include "GameplayEffectTypes.h"
+#include "PaperSpriteComponent.h"
+#include "Components/SceneCaptureComponent2D.h"
+#include "Paper2D/Classes/PaperSpriteComponent.h"
 
 APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -50,6 +53,23 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
+	
+	// Minimap
+	MinimapSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("MinimapSpringArm"));
+	MinimapSpringArm->SetupAttachment(GetRootComponent());
+	MinimapSpringArm->TargetArmLength = 500.0f;
+	MinimapSpringArm->SetRelativeRotation(FRotator(-90.0f, 0.0f, 0.0f));
+	MinimapSpringArm->bUsePawnControlRotation = false;
+	
+	MinimapSceneCaptureComponent = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("MinimapSceneCaptureComponent"));
+	MinimapSceneCaptureComponent->SetupAttachment(MinimapSpringArm);
+	MinimapSceneCaptureComponent->ProjectionType = ECameraProjectionMode::Orthographic;
+	MinimapSceneCaptureComponent->OrthoWidth = 2048.0f;
+		
+	IndicatorSprite = CreateDefaultSubobject<UPaperSpriteComponent>(TEXT("IndicatorSprite"));
+	IndicatorSprite->SetupAttachment(GetMesh());
+	IndicatorSprite->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, 450.0f), FRotator(0.0f, 0.0f, 90.0f));
+	IndicatorSprite->bOwnerNoSee = true;
 
 	// Movement component
 	GetCharacterMovement()->GetNavAgentPropertiesRef().bCanCrouch = true;

@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-05
  * 수정자 : 장대한
- * 수정일 : 2026-03-12
+ * 수정일 : 2026-03-17
  */
 
 #pragma once
@@ -36,6 +36,8 @@ public:
 	void RefreshHUDDataBindings();
 	// Clear data
 	void ClearHUDDataBindings();
+	// Visible Map
+	void VisibleMap();
 
 private:
 	using FAttributeChangedHandler = void (UPlayerHUDPresenterComponent::*)(const FOnAttributeChangeData&);

@@ -2,8 +2,8 @@
  * 파일명 : MGSStructType.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
- * 수정자 : 김동석
- * 수정일 : 2026-03-12
+ * 수정자 : 장대한
+ * 수정일 : 2026-03-17
  */
 
 #pragma once
@@ -11,8 +11,11 @@
 #include "GameplayTagContainer.h"
 #include "MGSStructType.generated.h"
 
-class UPlayerGameplayAbility;
+class AActor;
+class UAbilitySystemComponent;
+class UGameplayEffect;
 class UInputMappingContext;
+class UPlayerGameplayAbility;
 class UTexture2D;
 
 // 플레이어 Tag-GA 데이터
@@ -93,5 +96,52 @@ struct FWeaponRuntimeState
 	// 탄창
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Ammo")
 	int32 CurrentCarriedAmmo = 0;
+	
+};
+
+// Projectile Payload (=총알 데미지 정보)
+USTRUCT(BlueprintType)
+struct MGSPROJECT_API FMGSProjectileAttackPayload
+{
+	GENERATED_BODY()
+
+	// 발사한 주체 (플레이어, 적)
+	UPROPERTY(Transient)
+	TWeakObjectPtr<AActor> SourceActor;
+
+	// 발사한 물건 (무기)
+	UPROPERTY(Transient)
+	TWeakObjectPtr<AActor> SourceObject;
+
+	// 주체의 ASC
+	UPROPERTY(Transient)
+	TWeakObjectPtr<UAbilitySystemComponent> SourceASC;
+
+	// GE
+	UPROPERTY(Transient)
+	TSubclassOf<UGameplayEffect> DamageGameplayEffectClass;
+
+	// 기본 데미지
+	UPROPERTY(Transient)
+	float BaseDamage = 0.0f;
+
+	// GE Level
+	UPROPERTY(Transient)
+	float EffectLevel = 1.0f;
+ 
+	void Reset()
+	{
+		SourceActor.Reset();
+		SourceObject.Reset();
+		SourceASC.Reset();
+		DamageGameplayEffectClass = nullptr;
+		BaseDamage = 0.0f;
+		EffectLevel = 1.0f;
+	}
+	
+	bool HasDamageData() const
+	{
+		return BaseDamage > 0.0f;
+	}
 	
 };

@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-12
+ * 수정일 : 2026-03-17
  */
 
 #pragma once
@@ -19,6 +19,7 @@ class UAIPerceptionStimuliSourceComponent;
 class UCameraComponent;
 class UDA_SpreadSettings;
 class UMotionWarpingComponent;
+class UPaperSpriteComponent;
 class UPlayerCombatComponent;
 class UPrimitiveComponent;
 class USpringArmComponent;
@@ -75,6 +76,18 @@ private:
 	// Camera Component
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCameraComponent> FollowCamera;
+	
+	// Minimap Sprint Arm
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Minimap", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USpringArmComponent> MinimapSpringArm;
+	
+	// Minimap Scene Capture Component
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Minimap", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USceneCaptureComponent2D> MinimapSceneCaptureComponent;
+	
+	// Minimap Indicator Sprite
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Minimap", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UPaperSpriteComponent> IndicatorSprite;
 	
 	// Combat Component
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))

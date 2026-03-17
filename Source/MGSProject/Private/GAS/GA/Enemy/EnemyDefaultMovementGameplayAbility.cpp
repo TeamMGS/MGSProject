@@ -14,7 +14,9 @@
 
 UEnemyDefaultMovementGameplayAbility::UEnemyDefaultMovementGameplayAbility()
 {
-	AbilityTags.AddTag(MGSGameplayTags::Ability_Enemy_DefaultMovement);
+	FGameplayTagContainer AbilityAssetTags;
+	AbilityAssetTags.AddTag(MGSGameplayTags::Ability_Enemy_DefaultMovement);
+	SetAssetTags(AbilityAssetTags);
 	AbilityActivationPolicy = EBaseAbilityActivationPolicy::OnTriggered;
 	bClearAbilityOnEndWhenGiven = false;
 

@@ -14,7 +14,9 @@
 
 UEnemyReloadGameplayAbility::UEnemyReloadGameplayAbility()
 {
-	AbilityTags.AddTag(MGSGameplayTags::Ability_Enemy_Reload);
+	FGameplayTagContainer AbilityAssetTags;
+	AbilityAssetTags.AddTag(MGSGameplayTags::Ability_Enemy_Reload);
+	SetAssetTags(AbilityAssetTags);
 	AbilityActivationPolicy = EBaseAbilityActivationPolicy::OnTriggered;
 	bClearAbilityOnEndWhenGiven = false;
 	ActivationBlockedTags.AddTag(MGSGameplayTags::State_Enemy_Attacking);

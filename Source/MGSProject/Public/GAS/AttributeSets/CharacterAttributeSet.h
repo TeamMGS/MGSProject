@@ -39,5 +39,10 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Status")
 	FGameplayAttributeData CurrentHp;
 	ATTRIBUTE_ACCESSORS(UCharacterAttributeSet, CurrentHp)
+
+	// 메타 데미지. ExecutionCalculation이 여기에 누적하고 PostGameplayEffectExecute에서 HP에 반영합니다.
+	UPROPERTY(BlueprintReadOnly, Category = "Status")
+	FGameplayAttributeData IncomingDamage;
+	ATTRIBUTE_ACCESSORS(UCharacterAttributeSet, IncomingDamage)
 		
 };

@@ -12,6 +12,7 @@
 #include "Blueprint/UserWidget.h"
 #include "MGSPlayerStatusWidget.generated.h"
 
+class USizeBox;
 class UTexture2D;
 
 UCLASS(Abstract, BlueprintType)
@@ -36,6 +37,9 @@ public:
 	// Drop
 	UFUNCTION(BlueprintCallable, Category = "HUD")
 	void UpdatePickupWeaponPrompt(bool bInVisible, const FText& InWeaponName, UTexture2D* InWeaponInfoImage);
+	// Map
+	UFUNCTION(BlueprintCallable, Category = "HUD")
+	void UpdateMap();
 	
 	// Get
 	// Current HP Percent
@@ -113,5 +117,8 @@ private:
 	// Drop Weapon Image
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "HUD", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UTexture2D> PickupWeaponPromptImage = nullptr;
+	// Map Size Box
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<USizeBox> MapSizeBox;
 	
 };

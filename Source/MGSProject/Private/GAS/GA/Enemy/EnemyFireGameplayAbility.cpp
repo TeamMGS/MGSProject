@@ -17,13 +17,16 @@
 #include "GameFramework/Pawn.h"
 #include "GAS/AttributeSets/WeaponAttributeSet.h"
 #include "GAS/MGSGameplayTags.h"
+#include "MGSStructType.h"
 #include "Projectiles/BaseProjectile.h"
 #include "Subsystems/ProjectilePoolWorldSubsystem.h"
 #include "Weapon/BaseGun.h"
 
 UEnemyFireGameplayAbility::UEnemyFireGameplayAbility()
 {
-	AbilityTags.AddTag(MGSGameplayTags::Ability_Enemy_Fire);
+	FGameplayTagContainer AbilityAssetTags;
+	AbilityAssetTags.AddTag(MGSGameplayTags::Ability_Enemy_Fire);
+	SetAssetTags(AbilityAssetTags);
 	ActivationOwnedTags.AddTag(MGSGameplayTags::State_Enemy_Attacking);
 	AbilityActivationPolicy = EBaseAbilityActivationPolicy::OnTriggered;
 	bClearAbilityOnEndWhenGiven = false;
@@ -357,7 +360,13 @@ bool UEnemyFireGameplayAbility::SpawnProjectileShot(AEnemyCharacter* EnemyCharac
 		ProjectileCollision->IgnoreActorWhenMoving(EquippedGun, true);
 	}
 
-	SpawnedProjectile->CacheDamageFromWeapon(EquippedGun);
+	FMGSProjectileAttackPayload AttackPayload;
+	AttackPayload.SourceActor = DamageCauser;
+	AttackPayload.SourceObject = EquippedGun;
+	AttackPayload.SourceASC = GetAbilitySystemComponentFromActorInfo();
+	AttackPayload.DamageGameplayEffectClass = EquippedGun->GetDamageGameplayEffectClass();
+	AttackPayload.BaseDamage = FMath::Max(0.f, EquippedGun->GetBaseDamage());
+	SpawnedProjectile->SetAttackPayload(AttackPayload);
 	SpawnedProjectile->InitializeProjectile(MuzzleTraceDirection);
 
 	if (bEnableFireTraceLog)

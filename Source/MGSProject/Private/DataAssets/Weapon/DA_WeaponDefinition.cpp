@@ -7,3 +7,10 @@
  */
 
 #include "DataAssets/Weapon/DA_WeaponDefinition.h"
+
+#include "GAS/GE/MGSDamageGameplayEffect.h"
+
+UDA_WeaponDefinition::UDA_WeaponDefinition()
+{
+	DamageGameplayEffectClass = UMGSDamageGameplayEffect::StaticClass();
+}

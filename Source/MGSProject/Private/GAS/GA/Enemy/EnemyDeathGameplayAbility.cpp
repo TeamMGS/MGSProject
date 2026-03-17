@@ -16,7 +16,9 @@
 
 UEnemyDeathGameplayAbility::UEnemyDeathGameplayAbility()
 {
-	AbilityTags.AddTag(MGSGameplayTags::Ability_Enemy_Death);
+	FGameplayTagContainer AbilityAssetTags;
+	AbilityAssetTags.AddTag(MGSGameplayTags::Ability_Enemy_Death);
+	SetAssetTags(AbilityAssetTags);
 	ActivationBlockedTags.AddTag(MGSGameplayTags::State_Character_Dead);
 }
 
