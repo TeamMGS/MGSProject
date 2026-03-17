@@ -3,7 +3,7 @@
  * 생성자 : 김동석
  * 생성일 : 2026-03-16
  * 수정자 : 김동석
- * 수정일 : 2026-03-16
+ * 수정일 : 2026-03-17
  */
 
 #include "GAS/GA/Player/PlayerTraversalGameplayAbility.h"
@@ -15,6 +15,9 @@
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GAS/ASC/MGSAbilitySystemComponent.h"
+#include "GAS/MGSGameplayTags.h"
+#include "PoseSearch/PoseSearchLibrary.h"
 
 UPlayerTraversalGameplayAbility::UPlayerTraversalGameplayAbility()
 {
@@ -32,34 +35,31 @@ void UPlayerTraversalGameplayAbility::ActivateAbility(const FGameplayAbilitySpec
 	
 	// 부모 클래스의 헬퍼 함수를 통해 플레이어 캐릭터 획득
 	APlayerCharacter* Character = GetPlayerCharacterFromActorInfo();
-	if (!Character) return;
-
 	UMGSTraversalComponent* TraversalComp = Character->FindComponentByClass<UMGSTraversalComponent>();
-	if (!TraversalComp)
+	UMGSAbilitySystemComponent* ASC = GetMGSAbilitySystemComponentFromActorInfo();
+	
+	if (!Character || !ASC || !TraversalComp)
 	{
 		EndAbility(SpecHandle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
-
-	Character->GetCharacterMovement()->SetMovementMode(MOVE_Flying);
-	Character->GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Ignore);
 	
 	// 지형 분석 실행
 	FMGSTraversalChooserInputs Inputs;
 	if (TraversalComp->CheckTraversal(Inputs))
 	{
 		FChooserEvaluationContext ChooserContext;
-
+	
 		// 1. 첫 번째 소스: 캐릭터의 애니메이션 인스턴스 (BaseAnimInstance 대응)
 		UAnimInstance* AnimInst = Character->GetMesh()->GetAnimInstance();
 		if (AnimInst)
 		{
 			ChooserContext.AddObjectParam(AnimInst);
 		}
-
+	
 		// 2. 두 번째 소스: 우리가 분석한 구조체 (MGSTraversalChooserInputs 대응)
 		ChooserContext.AddStructParam(Inputs);
-
+	
 		UAnimMontage* SelectedMontage = nullptr;
 		UChooserTable::EvaluateChooser(ChooserContext, TraversalChooserTable,
 		                               FObjectChooserBase::FObjectChooserIteratorCallback::CreateLambda(
@@ -73,12 +73,14 @@ void UPlayerTraversalGameplayAbility::ActivateAbility(const FGameplayAbilitySpec
 				                               }
 				                               return FObjectChooserBase::EIteratorStatus::Continue; // 계속 탐색
 			                               }));
-
+	
 		if (SelectedMontage)
 		{
+			Character->GetCharacterMovement()->SetMovementMode(MOVE_Flying);
+			Character->GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Ignore);
 			// Motion Warping 설정
 			SetMotionWarpingTargets(Inputs);
-
+	
 			// 몽타주 재생 태스크
 			UAbilityTask_PlayMontageAndWait* MontageTask =
 				UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
@@ -90,23 +92,11 @@ void UPlayerTraversalGameplayAbility::ActivateAbility(const FGameplayAbilitySpec
 			MontageTask->OnCancelled.AddDynamic(this, &UPlayerTraversalGameplayAbility::OnTraversalFinished);
 			MontageTask->ReadyForActivation();
 			
-			
 			return;
 		}
-		Character->GetCharacterMovement()->SetMovementMode(MOVE_Falling);
-		Character->GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
-		// 3. 분석은 성공했으나 적절한 애니메이션이 없는 경우 -> 일반 점프 실행
-		Character->Jump();
 	}
-	else
-	{
-		Character->GetCharacterMovement()->SetMovementMode(MOVE_Falling);
-		Character->GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
-		Character->Jump();
-	}
-
-	// 분석 실패 혹은 몽타주 없음 시 종료
-	EndAbility(SpecHandle, ActorInfo, ActivationInfo, true, true);
+	EndAbility(SpecHandle, ActorInfo, ActivationInfo, true, false);
+	ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(MGSGameplayTags::Ability_Player_Jump));
 }
 
 
@@ -170,4 +160,13 @@ void UPlayerTraversalGameplayAbility::OnTraversalStopEventReceived(FGameplayEven
 		AnimInst->Montage_Stop(0.2f); // 부드럽게 중단
 		OnTraversalFinished(); // 상태 복구 함수 호출
 	}
+}
+
+void UPlayerTraversalGameplayAbility::RestoreMovementState(APlayerCharacter* Character, EMovementMode OriginalMode)
+{
+	if (!Character) return;
+
+	// 원래 모드가 Falling이었다면 그대로 두되, Walking이었다면 다시 지면 상태로 돌려놓음
+	Character->GetCharacterMovement()->SetMovementMode(OriginalMode);
+	Character->GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
 }

@@ -35,7 +35,7 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "MGS|Traversal|Debug")
 	TObjectPtr<UAnimMontage> DebugMontage;
-
+	
 private:
 	// Motion Warping 타겟 설정
 	void SetMotionWarpingTargets(const FMGSTraversalChooserInputs& Inputs);
@@ -46,4 +46,7 @@ private:
 	
 	UFUNCTION()
 	void OnTraversalStopEventReceived(FGameplayEventData Payload);
+	
+	// 헬퍼함수
+	void RestoreMovementState(APlayerCharacter* Character, EMovementMode OriginalMode);
 };
