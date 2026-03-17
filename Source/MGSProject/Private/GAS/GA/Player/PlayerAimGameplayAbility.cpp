@@ -17,7 +17,9 @@
 
 UPlayerAimGameplayAbility::UPlayerAimGameplayAbility()
 {
-	AbilityTags.AddTag(MGSGameplayTags::Ability_Player_Aim);
+	FGameplayTagContainer AbilityAssetTags;
+	AbilityAssetTags.AddTag(MGSGameplayTags::Ability_Player_Aim);
+	SetAssetTags(AbilityAssetTags);
 	AbilityActivationPolicy = EBaseAbilityActivationPolicy::OnTriggered;
 	bClearAbilityOnEndWhenGiven = false;
 	ActivationOwnedTags.AddTag(MGSGameplayTags::State_Player_Aiming);

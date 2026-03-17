@@ -25,6 +25,7 @@
 #include "InputCoreTypes.h"
 #include "Engine/Engine.h"
 #include "GameplayEffectTypes.h"
+#include "PaperSpriteComponent.h"
 #include "Perception/AIPerceptionStimuliSourceComponent.h"
 #include "Perception/AISense_Hearing.h"
 #include "Perception/AISense_Sight.h"
@@ -71,6 +72,12 @@ AEnemyCharacter::AEnemyCharacter(const FObjectInitializer& ObjectInitializer)
 	HeadHitSphere->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Overlap);
 	HeadHitSphere->SetGenerateOverlapEvents(true);
 	HeadHitSphere->SetCanEverAffectNavigation(false);
+	
+	// Minimap
+	IndicatorSprite = CreateDefaultSubobject<UPaperSpriteComponent>(TEXT("IndicatorSprite"));
+	IndicatorSprite->SetupAttachment(GetMesh());
+	IndicatorSprite->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, 450.0f), FRotator(0.0f, 0.0f, 90.0f));
+	IndicatorSprite->bVisibleInSceneCaptureOnly = true;
 
 	// AI
 	PerceptionStimuliSource = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("PerceptionStimuliSource"));

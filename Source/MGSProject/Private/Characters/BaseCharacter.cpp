@@ -2,8 +2,8 @@
  * 파일명 : BaseCharacter.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
- * 수정자 : 김동석
- * 수정일 : 2026-03-12
+ * 수정자 : 장대한
+ * 수정일 : 2026-03-17
  */
 
 #include "Characters/BaseCharacter.h"
@@ -21,6 +21,8 @@ ABaseCharacter::ABaseCharacter(const FObjectInitializer& ObjectInitializer)
 	PrimaryActorTick.bCanEverTick = false;
 	// Decal의 영향을 받지 않음
 	GetMesh()->bReceivesDecals = false;
+	// 메시는 SceneCapture에 비추지 않음 (Minimap)
+	GetMesh()->bHiddenInSceneCapture = true;
 	
 	// 1. 커스텀 CMC 캐싱
 	MGSMovementComponent = Cast<UMGSCharacterMovementComponent>(GetCharacterMovement());

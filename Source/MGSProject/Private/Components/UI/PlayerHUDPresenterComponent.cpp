@@ -142,6 +142,14 @@ void UPlayerHUDPresenterComponent::ClearHUDDataBindings()
 	CachedPlayerCombatComponent = nullptr;
 }
 
+void UPlayerHUDPresenterComponent::VisibleMap()
+{
+	if (PlayerStatusWidget)
+	{
+		PlayerStatusWidget->UpdateMap();
+	}
+}
+
 void UPlayerHUDPresenterComponent::PushInitialHUDValues() const
 {
 	if (!PlayerStatusWidget)

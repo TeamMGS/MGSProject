@@ -3,37 +3,30 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-06
  * 수정자 : 장대한
- * 수정일 : 2026-03-12
+ * 수정일 : 2026-03-16
  */
 
 #include "Projectiles/BaseProjectile.h"
 
-#include "AbilitySystemBlueprintLibrary.h"
-#include "AbilitySystemComponent.h"
-#include "Characters/BaseCharacter.h"
 #include "Components/PrimitiveComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "DataAssets/Projectile/DA_ProjectileDefinition.h"
-#include "GAS/GE/MGSDamageGameplayEffect.h"
-#include "GAS/MGSGameplayTags.h"
+#include "GAS/Statics/MGSDamageStatics.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Subsystems/ProjectilePoolWorldSubsystem.h"
 #include "TimerManager.h"
 #include "UObject/ConstructorHelpers.h"
-#include "Weapon/BaseGun.h"
 
 ABaseProjectile::ABaseProjectile()
 {
 	// 틱은 사용하지 않음
 	PrimaryActorTick.bCanEverTick = false;
-	PrimaryActorTick.bStartWithTickEnabled = false;
 
 	// 콜리전 컴포넌트 설정
 	CollisionComponent = CreateDefaultSubobject<USphereComponent>(TEXT("CollisionComponent"));
 	SetRootComponent(CollisionComponent);
-
 	CollisionComponent->InitSphereRadius(6.0f);
 	CollisionComponent->SetCollisionObjectType(ECC_WorldDynamic);
 	CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
@@ -73,17 +66,12 @@ ABaseProjectile::ABaseProjectile()
 	ProjectileMovementComponent->bForceSubStepping = true;
 
 	// 변수 초기화
-	CurrentDamageGameplayEffectClass = UMGSDamageGameplayEffect::StaticClass(); // 데미지 GE 클래스
-	CachedWeaponDamage = 0.0f; // 발사 시점 데미지
-	bShouldDestroyOnHit = true; // 히트 시 파괴 플래그
-	bShouldIgnoreOwnerOnHit = true; // 소유자 무시 플래그 
-	InitialLifeSpan = 5.0f; // 생존 시간
-}
-
-const UDA_ProjectileDefinition& ABaseProjectile::GetProjectileDefinitionChecked() const
-{
-	checkf(ProjectileDefinition, TEXT("%s has no ProjectileDefinition assigned."), *GetName());
-	return *ProjectileDefinition;
+	// 히트 시 파괴 플래그
+	bShouldDestroyOnHit = true;
+	// 소유자 무시 플래그
+	bShouldIgnoreOwnerOnHit = true;
+	// 생존 시간
+	InitialLifeSpan = 5.0f;
 }
 
 void ABaseProjectile::BeginPlay()
@@ -133,51 +121,34 @@ void ABaseProjectile::BeginPlay()
 
 	if (ensureMsgf(ProjectileMovementComponent, TEXT("%s has no projectile movement component."), *GetName()))
 	{
+		// Projectile 정지 이벤트 바인딩
 		ProjectileMovementComponent->OnProjectileStop.AddDynamic(this, &ThisClass::HandleProjectileStop);
 	}
 }
 
-void ABaseProjectile::InitializeProjectile(const FVector& ShootDirection)
+void ABaseProjectile::SetProjectilePoolSubsystem(UMGSProjectilePoolWorldSubsystem* InProjectilePoolSubsystem)
 {
-	if (!bHasAppliedDefinition)
-	{
-		ApplyProjectileDefinition();
-	}
-
-	if (!ProjectileMovementComponent)
-	{
-		return;
-	}
-
-	ProjectileMovementComponent->SetUpdatedComponent(CollisionComponent);
-
-	FVector SafeDirection = ShootDirection.GetSafeNormal();
-	if (SafeDirection.IsNearlyZero())
-	{
-		SafeDirection = GetActorForwardVector();
-	}
-
-	ProjectileMovementComponent->Velocity = SafeDirection * ProjectileMovementComponent->InitialSpeed;
-	ProjectileMovementComponent->UpdateComponentVelocity();
-	SetActorRotation(SafeDirection.Rotation());
-	bIsActiveInPool = true;
-	StartProjectileLifeSpanTimer();
+	ProjectilePoolSubsystem = InProjectilePoolSubsystem;
 }
 
-void ABaseProjectile::CacheDamageFromWeapon(const ABaseGun* InSourceWeapon)
+void ABaseProjectile::SetAttackPayload(const FMGSProjectileAttackPayload& InAttackPayload)
 {
-	CachedWeaponDamage = InSourceWeapon ? FMath::Max(0.f, InSourceWeapon->GetBaseDamage()) : 0.f;
+	AttackPayload = InAttackPayload;
 }
 
 void ABaseProjectile::ActivateFromPool(const FTransform& SpawnTransform, AActor* NewOwner, APawn* NewInstigator)
 {
+	// Owner, Instigator, 위치 설정
 	SetOwner(IsValid(NewOwner) ? NewOwner : nullptr);
 	SetInstigator(IsValid(NewInstigator) ? NewInstigator : nullptr);
 	SetActorTransform(SpawnTransform, false, nullptr, ETeleportType::TeleportPhysics);
 
+	// 이번 발사에서 충돌 했는지 플래그 초기화
 	bHasProcessedImpact = false;
+	// 현재 실제로 발사되어 활동중인지 플래그 초기화
 	bIsActiveInPool = false;
 
+	// 콜리전 설정
 	if (CollisionComponent)
 	{
 		CollisionComponent->ClearMoveIgnoreActors();
@@ -185,6 +156,7 @@ void ABaseProjectile::ActivateFromPool(const FTransform& SpawnTransform, AActor*
 		CollisionComponent->SetGenerateOverlapEvents(true);
 	}
 
+	// 무브먼트 설정
 	if (ProjectileMovementComponent)
 	{
 		ProjectileMovementComponent->SetUpdatedComponent(CollisionComponent);
@@ -194,7 +166,9 @@ void ABaseProjectile::ActivateFromPool(const FTransform& SpawnTransform, AActor*
 		ProjectileMovementComponent->Activate(true);
 	}
 
+	// 게임에서 숨김
 	SetActorHiddenInGame(false);
+	// 콜리전 활성화
 	SetActorEnableCollision(true);
 }
 
@@ -202,13 +176,15 @@ void ABaseProjectile::DeactivateToPool()
 {
 	if (UWorld* World = GetWorld())
 	{
+		// 생존 타이머 해제
 		World->GetTimerManager().ClearTimer(ProjectileLifeSpanTimerHandle);
 	}
 
 	bHasProcessedImpact = false;
 	bIsActiveInPool = false;
-	CachedWeaponDamage = 0.0f;
+	AttackPayload.Reset();
 
+	// 이동 정지 및 비활성화
 	if (ProjectileMovementComponent)
 	{
 		ProjectileMovementComponent->StopMovementImmediately();
@@ -217,6 +193,7 @@ void ABaseProjectile::DeactivateToPool()
 		ProjectileMovementComponent->Deactivate();
 	}
 
+	// 충돌 비활성화 및 무기 목록 제거
 	if (CollisionComponent)
 	{
 		CollisionComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -224,15 +201,58 @@ void ABaseProjectile::DeactivateToPool()
 		CollisionComponent->ClearMoveIgnoreActors();
 	}
 
+	// Collision 비활성화
 	SetActorEnableCollision(false);
+	// 게임에서 숨기기
 	SetActorHiddenInGame(true);
+	// Owner/Instigator clear
 	SetOwner(nullptr);
 	SetInstigator(nullptr);
 }
 
-void ABaseProjectile::SetProjectilePoolSubsystem(UMGSProjectilePoolWorldSubsystem* InProjectilePoolSubsystem)
+void ABaseProjectile::InitializeProjectile(const FVector& ShootDirection)
 {
-	ProjectilePoolSubsystem = InProjectilePoolSubsystem;
+	if (!bHasAppliedDefinition)
+	{
+		// DA_ProjectileDefinition에 설정된 값으로 설정
+		ApplyProjectileDefinition();
+	}
+
+	if (!ProjectileMovementComponent)
+	{
+		return;
+	}
+	
+	// Movement component 설정
+	ProjectileMovementComponent->SetUpdatedComponent(CollisionComponent);
+	
+	// Direction 설정
+	FVector SafeDirection = ShootDirection.GetSafeNormal();
+	if (SafeDirection.IsNearlyZero())
+	{
+		SafeDirection = GetActorForwardVector();
+	}
+
+	// Velocity 설정
+	ProjectileMovementComponent->Velocity = SafeDirection * ProjectileMovementComponent->InitialSpeed;
+	ProjectileMovementComponent->UpdateComponentVelocity();
+	// Rotation 설정
+	SetActorRotation(SafeDirection.Rotation());
+	// 총알 활동 플래그 참으로 설정
+	bIsActiveInPool = true;
+	// 수명 타이머 시작
+	StartProjectileLifeSpanTimer();
+}
+
+void ABaseProjectile::HandleProjectileStop(const FHitResult& ImpactResult)
+{
+	if (!bIsActiveInPool)
+	{
+		return;
+	}
+
+	// Projectile 충돌 처리
+	ProcessProjectileImpact(ImpactResult.GetActor(), ImpactResult);
 }
 
 void ABaseProjectile::HandleProjectileOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -247,28 +267,9 @@ void ABaseProjectile::HandleProjectileOverlap(UPrimitiveComponent* OverlappedCom
 		return;
 	}
 
+	// Projectile 충돌 처리
 	const FHitResult EffectiveHit = bFromSweep ? SweepResult : FHitResult();
 	ProcessProjectileImpact(OtherActor, EffectiveHit);
-}
-
-void ABaseProjectile::HandleProjectileStop(const FHitResult& ImpactResult)
-{
-	if (!bIsActiveInPool)
-	{
-		return;
-	}
-
-	ProcessProjectileImpact(ImpactResult.GetActor(), ImpactResult);
-}
-
-void ABaseProjectile::HandleLifeSpanExpired()
-{
-	if (!bIsActiveInPool)
-	{
-		return;
-	}
-
-	ReleaseToPoolOrDestroy();
 }
 
 void ABaseProjectile::ProcessProjectileImpact(AActor* HitActor, const FHitResult& Hit)
@@ -301,8 +302,6 @@ void ABaseProjectile::ProcessProjectileImpact(AActor* HitActor, const FHitResult
 
 	// 피격 데미지 적용
 	ApplyHitDamage(EffectiveHitActor, Hit);
-	// 충돌 이벤트 브로드캐스트
-	OnProjectileImpact(Hit);
 
 	if (bShouldDestroyOnHit)
 	{
@@ -310,15 +309,16 @@ void ABaseProjectile::ProcessProjectileImpact(AActor* HitActor, const FHitResult
 	}
 }
 
-void ABaseProjectile::ReleaseToPoolOrDestroy()
+void ABaseProjectile::ApplyHitDamage(AActor* DirectHitActor, const FHitResult& Hit)
 {
-	if (ProjectilePoolSubsystem.IsValid())
+	AActor* HitActor = DirectHitActor ? DirectHitActor : Hit.GetActor();
+	if (!HitActor || !AttackPayload.HasDamageData())
 	{
-		ProjectilePoolSubsystem->ReturnProjectile(this);
 		return;
 	}
 
-	Destroy();
+	// 실제 데미지 치러
+	FMGSDamageStatics::ApplyProjectileDamage(AttackPayload, this, GetInstigator(), HitActor, Hit);
 }
 
 void ABaseProjectile::StartProjectileLifeSpanTimer()
@@ -329,6 +329,7 @@ void ABaseProjectile::StartProjectileLifeSpanTimer()
 		return;
 	}
 
+	// 생존 타이머 시작
 	World->GetTimerManager().ClearTimer(ProjectileLifeSpanTimerHandle);
 	if (ActiveProjectileLifeSpan > 0.0f)
 	{
@@ -341,63 +342,27 @@ void ABaseProjectile::StartProjectileLifeSpanTimer()
 	}
 }
 
-void ABaseProjectile::ApplyHitDamage(AActor* DirectHitActor, const FHitResult& Hit)
+void ABaseProjectile::HandleLifeSpanExpired()
 {
-	AActor* HitActor = DirectHitActor ? DirectHitActor : Hit.GetActor();
-	const float BaseDamageToApply = FMath::Max(0.f, CachedWeaponDamage);
-	float DamageMultiplier = 1.0f;
-	if (const ABaseCharacter* HitCharacter = Cast<ABaseCharacter>(HitActor))
-	{
-		DamageMultiplier = HitCharacter->GetDamageMultiplierForHit(Hit);
-	}
-
-	const float DamageToApply = BaseDamageToApply * FMath::Max(0.0f, DamageMultiplier);
-	if (!HitActor || DamageToApply <= 0.f)
+	if (!bIsActiveInPool)
 	{
 		return;
 	}
 
-	if (DamageMultiplier > 1.0f)
-	{
-		UE_LOG(LogTemp, Log, TEXT("[Headshot] Target=%s Component=%s BaseDamage=%.1f Multiplier=%.2f FinalDamage=%.1f"),
-			*GetNameSafe(HitActor),
-			*GetNameSafe(Hit.GetComponent()),
-			BaseDamageToApply,
-			DamageMultiplier,
-			DamageToApply);
-	}
+	ReleaseToPoolOrDestroy();
+}
 
-	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(HitActor);
-	if (!TargetASC)
+void ABaseProjectile::ReleaseToPoolOrDestroy()
+{
+	// 풀링 시스템이 유효하면
+	if (ProjectilePoolSubsystem.IsValid())
 	{
-		// GE 전용 데미지 파이프라인: ASC 없는 대상은 데미지를 적용하지 않습니다.
+		ProjectilePoolSubsystem->ReturnProjectile(this);
 		return;
 	}
 
-	AActor* SourceActor = GetOwner() ? GetOwner() : this;
-	UAbilitySystemComponent* SourceASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(SourceActor);
-	const TSubclassOf<UGameplayEffect> DamageGEClass = CurrentDamageGameplayEffectClass
-		? CurrentDamageGameplayEffectClass
-		: TSubclassOf<UGameplayEffect>(UMGSDamageGameplayEffect::StaticClass());
-
-	FGameplayEffectContextHandle EffectContext = SourceASC
-		? SourceASC->MakeEffectContext()
-		: TargetASC->MakeEffectContext();
-	EffectContext.AddSourceObject(this);
-	EffectContext.AddInstigator(GetInstigator(), SourceActor);
-	EffectContext.AddHitResult(Hit, true);
-
-	FGameplayEffectSpecHandle DamageSpecHandle = SourceASC
-		? SourceASC->MakeOutgoingSpec(DamageGEClass, 1.f, EffectContext)
-		: TargetASC->MakeOutgoingSpec(DamageGEClass, 1.f, EffectContext);
-	if (!DamageSpecHandle.IsValid() || !DamageSpecHandle.Data.IsValid())
-	{
-		return;
-	}
-
-	// CurrentHp에 Additive 적용이므로 음수 값을 넣어 체력을 감소시킵니다.
-	DamageSpecHandle.Data->SetSetByCallerMagnitude(MGSGameplayTags::Data_Damage, -FMath::Abs(DamageToApply));
-	TargetASC->ApplyGameplayEffectSpecToSelf(*DamageSpecHandle.Data.Get());
+	// 풀링 시스템이 유효하지 않으면 제거
+	Destroy();
 }
 
 void ABaseProjectile::ApplyProjectileDefinition()
@@ -418,9 +383,6 @@ void ABaseProjectile::ApplyProjectileDefinition()
 	const bool bDefinitionRotationFollowsVelocity = Definition.bRotationFollowsVelocity;
 	const float DefinitionProjectileGravityScale = Definition.ProjectileGravityScale;
 
-	CurrentDamageGameplayEffectClass = Definition.DamageGameplayEffectClass
-		? Definition.DamageGameplayEffectClass
-		: TSubclassOf<UGameplayEffect>(UMGSDamageGameplayEffect::StaticClass());
 	bShouldDestroyOnHit = bDefinitionDestroyOnHit;
 	bShouldIgnoreOwnerOnHit = bDefinitionIgnoreOwnerOnHit;
 
@@ -439,9 +401,13 @@ void ABaseProjectile::ApplyProjectileDefinition()
 
 	ActiveProjectileLifeSpan = DefinitionLifeSpan;
 	InitialLifeSpan = 0.0f;
+	// DA_ProjectileDefinition 플래그 참처리
 	bHasAppliedDefinition = true;
 }
 
-void ABaseProjectile::OnProjectileImpact_Implementation(const FHitResult& HitResult)
+const UDA_ProjectileDefinition& ABaseProjectile::GetProjectileDefinitionChecked() const
 {
+	checkf(ProjectileDefinition, TEXT("%s has no ProjectileDefinition assigned."), *GetName());
+	
+	return *ProjectileDefinition;
 }

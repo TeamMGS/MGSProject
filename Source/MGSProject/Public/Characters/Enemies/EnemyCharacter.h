@@ -15,6 +15,7 @@
 #include "GAS/AttributeSets/CharacterAttributeSet.h"
 #include "EnemyCharacter.generated.h"
 
+class UPaperSpriteComponent;
 struct FOnAttributeChangeData;
 class UAbilitySystemComponent;
 class UAIPerceptionStimuliSourceComponent;
@@ -129,6 +130,10 @@ protected:
 	// Collision
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USphereComponent> HeadHitSphere;
+	
+	// Minimap Indicator Sprite
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Minimap", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UPaperSpriteComponent> IndicatorSprite;
 	
 	// Character AttributeSet
 	// Max HP

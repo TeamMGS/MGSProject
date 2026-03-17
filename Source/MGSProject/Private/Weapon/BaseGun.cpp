@@ -11,6 +11,7 @@
 #include "Characters/BaseCharacter.h"
 #include "DataAssets/Weapon/DA_WeaponDefinition.h"
 #include "GAS/AttributeSets/WeaponAttributeSet.h"
+#include "GAS/GE/MGSDamageGameplayEffect.h"
 #include "MGSStructType.h"
 #include "Projectiles/BaseBullet.h"
 
@@ -183,6 +184,14 @@ float ABaseGun::GetBaseDamage() const
 
 	const UDA_WeaponDefinition& WeaponDef = GetWeaponDefinitionChecked();
 	return FMath::Max(0.f, WeaponDef.BaseDamage);
+}
+
+TSubclassOf<UGameplayEffect> ABaseGun::GetDamageGameplayEffectClass() const
+{
+	const UDA_WeaponDefinition& WeaponDef = GetWeaponDefinitionChecked();
+	return WeaponDef.DamageGameplayEffectClass
+		? WeaponDef.DamageGameplayEffectClass
+		: TSubclassOf<UGameplayEffect>(UMGSDamageGameplayEffect::StaticClass());
 }
 
 float ABaseGun::GetFireInterval() const

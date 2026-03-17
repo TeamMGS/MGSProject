@@ -124,7 +124,8 @@ void AMGSPlayerController::BindInputActions()
 	// Bind Native input
 	MGSInputComponent->BindNativeInputAction(InputConfigDataAsset, MGSGameplayTags::InputTag_Move, ETriggerEvent::Triggered, this, &ThisClass::Input_Move);
 	MGSInputComponent->BindNativeInputAction(InputConfigDataAsset, MGSGameplayTags::InputTag_Look, ETriggerEvent::Triggered, this, &ThisClass::Input_Look);
-	MGSInputComponent->BindNativeInputAction(InputConfigDataAsset, MGSGameplayTags::InputTag_Weapon_Unequip, ETriggerEvent::Started, this, &ThisClass::Input_UnequipWeapons);
+	MGSInputComponent->BindNativeInputAction(InputConfigDataAsset, MGSGameplayTags::InputTag_Weapon_Unequip, ETriggerEvent::Triggered, this, &ThisClass::Input_UnequipWeapons);
+	MGSInputComponent->BindNativeInputAction(InputConfigDataAsset, MGSGameplayTags::InputTag_Map, ETriggerEvent::Triggered, this, &ThisClass::Input_Map);
 	// Bind Ability input
 	MGSInputComponent->BindAbilityInputAction(InputConfigDataAsset, this, &ThisClass::Input_AbilityInputPressed, &ThisClass::Input_AbilityInputReleased);
 }
@@ -153,6 +154,14 @@ void AMGSPlayerController::Input_UnequipWeapons()
 		{
 			PlayerCombatComponent->UnequipCurrentWeapon();
 		}
+	}
+}
+
+void AMGSPlayerController::Input_Map()
+{
+	if (PlayerHUDPresenterComponent)
+	{
+		PlayerHUDPresenterComponent->VisibleMap();
 	}
 }
 

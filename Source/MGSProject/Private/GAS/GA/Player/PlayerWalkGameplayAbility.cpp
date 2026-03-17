@@ -14,7 +14,9 @@
 
 UPlayerWalkGameplayAbility::UPlayerWalkGameplayAbility()
 {
-	AbilityTags.AddTag(MGSGameplayTags::Ability_Player_Walk);
+	FGameplayTagContainer AbilityAssetTags;
+	AbilityAssetTags.AddTag(MGSGameplayTags::Ability_Player_Walk);
+	SetAssetTags(AbilityAssetTags);
 	AbilityActivationPolicy = EBaseAbilityActivationPolicy::OnTriggered;
 	bClearAbilityOnEndWhenGiven = false;
 
