@@ -2,8 +2,8 @@
  * 파일명 : PlayerCharacter.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
- * 수정자 : 장대한
- * 수정일 : 2026-03-12
+ * 수정자 : 김동석
+ * 수정일 : 2026-03-16
  */
 
 #pragma once
@@ -18,6 +18,7 @@ struct FInputActionValue;
 class UAIPerceptionStimuliSourceComponent;
 class UCameraComponent;
 class UDA_SpreadSettings;
+class UMGSTraversalComponent;
 class UMotionWarpingComponent;
 class UPlayerCombatComponent;
 class UPrimitiveComponent;
@@ -83,6 +84,10 @@ private:
 	// 파쿠르 위치 보정용 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MotionWarping", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UMotionWarpingComponent> MotionWarpingComponent;
+	
+	// 지형 분석 및 파쿠르 가능 여부 판단 컴포넌트
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MGS|Traversal", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UMGSTraversalComponent> TraversalComponent;
 	
 	// PerceptionStimuliSource Component
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI", meta = (AllowPrivateAccess = "true"))

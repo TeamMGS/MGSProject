@@ -2,8 +2,8 @@
  * 파일명 : PlayerCharacter.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
- * 수정자 : 장대한
- * 수정일 : 2026-03-12
+ * 수정자 : 김동석
+ * 수정일 : 2026-03-16
  */
 
 #include "Characters/Player/PlayerCharacter.h"
@@ -31,6 +31,7 @@
 #include "Engine/World.h"
 #include "Components/PrimitiveComponent.h"
 #include "GameplayEffectTypes.h"
+#include "Components/TraversalComponent/MGSTraversalComponent.h"
 
 APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -65,6 +66,9 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 
 	// Combat component
 	PlayerCombatComponent = CreateDefaultSubobject<UPlayerCombatComponent>(TEXT("PlayerCombatComponent"));
+	
+	// 파쿠르 컴포넌트
+	TraversalComponent = CreateDefaultSubobject<UMGSTraversalComponent>(TEXT("TraversalComponent"));
 	
 	// 모션워핑
 	MotionWarpingComponent = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("MotionWarpingComponent"));

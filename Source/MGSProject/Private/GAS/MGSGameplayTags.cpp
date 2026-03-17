@@ -42,6 +42,7 @@ namespace MGSGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Equip_Secondary, "Ability.Player.Equip.Secondary")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Equip_Throwable, "Ability.Player.Equip.Throwable")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Death, "Ability.Player.Death")
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Traversal, "Ability.Player.Traversal")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Enemy_Equip_Primary, "Ability.Enemy.Equip.Primary")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Enemy_Equip_Secondary, "Ability.Enemy.Equip.Secondary")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Enemy_DefaultMovement, "Ability.Enemy.DefaultMovement")
@@ -70,6 +71,7 @@ namespace MGSGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Movement_Starting, "State.Player.Movement.Starting")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Movement_FromTraversal, "State.Player.Movement.FromTraversal")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Movement_SpinTransition, "State.Player.Movement.SpinTransition")
+	UE_DEFINE_GAMEPLAY_TAG(State_Player_Movement_Traversing, "State.Player.Movement.Traversing")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_JustLanded_Light, "State.Player.JustLanded.Light")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_JustLanded_Heavy, "State.Player.JustLanded.Heavy")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Crouching, "State.Player.Crouching")
@@ -109,6 +111,7 @@ namespace MGSGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(Event_Player_Weapon_Reload_Ammo_Refill, "Event.Player.Weapon.Reload.Ammo.Refill")
 	UE_DEFINE_GAMEPLAY_TAG(Event_Player_Weapon_Equip_Attach, "Event.Player.Weapon.Equip.Attach")
 	UE_DEFINE_GAMEPLAY_TAG(Event_Player_Weapon_Equip_Detach, "Event.Player.Weapon.Equip.Detach")
+	UE_DEFINE_GAMEPLAY_TAG(Event_Player_Traversal_Stop, "Event.Player.Traversal.Stop")
 	
 	// SetByCaller data
 	UE_DEFINE_GAMEPLAY_TAG(Data_Damage, "Data.Damage")

@@ -3,12 +3,13 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
  * 수정자 : 김동석
- * 수정일 : 2026-03-12
+ * 수정일 : 2026-03-13
  */
 
 #pragma once
 
 #include "GameplayTagContainer.h"
+#include "MGSEnumType.h"
 #include "MGSStructType.generated.h"
 
 class UPlayerGameplayAbility;
