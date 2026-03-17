@@ -18,6 +18,7 @@ struct FInputActionValue;
 class UAIPerceptionStimuliSourceComponent;
 class UCameraComponent;
 class UDA_SpreadSettings;
+class UMGSTraversalComponent;
 class UMotionWarpingComponent;
 class UPaperSpriteComponent;
 class UPlayerCombatComponent;
@@ -96,6 +97,10 @@ private:
 	// 파쿠르 위치 보정용 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MotionWarping", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UMotionWarpingComponent> MotionWarpingComponent;
+	
+	// 지형 분석 및 파쿠르 가능 여부 판단 컴포넌트
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MGS|Traversal", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UMGSTraversalComponent> TraversalComponent;
 	
 	// PerceptionStimuliSource Component
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI", meta = (AllowPrivateAccess = "true"))

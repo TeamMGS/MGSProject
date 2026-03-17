@@ -9,6 +9,7 @@
 #pragma once
 
 #include "GameplayTagContainer.h"
+#include "MGSEnumType.h"
 #include "MGSStructType.generated.h"
 
 class AActor;

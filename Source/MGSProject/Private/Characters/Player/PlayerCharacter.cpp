@@ -31,6 +31,7 @@
 #include "Engine/World.h"
 #include "Components/PrimitiveComponent.h"
 #include "GameplayEffectTypes.h"
+#include "Components/TraversalComponent/MGSTraversalComponent.h"
 #include "PaperSpriteComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Paper2D/Classes/PaperSpriteComponent.h"
@@ -85,6 +86,9 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 
 	// Combat component
 	PlayerCombatComponent = CreateDefaultSubobject<UPlayerCombatComponent>(TEXT("PlayerCombatComponent"));
+	
+	// 파쿠르 컴포넌트
+	TraversalComponent = CreateDefaultSubobject<UMGSTraversalComponent>(TEXT("TraversalComponent"));
 	
 	// 모션워핑
 	MotionWarpingComponent = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("MotionWarpingComponent"));

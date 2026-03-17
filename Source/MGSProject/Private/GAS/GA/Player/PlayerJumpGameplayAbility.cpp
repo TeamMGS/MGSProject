@@ -2,14 +2,15 @@
  * 파일명 : PlayerJumpGameplayAbility.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-03
- * 수정자 : 장대한
- * 수정일 : 2026-03-09
+ * 수정자 : 김동석
+ * 수정일 : 2026-03-16
  */
 
 #include "GAS/GA/Player/PlayerJumpGameplayAbility.h"
 
 #include "Characters/Player/PlayerCharacter.h"
 #include "GAS/MGSGameplayTags.h"
+#include "Abilities/Tasks/AbilityTask_WaitGameplayTag.h"
 
 UPlayerJumpGameplayAbility::UPlayerJumpGameplayAbility()
 {
@@ -61,6 +62,14 @@ void UPlayerJumpGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandl
 	{
 		// 점프
 		PlayerCharacter->Jump();
+		
+		UAbilityTask_WaitGameplayTagAdded* WaitFallingTask =
+	UAbilityTask_WaitGameplayTagAdded::WaitGameplayTagAdd(this, MGSGameplayTags::State_Player_Movement_Falling);
+
+		WaitFallingTask->Added.AddDynamic(this, &UPlayerJumpGameplayAbility::OnFallingStarted); // 아래 새로 만들 함수
+		WaitFallingTask->ReadyForActivation();
+
+		
 		return;
 	}
 
@@ -95,4 +104,14 @@ void UPlayerJumpGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Han
 	}
 
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
+}
+
+void UPlayerJumpGameplayAbility::OnFallingStarted()
+{
+	UAbilityTask_WaitGameplayTagRemoved* WaitLandedTask =
+		UAbilityTask_WaitGameplayTagRemoved::WaitGameplayTagRemove(this, MGSGameplayTags::State_Player_Movement_Falling);
+
+	// 제거되면(착지하면) K2_EndAbility(어빌리티 종료)를 호출합니다.
+	WaitLandedTask->Removed.AddDynamic(this, &UPlayerJumpGameplayAbility::K2_EndAbility);
+	WaitLandedTask->ReadyForActivation();
 }
