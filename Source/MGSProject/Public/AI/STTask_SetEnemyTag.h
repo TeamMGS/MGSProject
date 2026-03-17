@@ -10,13 +10,13 @@
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "Blueprint/StateTreeTaskBlueprintBase.h"
-#include "STTask_SetEnemyStateTag.generated.h"
+#include "STTask_SetEnemyTag.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class MGSPROJECT_API USTTask_SetEnemyStateTag : public UStateTreeTaskBlueprintBase
+class MGSPROJECT_API USTTask_SetEnemyTag : public UStateTreeTaskBlueprintBase
 {
 	GENERATED_BODY()
 
