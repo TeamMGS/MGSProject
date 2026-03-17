@@ -71,6 +71,7 @@ namespace MGSGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Movement_Starting, "State.Player.Movement.Starting")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Movement_FromTraversal, "State.Player.Movement.FromTraversal")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Movement_SpinTransition, "State.Player.Movement.SpinTransition")
+	UE_DEFINE_GAMEPLAY_TAG(State_Player_Movement_Traversing, "State.Player.Movement.Traversing")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_JustLanded_Light, "State.Player.JustLanded.Light")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_JustLanded_Heavy, "State.Player.JustLanded.Heavy")
 	UE_DEFINE_GAMEPLAY_TAG(State_Player_Crouching, "State.Player.Crouching")

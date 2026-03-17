@@ -17,6 +17,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GAS/ASC/MGSAbilitySystemComponent.h"
 #include "GAS/MGSGameplayTags.h"
+#include "PoseSearch/PoseSearchDatabase.h"
 #include "PoseSearch/PoseSearchLibrary.h"
 
 UPlayerTraversalGameplayAbility::UPlayerTraversalGameplayAbility()
@@ -50,51 +51,91 @@ void UPlayerTraversalGameplayAbility::ActivateAbility(const FGameplayAbilitySpec
 	{
 		FChooserEvaluationContext ChooserContext;
 	
-		// 1. 첫 번째 소스: 캐릭터의 애니메이션 인스턴스 (BaseAnimInstance 대응)
+		// 캐릭터의 애니메이션 인스턴스
 		UAnimInstance* AnimInst = Character->GetMesh()->GetAnimInstance();
 		if (AnimInst)
 		{
 			ChooserContext.AddObjectParam(AnimInst);
 		}
-	
-		// 2. 두 번째 소스: 우리가 분석한 구조체 (MGSTraversalChooserInputs 대응)
 		ChooserContext.AddStructParam(Inputs);
-	
-		UAnimMontage* SelectedMontage = nullptr;
+		
+		UObject* SelectedAsset = nullptr;
 		UChooserTable::EvaluateChooser(ChooserContext, TraversalChooserTable,
-		                               FObjectChooserBase::FObjectChooserIteratorCallback::CreateLambda(
-			                               [&SelectedMontage](UObject* InObject)
-			                               {
-				                               // 첫 번째로 유효한 몽타주를 찾으면 저장하고 중단합니다.
-				                               if (UAnimMontage* Montage = Cast<UAnimMontage>(InObject))
-				                               {
-					                               SelectedMontage = Montage;
-					                               return FObjectChooserBase::EIteratorStatus::Stop; // 하나 찾았으니 중단
-				                               }
-				                               return FObjectChooserBase::EIteratorStatus::Continue; // 계속 탐색
-			                               }));
-	
-		if (SelectedMontage)
+									   FObjectChooserBase::FObjectChooserIteratorCallback::CreateLambda(
+										   [&SelectedAsset](UObject* InObject)
+										   {
+											   SelectedAsset = InObject;
+											   return FObjectChooserBase::EIteratorStatus::Stop;
+										   }));
+		
+		UAnimMontage* MontageToPlay = nullptr;
+		float StartTime = 0.0f;
+		if (SelectedAsset)
 		{
-			Character->GetCharacterMovement()->SetMovementMode(MOVE_Flying);
-			Character->GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Ignore);
-			// Motion Warping 설정
-			SetMotionWarpingTargets(Inputs);
-	
-			// 몽타주 재생 태스크
-			UAbilityTask_PlayMontageAndWait* MontageTask =
-				UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
-					this, NAME_None, SelectedMontage, 1.0f, NAME_None, false);
-			
-			MontageTask->OnCompleted.AddDynamic(this, &UPlayerTraversalGameplayAbility::OnTraversalFinished);
-			MontageTask->OnBlendOut.AddDynamic(this, &UPlayerTraversalGameplayAbility::OnTraversalFinished);
-			MontageTask->OnInterrupted.AddDynamic(this, &UPlayerTraversalGameplayAbility::OnTraversalFinished);
-			MontageTask->OnCancelled.AddDynamic(this, &UPlayerTraversalGameplayAbility::OnTraversalFinished);
-			MontageTask->ReadyForActivation();
-			
-			return;
+			// --- 상황 A: 결과가 Pose Search Database인 경우 (GASP 방식) ---
+			if (UPoseSearchDatabase* SelectedDatabase = Cast<UPoseSearchDatabase>(SelectedAsset))
+			{
+				FPoseSearchBlueprintResult SearchResult;
+				TArray<UObject*> AssetsToSearch;
+				AssetsToSearch.Add(SelectedDatabase);
+
+				UPoseSearchLibrary::MotionMatch(AnimInst, AssetsToSearch, FName("PoseHistory"),
+				                                FPoseSearchContinuingProperties(), FPoseSearchFutureProperties(),
+				                                SearchResult);
+
+				// UE 5.4+ 에서는 SelectedAnimation 멤버를 사용합니다.
+				MontageToPlay = Cast<UAnimMontage>(SearchResult.SelectedAnim);
+				StartTime = SearchResult.SelectedTime;
+			}
+			// --- 상황 B: 결과가 일반 Anim Montage인 경우 (사용자 요청 방식) ---
+			else if (UAnimMontage* SelectedMontage = Cast<UAnimMontage>(SelectedAsset))
+			{
+				MontageToPlay = SelectedMontage;
+
+				// [핵심] 거리에 따른 수동 스킵 로직
+				// 거리가 150cm 이상이면 0초부터, 50cm 이하면 1.5초(파쿠르 시작점)부터 재생
+				// (이 수치들은 사용하시는 몽타주의 실제 '걷기' 길이에 맞춰 조절하세요)
+				StartTime = FMath::GetMappedRangeValueClamped(
+					FVector2D(50.0f, 225.0f), // 입력 범위 (최소거리, 최대거리)
+					FVector2D(0.5f, 0.0f), // 출력 범위 (최대스킵시간, 최소스킵시간)
+					Inputs.DistanceToLedge // 현재 장애물과의 수평 거리
+				);
+			}
+
+			// --- [2] 결정된 몽타주와 시간으로 재생 실행 ---
+			if (MontageToPlay)
+			{
+				Character->GetCharacterMovement()->SetMovementMode(MOVE_Flying);
+				Character->GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Ignore);
+				SetMotionWarpingTargets(Inputs);
+
+				UAbilityTask_PlayMontageAndWait* MontageTask =
+					UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
+						this, NAME_None, MontageToPlay, 1.0f, NAME_None, false, 1.0f, StartTime);
+
+				MontageTask->OnCompleted.AddDynamic(this, &UPlayerTraversalGameplayAbility::OnTraversalFinished);
+				MontageTask->OnBlendOut.AddDynamic(this, &UPlayerTraversalGameplayAbility::OnTraversalFinished);
+				MontageTask->OnInterrupted.AddDynamic(this, &UPlayerTraversalGameplayAbility::OnTraversalFinished);
+				MontageTask->OnCancelled.AddDynamic(this, &UPlayerTraversalGameplayAbility::OnTraversalFinished);
+				MontageTask->ReadyForActivation();
+
+				return;
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("[Traversal] Search Failed: No matching pose found in Database."));
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[Traversal] Chooser Failed: No Database selected for current inputs."));
 		}
 	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Traversal] Detection Failed: Not a traversable terrain."));
+	}
+	
 	EndAbility(SpecHandle, ActorInfo, ActivationInfo, true, false);
 	ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(MGSGameplayTags::Ability_Player_Jump));
 }

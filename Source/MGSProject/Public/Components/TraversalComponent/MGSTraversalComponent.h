@@ -10,6 +10,7 @@
 #include "CoreMinimal.h"
 #include "MGSEnumType.h"
 #include "Components/ActorComponent.h"
+#include "PoseSearch/PoseSearchHistory.h"
 #include "MGSTraversalComponent.generated.h"
 
 // 파쿠르 감지 트레이스(Trace)를 위한 물리 세팅
@@ -127,6 +128,10 @@ struct FMGSTraversalChooserInputs
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Traversal|Location")
 	FVector BackFloorLocation = FVector::ZeroVector;
+
+	// GASP 대응: 포즈 매칭을 위한 히스토리 데이터
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Traversal")
+	FPoseHistoryReference PoseHistory;
 };
 
 

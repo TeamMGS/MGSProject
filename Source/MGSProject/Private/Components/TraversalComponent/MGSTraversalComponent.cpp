@@ -11,6 +11,8 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/MovementComponent/MGSCharacterMovementComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "PoseSearch/PoseSearchLibrary.h"
+#include "PoseSearch/AnimNode_PoseSearchHistoryCollector.h"
 
 UMGSTraversalComponent::UMGSTraversalComponent()
 {
@@ -102,7 +104,33 @@ bool UMGSTraversalComponent::CheckTraversal(FMGSTraversalChooserInputs& OutInput
 	OutInputs.FrontLedgeNormal = FrontLedgeNormal;
 	OutInputs.BackLedgeLocation = BackLedgeLoc;
 	OutInputs.BackFloorLocation = BackFloorLoc;
-	
+
+	// [추가] GASP 대응: 포즈 히스토리 데이터 채우기
+	if (UAnimInstance* AnimInst = OwningCharacter->GetMesh()->GetAnimInstance())
+	{
+		if (const auto* HistoryNode = UPoseSearchLibrary::FindPoseHistoryNode(FName("PoseHistory"), AnimInst))
+		{
+			// 1. 데이터를 안전하게 복사할 Archived 객체 생성 (SharedPtr)
+			TSharedRef<UE::PoseSearch::FArchivedPoseHistory> ArchivedHistory = MakeShared<UE::PoseSearch::FArchivedPoseHistory>();
+
+			// 2. 현재 노드의 히스토리 상태를 스냅샷으로 복사
+			ArchivedHistory->InitFrom(&HistoryNode->GetPoseHistory());
+
+			// 3. 구조체에 할당 (TSharedPtr<IPoseHistory>로 자동 업캐스팅됨)
+			OutInputs.PoseHistory.PoseHistory = ArchivedHistory;
+			// [추가] PoseHistory 유효성 검사 로그
+			UE_LOG(LogTemp, Warning, TEXT("[Traversal] PoseHistory populated! Entries: %d"), ArchivedHistory->GetNumEntries());
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[Traversal] Failed to find PoseHistoryCollector node with Tag 'PoseHistory'!"));
+		}
+	}
+	else
+	{
+		// 이 로그가 뜬다면 메쉬에 AnimInstance가 할당되지 않은 상태입니다.
+		UE_LOG(LogTemp, Error, TEXT("[Traversal] Critical: AnimInstance is NULL!"));
+	}
 	// 컴포넌트 내부 변수에 데이터 저장 (Chooser가 읽어갈 수 있도록)
 	CurrentTraversalInputs = OutInputs;
 	
@@ -115,16 +143,31 @@ bool UMGSTraversalComponent::FindWall(FHitResult& OutWallHit, FVector& OutTraceD
 
 	// 트레이스 방향 설정
 	OutTraceDirection = OwningCharacter->GetActorForwardVector();
+	float ForwardDistance = 0.0f;
 
 	// 속도에 따른 가변 거리 계산 
 	// 속도가 0일 때 75cm, 속도가 500일 때 150cm 정도로 동적 조절
 	float CurrentSpeed = OwningCharacter->GetVelocity().Size2D();
-	float ForwardDistance = FMath::GetMappedRangeValueClamped(
-		FVector2D(0.f, 500.f),
-		FVector2D(150.f, 225.f),
-		CurrentSpeed
-	);
-
+	// [수정] 공중 상태(Falling)와 지상 상태(Walking)의 감지 거리 차별화
+	if (MGSMovementComponent->IsFalling())
+	{
+		// 공중일 때는 훨씬 짧은 거리에서만 감지 (예: 50cm ~ 100cm)
+		// 점프 중 의도치 않게 먼 벽을 잡는 것을 방지합니다.
+		ForwardDistance = FMath::GetMappedRangeValueClamped(
+			FVector2D(0.f, 500.f),
+			FVector2D(50.f, 100.f),
+			CurrentSpeed
+		);
+	}
+	else
+	{
+		// 지상일 때는 기존 거리 유지 (예: 150cm ~ 250cm)
+		ForwardDistance = FMath::GetMappedRangeValueClamped(
+			FVector2D(0.f, 500.f),
+			FVector2D(150.f, 250.f),
+			CurrentSpeed
+		);
+	}
 	// traversal channel 설정
 	ECollisionChannel TraversalChannel = ECC_GameTraceChannel1;
 
