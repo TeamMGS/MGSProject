@@ -16,6 +16,7 @@ class UDA_WeaponDefinition;
 class UCameraShakeBase;
 class UWeaponAttributeSet;
 class ABaseProjectile;
+class UGameplayEffect;
 struct FWeaponRuntimeState;
 
 UCLASS()
@@ -65,6 +66,10 @@ public:
 	// 기본 데미지
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Fire")
 	float GetBaseDamage() const;
+
+	// 발사 데미지 GameplayEffect
+	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Fire")
+	TSubclassOf<UGameplayEffect> GetDamageGameplayEffectClass() const;
 
 	// 연사 간격
 	UFUNCTION(BlueprintPure, Category = "Weapon|Gun|Fire")

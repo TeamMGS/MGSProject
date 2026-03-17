@@ -14,6 +14,7 @@ UCharacterAttributeSet::UCharacterAttributeSet()
 {
 	InitCurrentHp(100.0f);
 	InitMaxHp(100.0f);
+	InitIncomingDamage(0.0f);
 }
 
 void UCharacterAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
@@ -50,5 +51,18 @@ void UCharacterAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModC
 	if (Data.EvaluatedData.Attribute == GetCurrentHpAttribute())
 	{
 		SetCurrentHp(FMath::Clamp(GetCurrentHp(), 0.0f, FMath::Max(1.0f, GetMaxHp())));
+		return;
+	}
+
+	// IncomingDamage는 메타 어트리뷰트이므로 실제 HP에 반영한 뒤 즉시 초기화합니다.
+	if (Data.EvaluatedData.Attribute == GetIncomingDamageAttribute())
+	{
+		const float DamageToApply = FMath::Max(0.0f, GetIncomingDamage());
+		if (DamageToApply > 0.0f)
+		{
+			SetCurrentHp(FMath::Clamp(GetCurrentHp() - DamageToApply, 0.0f, FMath::Max(1.0f, GetMaxHp())));
+		}
+
+		SetIncomingDamage(0.0f);
 	}
 }

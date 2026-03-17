@@ -14,7 +14,9 @@
 
 UPlayerSprintGameplayAbility::UPlayerSprintGameplayAbility()
 {
-	AbilityTags.AddTag(MGSGameplayTags::Ability_Player_Sprint);
+	FGameplayTagContainer AbilityAssetTags;
+	AbilityAssetTags.AddTag(MGSGameplayTags::Ability_Player_Sprint);
+	SetAssetTags(AbilityAssetTags);
 	AbilityActivationPolicy = EBaseAbilityActivationPolicy::OnTriggered;
 	bClearAbilityOnEndWhenGiven = false;
 

@@ -8,9 +8,6 @@
 
 #include "DataAssets/Projectile/DA_ProjectileDefinition.h"
 
-#include "GAS/GE/MGSDamageGameplayEffect.h"
-
 UDA_ProjectileDefinition::UDA_ProjectileDefinition()
 {
-	DamageGameplayEffectClass = UMGSDamageGameplayEffect::StaticClass();
 }

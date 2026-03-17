@@ -16,7 +16,9 @@
 
 UPlayerEquipSecondaryWeaponGameplayAbility::UPlayerEquipSecondaryWeaponGameplayAbility()
 {
-	AbilityTags.AddTag(MGSGameplayTags::Ability_Player_Equip_Secondary);
+	FGameplayTagContainer AbilityAssetTags;
+	AbilityAssetTags.AddTag(MGSGameplayTags::Ability_Player_Equip_Secondary);
+	SetAssetTags(AbilityAssetTags);
 	AbilityActivationPolicy = EBaseAbilityActivationPolicy::OnTriggered;
 	bClearAbilityOnEndWhenGiven = false;
 }

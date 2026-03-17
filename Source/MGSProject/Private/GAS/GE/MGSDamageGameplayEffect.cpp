@@ -8,20 +8,13 @@
 
 #include "GAS/GE/MGSDamageGameplayEffect.h"
 
-#include "GAS/AttributeSets/CharacterAttributeSet.h"
-#include "GAS/MGSGameplayTags.h"
+#include "GAS/ExecCalc/MGSExecCalc_ProjectileDamage.h"
 
 UMGSDamageGameplayEffect::UMGSDamageGameplayEffect()
 {
 	DurationPolicy = EGameplayEffectDurationType::Instant;
 
-	FGameplayModifierInfo DamageModifier;
-	DamageModifier.Attribute = UCharacterAttributeSet::GetCurrentHpAttribute();
-	DamageModifier.ModifierOp = EGameplayModOp::Additive;
-
-	FSetByCallerFloat SetByCallerMagnitude;
-	SetByCallerMagnitude.DataTag = MGSGameplayTags::Data_Damage;
-	DamageModifier.ModifierMagnitude = SetByCallerMagnitude;
-
-	Modifiers.Add(DamageModifier);
+	FGameplayEffectExecutionDefinition DamageExecution;
+	DamageExecution.CalculationClass = UMGSExecCalc_ProjectileDamage::StaticClass();
+	Executions.Add(DamageExecution);
 }

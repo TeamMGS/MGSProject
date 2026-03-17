@@ -27,6 +27,7 @@ namespace MGSGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_Weapon_Secondary, "InputTag.Weapon.Secondary")
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_Weapon_Throwable, "InputTag.Weapon.Throwable")
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_Weapon_Unequip, "InputTag.Weapon.Unequip")
+	UE_DEFINE_GAMEPLAY_TAG(InputTag_Map, "InputTag.Map")
 
 	// Ability
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Jump, "Ability.Player.Jump")

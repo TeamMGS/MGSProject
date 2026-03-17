@@ -12,8 +12,6 @@
 #include "Engine/DataAsset.h"
 #include "DA_ProjectileDefinition.generated.h"
 
-class UGameplayEffect;
-
 UCLASS(BlueprintType)
 class MGSPROJECT_API UDA_ProjectileDefinition : public UPrimaryDataAsset
 {
@@ -25,10 +23,6 @@ public:
 	// Collision 반지름
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Projectile|Collision", meta = (ClampMin = "0.0"))
 	float CollisionRadius = 6.0f;
-
-	// 피격 시 적용할 데미지 GameplayEffect(Instant 권장)
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Projectile|Damage")
-	TSubclassOf<UGameplayEffect> DamageGameplayEffectClass;
 
 	// 초기 속도
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Projectile|Move", meta = (ClampMin = "0.0"))
