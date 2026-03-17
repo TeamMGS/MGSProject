@@ -54,6 +54,7 @@ bool UBaseAnimInstance::ShouldEnableAimOffset() const
 }
 
 bool UBaseAnimInstance::HasLocomotionTag(FGameplayTag TagToCheck) const
+
 {
 	if (CharacterData.GameplayTags.HasTag(TagToCheck)) return true;
 	
