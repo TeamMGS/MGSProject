@@ -16,14 +16,14 @@
 class UInputMappingContext;
 class UInputAction;
 
-// 입력 정책 (Tag-IA)
+// Tag-IA 데이터
 USTRUCT(BlueprintType)
 struct FInputActionConfig
 {
 	GENERATED_BODY()
 	
 public:
-	// 입력 태그
+	// Tag
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (Category = "InputTag"))
 	FGameplayTag InputTag;
 	
@@ -48,15 +48,15 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UInputMappingContext> InputMappingContext;
 	
-	// 네이티브 입력 배열 : 직접 함수 호출
+	// Native input: 직접 함수 호출
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (TitleProperty = "InputTag"))
 	TArray<FInputActionConfig> NativeInputActions;
 	
-	// 어빌리티 입력 배열 : Pressed/Released를 ASC로 전달
+	// Ability input: Pressed/Released 함수로 태그를 ASC에 전달
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (TitleProperty = "InputTag"))
 	TArray<FInputActionConfig> AbilityInputActions;
 	
-	// 입력 태그로 Native 입력 액션을 찾아 반환한다.
+	// Tag로 Native input IA 탐색
 	UInputAction* FindNativeInputActionByTag(const FGameplayTag& InInputTag) const;
 	
 };

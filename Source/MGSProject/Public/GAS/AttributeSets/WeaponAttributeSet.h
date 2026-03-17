@@ -27,64 +27,60 @@ class MGSPROJECT_API UWeaponAttributeSet : public UAttributeSet
 public:
 	UWeaponAttributeSet();
 
-	// 현재 탄약
-	UPROPERTY(BlueprintReadOnly, Category = "Weapon|Ammo")
-	FGameplayAttributeData CurrentMagazineAmmo;
-	WEAPON_ATTRIBUTE_ACCESSORS(UWeaponAttributeSet, CurrentMagazineAmmo)
-
-	// 최대 탄약
+	// Ammo
+	// Max Ammo
 	UPROPERTY(BlueprintReadOnly, Category = "Weapon|Ammo")
 	FGameplayAttributeData MaxMagazineAmmo;
 	WEAPON_ATTRIBUTE_ACCESSORS(UWeaponAttributeSet, MaxMagazineAmmo)
-
-	// 현재 탄창
+	// Current Ammo
+	UPROPERTY(BlueprintReadOnly, Category = "Weapon|Ammo")
+	FGameplayAttributeData CurrentMagazineAmmo;
+	WEAPON_ATTRIBUTE_ACCESSORS(UWeaponAttributeSet, CurrentMagazineAmmo)
+	// Max Carried Ammo
+	UPROPERTY(BlueprintReadOnly, Category = "Weapon|Ammo")
+	FGameplayAttributeData MaxCarriedAmmo;
+	WEAPON_ATTRIBUTE_ACCESSORS(UWeaponAttributeSet, MaxCarriedAmmo)
+	// Current Carried Ammo
 	UPROPERTY(BlueprintReadOnly, Category = "Weapon|Ammo")
 	FGameplayAttributeData CurrentCarriedAmmo;
 	WEAPON_ATTRIBUTE_ACCESSORS(UWeaponAttributeSet, CurrentCarriedAmmo)
 
-	// 최대 탄창
-	UPROPERTY(BlueprintReadOnly, Category = "Weapon|Ammo")
-	FGameplayAttributeData MaxCarriedAmmo;
-	WEAPON_ATTRIBUTE_ACCESSORS(UWeaponAttributeSet, MaxCarriedAmmo)
-
-	// 에임 목표점 계산 기준 거리
-	UPROPERTY(BlueprintReadOnly, Category = "Weapon|Fire")
-	FGameplayAttributeData AimReferenceDistance;
-	WEAPON_ATTRIBUTE_ACCESSORS(UWeaponAttributeSet, AimReferenceDistance)
-
-	// 기본 데미지
+	// Fire
+	// Base Damage
 	UPROPERTY(BlueprintReadOnly, Category = "Weapon|Fire")
 	FGameplayAttributeData BaseDamage;
 	WEAPON_ATTRIBUTE_ACCESSORS(UWeaponAttributeSet, BaseDamage)
-
-	// 연사 간격
+	// Aim Reference Distance
+	UPROPERTY(BlueprintReadOnly, Category = "Weapon|Fire")
+	FGameplayAttributeData AimReferenceDistance;
+	WEAPON_ATTRIBUTE_ACCESSORS(UWeaponAttributeSet, AimReferenceDistance)
+	// Fire Interval
 	UPROPERTY(BlueprintReadOnly, Category = "Weapon|Fire")
 	FGameplayAttributeData FireInterval;
 	WEAPON_ATTRIBUTE_ACCESSORS(UWeaponAttributeSet, FireInterval)
 
-	// 기본 스프레드(집탄률)
+	// Spread
+	// Base Spread
 	UPROPERTY(BlueprintReadOnly, Category = "Weapon|Fire|Spread")
 	FGameplayAttributeData BaseSpreadRadius;
 	WEAPON_ATTRIBUTE_ACCESSORS(UWeaponAttributeSet, BaseSpreadRadius)
-
-	// 현재 스프레드
-	UPROPERTY(BlueprintReadOnly, Category = "Weapon|Fire|Spread")
-	FGameplayAttributeData CurrentSpreadRadius;
-	WEAPON_ATTRIBUTE_ACCESSORS(UWeaponAttributeSet, CurrentSpreadRadius)
-
-	// 최대 스프레드
+	// Max Spread
 	UPROPERTY(BlueprintReadOnly, Category = "Weapon|Fire|Spread")
 	FGameplayAttributeData MaxSpreadRadius;
 	WEAPON_ATTRIBUTE_ACCESSORS(UWeaponAttributeSet, MaxSpreadRadius)
-
-	// 스프레드 증가율
+	// Current Spread
+	UPROPERTY(BlueprintReadOnly, Category = "Weapon|Fire|Spread")
+	FGameplayAttributeData CurrentSpreadRadius;
+	WEAPON_ATTRIBUTE_ACCESSORS(UWeaponAttributeSet, CurrentSpreadRadius)
+	// Spread Increase
 	UPROPERTY(BlueprintReadOnly, Category = "Weapon|Fire|Spread")
 	FGameplayAttributeData SpreadRadiusIncreasePerShot;
 	WEAPON_ATTRIBUTE_ACCESSORS(UWeaponAttributeSet, SpreadRadiusIncreasePerShot)
 
-	// 조준 줌인 FOV
+	// Aim
+	// Aim FOV
 	UPROPERTY(BlueprintReadOnly, Category = "Weapon|Aim")
 	FGameplayAttributeData AimFOV;
 	WEAPON_ATTRIBUTE_ACCESSORS(UWeaponAttributeSet, AimFOV)
+	
 };
-

@@ -14,8 +14,8 @@
 #include "MGSPlayerState.generated.h"
 
 class UCharacterAttributeSet;
-class UWeaponAttributeSet;
 class UMGSAbilitySystemComponent;
+class UWeaponAttributeSet;
 
 UCLASS()
 class MGSPROJECT_API AMGSPlayerState : public APlayerState, public IAbilitySystemInterface
@@ -25,24 +25,28 @@ class MGSPROJECT_API AMGSPlayerState : public APlayerState, public IAbilitySyste
 public:
 	AMGSPlayerState();
 	
-	void InitASC(AActor* Avatar); // ASC 초기화
+	// ASC 초기화
+	void InitASC(AActor* Avatar);
+	
+	// Getter
+	FORCEINLINE UMGSAbilitySystemComponent* GetMGSAbilitySystemComponent() const { return MGSAbilitySystemComponent; }
+	FORCEINLINE UCharacterAttributeSet* GetCharacterAttributeSet() const { return CharacterAttributeSet; }
+	FORCEINLINE UWeaponAttributeSet* GetWeaponAttributeSet() const { return WeaponAttributeSet; }
 	
 protected:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	
 private:
+	// ASC
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AbilitySystem", meta = (AllowPrivateAccess = true))
 	TObjectPtr<UMGSAbilitySystemComponent> MGSAbilitySystemComponent;
 	
+	// Attribute
+	// Character Attribute
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AbilitySystem", meta = (AllowPrivateAccess = true))
 	TObjectPtr<UCharacterAttributeSet> CharacterAttributeSet;
-
+	// Weapon Attribute
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AbilitySystem", meta = (AllowPrivateAccess = true))
 	TObjectPtr<UWeaponAttributeSet> WeaponAttributeSet;
-	
-public:
-	FORCEINLINE UMGSAbilitySystemComponent* GetMGSAbilitySystemComponent() const { return MGSAbilitySystemComponent; }
-	FORCEINLINE UCharacterAttributeSet* GetCharacterAttributeSet() const { return CharacterAttributeSet; }
-	FORCEINLINE UWeaponAttributeSet* GetWeaponAttributeSet() const { return WeaponAttributeSet; }
 	
 };

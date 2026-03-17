@@ -3,7 +3,7 @@
  * 생성자 : 김동석
  * 생성일 : 2026-03-05
  * 수정자 : 김동석
- * 수정일 : 2026-03-09
+ * 수정일 : 2026-03-12
  */
 #pragma once
 
@@ -13,6 +13,7 @@
 #include "Animation/TrajectoryTypes.h"
 #include "PoseSearch/PoseSearchTrajectoryLibrary.h"
 #include "Animation/AnimNodeReference.h"
+#include "BoneControllers/AnimNode_FootPlacement.h"
 #include "MGSAnimInstanceTypes.generated.h"
 
 class UPoseSearchDatabase;
@@ -90,6 +91,8 @@ struct FMGSEssentialValues
 	// 계산을 위한 이전 프레임 저장용 (내부 변수)
 	FVector Velocity_LastFrame = FVector::ZeroVector;
 	FTransform CharacterTransform_LastFrame = FTransform::Identity;
+	float LastFrameActorYaw = 0.f;	
+	float LastBodyWorldYaw = 0.f;
 
 	// GASP 로직을 C++로 이식한 업데이트 함수
 	void Update(UAnimInstance* AnimInstance, const FMGSCharacterDataProxy& Data, float DeltaSeconds);
@@ -202,4 +205,47 @@ struct FMGSLocomotionState
 	
 	// 헬퍼 함수
 	bool CheckIsPivoting(const FMGSCharacterDataProxy& Data, const FMGSEssentialValues& Essential, const FMGSTrajectoryHandler& Trajectory);
+};
+
+
+USTRUCT(BlueprintType)
+struct FMGSProceduralSettings
+{
+	GENERATED_BODY()
+
+	// 기본 설정들
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
+	FFootPlacementPlantSettings PlantSettings_Default;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
+	FFootPlacementInterpolationSettings InterpolationSettings_Default;
+
+	// 멈춤(Stop) 전용 설정들 (더 민감한 접지용)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
+	FFootPlacementPlantSettings PlantSettings_Stops;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
+	FFootPlacementInterpolationSettings InterpolationSettings_Stops;
+
+	FMGSProceduralSettings()
+	{
+		// 초기화 로직 (에디터에서 수정 가능하도록 기본값 세팅)
+	}
+};
+
+USTRUCT(BlueprintType)
+struct FMGSWeaponState
+{
+	GENERATED_BODY()
+
+	// 현재 장착된 무기의 왼손 IK 오프셋
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MGS|Weapon")
+	FVector LeftHandIKOffset = FVector::ZeroVector;
+	
+	// IK 알파값을 1.0(활성화)할지 0(비활성화)할지 정할 변수
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	float FinalIKAlpha = 0.0f; // 최종 IK 강도 (0 or 1)
+
+	// 업데이트 로직
+	void Update(const class ABaseCharacter* Character, bool bIsWeaponEquipped, bool bIsSprinting, bool bIsReloading, bool bIsWeaponEquipping, float DeltaSeconds);
 };

@@ -8,6 +8,8 @@
 
 #include "UI/MGSPlayerStatusWidget.h"
 
+#include "Components/SizeBox.h"
+
 void UMGSPlayerStatusWidget::UpdateHealth(float InCurrentHp, float InMaxHp)
 {
 	CurrentHp = FMath::Max(0.f, InCurrentHp);
@@ -30,16 +32,35 @@ void UMGSPlayerStatusWidget::UpdateSpread(float InCurrentSpreadRadius, float InM
 	BP_OnSpreadUpdated(CurrentSpreadRadius, MaxSpreadRadius, GetSpreadPercent());
 }
 
-void UMGSPlayerStatusWidget::SetWeaponInfoVisible(bool bInVisible)
-{
-	UpdateWeaponInfo(bInVisible, CurrentWeaponInfoImage.Get());
-}
-
 void UMGSPlayerStatusWidget::UpdateWeaponInfo(bool bInVisible, UTexture2D* InWeaponInfoImage)
 {
 	bWeaponInfoVisible = bInVisible;
 	CurrentWeaponInfoImage = InWeaponInfoImage;
 	BP_OnWeaponInfoVisibilityChanged(bWeaponInfoVisible);
+}
+
+void UMGSPlayerStatusWidget::UpdatePickupWeaponPrompt(bool bInVisible, const FText& InWeaponName, UTexture2D* InWeaponInfoImage)
+{
+	bPickupWeaponPromptVisible = bInVisible;
+	PickupWeaponPromptName = InWeaponName;
+	PickupWeaponPromptImage = InWeaponInfoImage;
+	BP_OnPickupWeaponPromptUpdated(bPickupWeaponPromptVisible, PickupWeaponPromptName, PickupWeaponPromptImage.Get());
+}
+
+void UMGSPlayerStatusWidget::UpdateMap()
+{
+	// 보이는 상태면
+	if (MapSizeBox->IsVisible())
+	{
+		// 안보이도록 함
+		MapSizeBox->SetVisibility(ESlateVisibility::Hidden);
+	}
+	// 안보이는 상태면
+	else
+	{
+		// 보이도록 함
+		MapSizeBox->SetVisibility(ESlateVisibility::Visible);
+	}
 }
 
 float UMGSPlayerStatusWidget::GetHealthPercent() const
@@ -65,4 +86,19 @@ float UMGSPlayerStatusWidget::GetSpreadPercent() const
 UTexture2D* UMGSPlayerStatusWidget::GetCurrentWeaponInfoImage() const
 {
 	return CurrentWeaponInfoImage.Get();
+}
+
+FText UMGSPlayerStatusWidget::GetPickupWeaponPromptName() const
+{
+	return PickupWeaponPromptName;
+}
+
+UTexture2D* UMGSPlayerStatusWidget::GetPickupWeaponPromptImage() const
+{
+	return PickupWeaponPromptImage.Get();
+}
+
+void UMGSPlayerStatusWidget::SetWeaponInfoVisible(bool bInVisible)
+{
+	UpdateWeaponInfo(bInVisible, CurrentWeaponInfoImage.Get());
 }

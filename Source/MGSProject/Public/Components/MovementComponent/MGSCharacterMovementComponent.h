@@ -2,8 +2,8 @@
  * 파일명 : MGSCharacterMovementComponent.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-06
- * 수정자 : 장대한
- * 수정일 : 2026-03-09
+ * 수정자 : 김동석
+ * 수정일 : 2026-03-11
  */
 
 #pragma once
@@ -51,19 +51,20 @@ public:
 protected:
 	// 보행 등급별 속도 설정 (X: 정면, Y: 측면, Z: 후면)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MGS|Movement")
-	FVector WalkSpeeds = FVector(375.f, 360.f, 350.f);
+	FVector WalkSpeeds = FVector(325.f, 310.f, 300.f);
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MGS|Movement")
-	FVector RunSpeeds = FVector(575.f, 510.f, 550.f);
+	FVector RunSpeeds = FVector(525.f, 460.f, 500.f);
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MGS|Movement")
 	FVector SprintSpeeds = FVector(700.f, 700.f, 700.f);
 	
 	// 앉은 상태의 방향별 속도 설정 (X: 정면, Y: 측면, Z: 후면)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MGS|Movement")
-	FVector CrouchSpeeds = FVector(150.f, 130.f, 120.f);
+	FVector CrouchSpeeds = FVector(180.f, 160.f, 150.f);
 
 	// 방향(Degree)을 0~2 범위로 매핑하는 곡선 (0:정면, 1:측면, 2:후면)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MGS|Movement")
 	TObjectPtr<UCurveFloat> StrafeSpeedMapCurve;
+	
 };

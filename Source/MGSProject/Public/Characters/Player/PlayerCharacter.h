@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-09
+ * 수정일 : 2026-03-17
  */
 
 #pragma once
@@ -13,11 +13,17 @@
 #include "Characters/BaseCharacter.h"
 #include "PlayerCharacter.generated.h"
 
-class UPlayerCombatComponent;
+struct FOnAttributeChangeData;
 struct FInputActionValue;
+class UAIPerceptionStimuliSourceComponent;
 class UCameraComponent;
-class USpringArmComponent;
+class UDA_SpreadSettings;
+class UMGSTraversalComponent;
 class UMotionWarpingComponent;
+class UPaperSpriteComponent;
+class UPlayerCombatComponent;
+class UPrimitiveComponent;
+class USpringArmComponent;
 
 UCLASS()
 class MGSPROJECT_API APlayerCharacter : public ABaseCharacter
@@ -27,24 +33,64 @@ class MGSPROJECT_API APlayerCharacter : public ABaseCharacter
 public:
 	APlayerCharacter(const FObjectInitializer& ObjectInitializer);
 	
+	// IPawnCombatInterface pure virtual function override
 	virtual UPawnCombatComponent* GetPawnCombatComponent() const override;
+	
+	// Getter
+	FORCEINLINE UPlayerCombatComponent* GetPlayerCombatComponent() const { return PlayerCombatComponent; }
+	FORCEINLINE USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
+	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+	const UDA_SpreadSettings* GetSpreadSettings() const;
+	
+	// 현재 누르고 있는 입력 어빌리티를 다음 틱에 복원 요청
 	void RequestRestoreHeldMovementAbilityInputNextTick();
+	// 조준 중 플레이어와 카메라 사이 장애물 검사 
+	void StartAimObstructionTrace();
+	// 플레이어와 카메라 사이 장애물 검사 종료 
+	void StopAimObstructionTrace();
+	// 현재 조준 중 임시로 숨긴 장애물 액터 목록 수집
+	void GetAimObstructionActorsToIgnore(TArray<AActor*>& OutActors) const;
 	
 protected:
 	virtual void BeginPlay() override;
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void PossessedBy(AController* NewController) override;
-	virtual void Landed(const FHitResult& Hit) override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	
+	// Movement virtual function override
+	// Update movement mode
 	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode) override;
-	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+	// Landed
+	virtual void Landed(const FHitResult& Hit) override;
+	// Crouch
+	virtual void OnStartCrouch(float HeightAdjust, float ScaledHeightAdjust) override;
+	virtual void OnEndCrouch(float HeightAdjust, float ScaledHeightAdjust) override;
+
+	void BindHpChangedDelegate();
+	void HandleCurrentHpChanged(const FOnAttributeChangeData& AttributeChangeData);
 	
 private:
 #pragma region Components
+	// Spring Arm Component
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USpringArmComponent> CameraBoom;
+	
+	// Camera Component
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCameraComponent> FollowCamera;
 	
+	// Minimap Sprint Arm
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Minimap", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USpringArmComponent> MinimapSpringArm;
+	
+	// Minimap Scene Capture Component
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Minimap", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USceneCaptureComponent2D> MinimapSceneCaptureComponent;
+	
+	// Minimap Indicator Sprite
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Minimap", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UPaperSpriteComponent> IndicatorSprite;
+	
+	// Combat Component
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UPlayerCombatComponent> PlayerCombatComponent;
 	
@@ -52,45 +98,95 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MotionWarping", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UMotionWarpingComponent> MotionWarpingComponent;
 	
-public:
-	FORCEINLINE UPlayerCombatComponent* GetPlayerCombatComponent() const { return PlayerCombatComponent; }
+	// 지형 분석 및 파쿠르 가능 여부 판단 컴포넌트
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MGS|Traversal", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UMGSTraversalComponent> TraversalComponent;
+	
+	// PerceptionStimuliSource Component
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UAIPerceptionStimuliSourceComponent> PerceptionStimuliSource;
 	
 #pragma endregion
 #pragma region Input
 public:
+	// Native Input
+	// Move
 	void Input_Move(const FInputActionValue& InputActionValue);
+	// Look
 	void Input_Look(const FInputActionValue& InputActionValue);
 	
+	// Ability Input
+	// Pressed
 	void Input_AbilityInputPressed(FGameplayTag InputTag);
+	// Released
 	void Input_AbilityInputReleased(FGameplayTag InputTag);
 #pragma endregion 
 
 private:
-	// 캐릭터 방향과 컨트롤러 방향 동기화
-	void ApplyAlwaysAimFacingMode();
-	void UpdateFallingStateTag();
+	// Handler
+	// 이동 갱신에 따른 핸들러
+	UFUNCTION()
+	void HandleMovementUpdated(float DeltaSeconds, FVector OldLocation, FVector OldVelocity);
+	// 무기 장착 변경에 따른 핸들러
+	UFUNCTION()
+	void HandleEquippedWeaponChanged(FGameplayTag PreviousWeaponTag, FGameplayTag CurrentWeaponTag);
+	
+	// 현재 누르고 있는 입력 어빌리티 복원
 	void TryRestoreHeldMovementAbilityInput();
+	// 공중 상태 조회 후 태그 갱신
+	void UpdateFallingStateTag();
+		
+	// Spread
 	// 다음 틱에 스프레드 갱신
 	void RequestSpreadRefreshNextTick();
 	// 스프레드 보정
 	void UpdateCurrentSpreadFromState();
 	// 스프레드 보정률 계산
 	float CalculateCurrentSpreadStateMultiplier() const;
-	// 장착 무기 변경 핸들러
-	void HandleEquippedWeaponChanged(FGameplayTag PreviousWeaponTag, FGameplayTag CurrentWeaponTag);
-	// 이동에 따른 스프레드 갱신 핸들러
-	UFUNCTION()
-	void HandleSpreadMovementUpdated(float DeltaSeconds, FVector OldLocation, FVector OldVelocity);
+	
+	// Crouch
+	// 카메라 보간 요청
+	void StartCrouchCameraBlend(float TargetOffsetZ);
+	// 카메라 블렌딩 갱신
+	void UpdateCrouchCameraBlend();
+	
+	// Aim
+	// 조준 중 카메라와 플레이어 사이 장애물 숨김 갱신
+	void UpdateAimObstructionTrace();
+	// 숨겨둔 장애물 렌더링 복원
+	void RestoreAimObstructionVisibility();
 
-	static constexpr float SpreadJumpMultiplier = 2.4f; // 점프 시 스프레드 보정률
-	static constexpr float SpreadSprintMultiplier = 1.6f; // 뛸 시 스프레드 보정률
-	static constexpr float SpreadMovingMultiplier = 1.3f; // 움직일 시 스프레드 보정률
-	static constexpr float SpreadWalkMultiplier = 1.1f; // 걸을 시 스프레드 보정률
-	static constexpr float SpreadCrouchStillMultiplier = 0.7f; // 웅크릴 시 스프레드 보정률
-	static constexpr float SpreadAimMultiplier = 0.65f; // 조준 시 스프레드 보정률
-	static constexpr float SpreadMovingSpeedThreshold = 10.0f; // 이동 시 스프레드 보정 임계값
-
+private:
+	// DA_SpreadSettings: 상태에 따른 스프레드 보정 스케일 데이터
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spread", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UDA_SpreadSettings> SpreadSettingsData;
+	
+	// 서있을 때 카메라 Z 오프셋
+	static constexpr float CrouchCameraStandingOffsetZ = 0.0f;
+	// 웅크릴 때 카메라 Z 오프셋
+	static constexpr float CrouchCameraCrouchedOffsetZ = -29.0f;
+	// 웅크릴 때 카메라 보간 속도
+	static constexpr float CrouchCameraInterpSpeed = 12.0f;
+	// 웅크릴 때 카메라 보간 간격
+	static constexpr float CrouchCameraBlendTickInterval = 1.0f / 120.0f;
+	// 조준 시 장애물 검사 간격
+	static constexpr float AimObstructionTraceTickInterval = 1.0f / 30.0f;
+	// 조준 시 장애물 검사 스피어 스윕 반지름
+	static constexpr float AimObstructionSweepRadius = 30.0f;
+	
+	// 무기 장착 변경 델리게이트 핸들
 	FDelegateHandle EquippedWeaponChangedHandle;
+	// 스프레드 갱신 진행 여부 플래그
 	bool bPendingSpreadRefreshRequest = false;
+	// 목표 카메라 Z 오프셋
+	float DesiredCrouchCameraOffsetZ = CrouchCameraStandingOffsetZ;
+	// 웅크릴 때 카메라 보간 타이머 핸들
+	FTimerHandle CrouchCameraBlendTimerHandle;
+	// 조준 중 장애물 추적 타이머 핸들
+	FTimerHandle AimObstructionTraceTimerHandle;
+	// 조준 중 임시로 숨긴 컴포넌트들의 원래 가시성
+	TMap<TWeakObjectPtr<UPrimitiveComponent>, bool> HiddenAimObstructionComponents;
+	FDelegateHandle CurrentHpChangedDelegateHandle;
+	bool bHasBoundHpChangedDelegate = false;
 	
 };

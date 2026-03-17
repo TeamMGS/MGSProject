@@ -8,7 +8,7 @@
 
 #include "MGSStructType.h"
 
-#include "GAS/GA/PlayerGameplayAbility.h"
+#include "GAS/GA/Player/PlayerGameplayAbility.h"
 
 bool FPlayerAbilitySet::IsValid() const
 {

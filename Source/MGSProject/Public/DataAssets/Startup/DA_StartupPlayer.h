@@ -20,11 +20,11 @@ class MGSPROJECT_API UDA_StartupPlayer : public UDA_StartupBase
 	GENERATED_BODY()
 	
 protected:
-	// ASC에 자동 활성화 GA, 반응형 GA 부여
+	// ASC에 자동 활성화/반응형 GA 및 자동 활성화 GE 부여
 	virtual void GiveToAbilitySystemComponent(UMGSAbilitySystemComponent* ASC, int32 Level = 1) override;
 	
 private:
-	// 플레이어 GA 배열 (Tag-GA)
+	// 플레이어 Tag-GA 목록
 	UPROPERTY(EditDefaultsOnly, Category = "StartupData", meta = (TitleProperty = "InputTag"))
 	TArray<FPlayerAbilitySet> PlayerStartupAbilitySets;
 	

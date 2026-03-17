@@ -11,9 +11,12 @@
 #include "AbilitySystemComponent.h"
 #include "Components/Combat/PawnCombatComponent.h"
 #include "GAS/ASC/MGSAbilitySystemComponent.h"
+#include "GAS/MGSGameplayTags.h"
 
 UBaseGameplayAbility::UBaseGameplayAbility()
 {
+	// 캐릭터가 죽음 상태일 때는 GA가 발동하지 않음
+	ActivationBlockedTags.AddTag(MGSGameplayTags::State_Character_Dead);
 }
 
 void UBaseGameplayAbility::OnGiveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)

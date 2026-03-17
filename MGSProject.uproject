@@ -13,7 +13,8 @@
 				"AIModule",
 				"UMG",
 				"EnhancedInput",
-				"GameplayAbilities"
+				"GameplayAbilities",
+				"StateTreeModule"
 			]
 		}
 	],
@@ -71,6 +72,10 @@
 		},
 		{
 			"Name": "Mover",
+			"Enabled": true
+		},
+		{
+			"Name": "BlendStack",
 			"Enabled": true
 		}
 	]

@@ -2,8 +2,8 @@
  * 파일명 : BaseCharacter.h
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
- * 수정자 : 김동석
- * 수정일 : 2026-03-09
+ * 수정자 : 장대한
+ * 수정일 : 2026-03-17
  */
 
 #pragma once
@@ -11,6 +11,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Interfaces/PawnCombatInterface.h"
+#include "AbilitySystemInterface.h"
 #include "BaseCharacter.generated.h"
 
 class UMGSLocomotionComponent;
@@ -22,34 +23,44 @@ class UDA_StartupBase;
 class AMGSPlayerState;
 
 UCLASS()
-class MGSPROJECT_API ABaseCharacter : public ACharacter, public IPawnCombatInterface
+class MGSPROJECT_API ABaseCharacter : public ACharacter, public IPawnCombatInterface, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
 public:
 	ABaseCharacter(const FObjectInitializer& ObjectInitializer);
 	
+	// IPawnCombatInterface pure virtual function override
 	virtual UPawnCombatComponent* GetPawnCombatComponent() const override;
-
+	// GameFramework getter
+	// Get PlayerState
+	AMGSPlayerState* GetMGSPlayerState() const;
+	// GAS getter
+	// Get MGSAbilitySystemComponent
+	virtual UMGSAbilitySystemComponent* GetMGSAbilitySystemComponent() const;
+	// Get Character AttributeSet
+	virtual UCharacterAttributeSet* GetCharacterAttributeSet() const;
+	// Get Weapon AttributeSet
+	virtual UWeaponAttributeSet* GetWeaponAttributeSet() const;
+	// 피격 부위에 따른 데미지 배율 조회
+	virtual float GetDamageMultiplierForHit(const FHitResult& Hit) const;
+	// 어빌리티 시스템 인터페이스 전용
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	
 protected:
 	virtual void PossessedBy(AController* NewController) override;
-
-public:	
-	virtual UMGSAbilitySystemComponent* GetMGSAbilitySystemComponent() const;
-	virtual UCharacterAttributeSet* GetCharacterAttributeSet() const;
-	virtual UWeaponAttributeSet* GetWeaponAttributeSet() const;
-
-protected:
-	AMGSPlayerState* GetMGSPlayerState() const;
 	
-	virtual void OnJumped_Implementation() override;
-	
+	// Movement virtual function override
+	// Landed
 	virtual void Landed(const FHitResult& Hit) override;
+	// Jump
+	virtual void OnJumped_Implementation() override;
+	// Crouch
 	virtual void OnStartCrouch(float HeightAdjust, float ScaledHeightAdjust) override;
 	virtual void OnEndCrouch(float HeightAdjust, float ScaledHeightAdjust) override;
 	
-protected:
-	// DA_StartupBase : 초기 부여 어빌리티 데이터 에셋
+	// DA_StartupBase(캐릭터가 생성될 때 ASC에 부여할 GA/GE을 정의하는 데이터 에셋)
+	// TSoftObjectPtr : 실제 객체가 아니라 경로만 참조 -> 필요할 때 로딩(지연 로딩) -> 메모리 절약 + 초기 로딩 시간 감소 + Dependency chain 해소
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "StartupData")
 	TSoftObjectPtr<UDA_StartupBase> StartupData;
 	
@@ -60,4 +71,5 @@ protected:
 	// 캐싱된 커스텀 무브먼트 컴포넌트 포인터 (캐스팅 오버헤드 방지)
 	UPROPERTY()
 	TObjectPtr<UMGSCharacterMovementComponent> MGSMovementComponent;
+	
 };

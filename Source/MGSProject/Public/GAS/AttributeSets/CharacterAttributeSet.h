@@ -30,16 +30,19 @@ public:
 	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
 	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
 	
-	// 현재 체력
-	UPROPERTY(BlueprintReadOnly, Category = "Status")
-	FGameplayAttributeData CurrentHp;
-	ATTRIBUTE_ACCESSORS(UCharacterAttributeSet, CurrentHp)
-	
-	// 최대 체력
+	// Max HP
 	UPROPERTY(BlueprintReadOnly, Category = "Status")
 	FGameplayAttributeData MaxHp;
 	ATTRIBUTE_ACCESSORS(UCharacterAttributeSet, MaxHp)
+	
+	// Current HP
+	UPROPERTY(BlueprintReadOnly, Category = "Status")
+	FGameplayAttributeData CurrentHp;
+	ATTRIBUTE_ACCESSORS(UCharacterAttributeSet, CurrentHp)
+
+	// 메타 데미지. ExecutionCalculation이 여기에 누적하고 PostGameplayEffectExecute에서 HP에 반영합니다.
+	UPROPERTY(BlueprintReadOnly, Category = "Status")
+	FGameplayAttributeData IncomingDamage;
+	ATTRIBUTE_ACCESSORS(UCharacterAttributeSet, IncomingDamage)
 		
 };
-
-
