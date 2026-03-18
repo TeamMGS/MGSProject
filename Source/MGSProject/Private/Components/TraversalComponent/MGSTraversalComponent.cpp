@@ -223,7 +223,7 @@ bool UMGSTraversalComponent::FindFrontLedge(const FHitResult& WallHit, const FVe
 	if (!OwningCharacter) return false;
 
 	// 수직 스캔 기준점 (X, Y)
-	FVector ScanTarget = WallHit.ImpactPoint + (TraceDirection * 15.0f);
+	FVector ScanTarget = WallHit.ImpactPoint + (TraceDirection * 5.0f);
 
 	// 수직 트레이스 시작/끝 지점 (Z축)
 	float CapsuleHalfHeight = OwningCharacter->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
@@ -231,11 +231,11 @@ bool UMGSTraversalComponent::FindFrontLedge(const FHitResult& WallHit, const FVe
 
 	// 300 높이까지 확인
 	FVector VerticalStart = ScanTarget;
-	VerticalStart.Z = CharacterBaseZ + 300.0f;
+	VerticalStart.Z = CharacterBaseZ + 250.0f;
 
 	// 발바닥보다 살짝 위까지만확인
 	FVector VerticalEnd = ScanTarget;
-	VerticalEnd.Z = CharacterBaseZ + 30.0f;
+	VerticalEnd.Z = CharacterBaseZ + 10.0f;
 
 	// 트레이스 설정
 	ECollisionChannel TraversalChannel = ECC_GameTraceChannel1; // Traversal 전용 채널
@@ -251,7 +251,7 @@ bool UMGSTraversalComponent::FindFrontLedge(const FHitResult& WallHit, const FVe
 		VerticalEnd,
 		FQuat::Identity,
 		TraversalChannel,
-		FCollisionShape::MakeSphere(10.0f),
+		FCollisionShape::MakeSphere(5.0f),
 		Params
 	);
 
@@ -270,13 +270,13 @@ bool UMGSTraversalComponent::FindFrontLedge(const FHitResult& WallHit, const FVe
 
 		if (FloorAngle < 35.0f)
 		{
-			OutLedgeLocation = LedgeHit.ImpactPoint;
-			OutLedgeNormal = LedgeHit.ImpactNormal;
+			OutLedgeLocation = FVector(WallHit.ImpactPoint.X, WallHit.ImpactPoint.Y, LedgeHit.ImpactPoint.Z);
+			OutLedgeNormal = WallHit.ImpactNormal;
 
 			// 최종 높이 계산 및 검증
 			float FinalHeight = OutLedgeLocation.Z - CharacterBaseZ;
 
-			if (FinalHeight <= 275.0f)
+			if (FinalHeight <= 250.0f)
 			{
 				return true;
 			}
