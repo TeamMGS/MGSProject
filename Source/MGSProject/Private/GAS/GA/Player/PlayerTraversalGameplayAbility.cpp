@@ -150,11 +150,11 @@ void UPlayerTraversalGameplayAbility::SetMotionWarpingTargets(const FMGSTraversa
 	if (!MWComp) return;
 
 	// 캐릭터 정렬 회전값 (장애물을 정면으로 응시하도록 Normal 벡터의 반대 방향으로 회전)
-	FVector LookAtDir = -Inputs.FrontLedgeNormal;
-	LookAtDir.Z = 0.0f; // 수평 회전만 고려
 	FRotator LedgeRotation = Character->GetActorRotation();
-	FVector AdjustedFrontLedge = Inputs.FrontLedgeLocation + FVector(0, 0, 2.0f);
-	FVector AdjustedBackLedge = Inputs.BackLedgeLocation + FVector(0, 0, 2.0f);
+	
+	float HeightCorrection = -Inputs.ObstacleHeight;
+	FVector AdjustedFrontLedge = Inputs.FrontLedgeLocation + FVector(0, 0, 40.0f + HeightCorrection);
+	FVector AdjustedBackLedge = Inputs.BackLedgeLocation + FVector(0, 0, 40.0f + HeightCorrection);
 	
 	// 1. FrontLedge (모든 파쿠르 동작 공통: 손을 짚거나 딛을 앞 모서리)
 	MWComp->AddOrUpdateWarpTargetFromLocationAndRotation(FName("FrontLedge"), AdjustedFrontLedge, LedgeRotation);
