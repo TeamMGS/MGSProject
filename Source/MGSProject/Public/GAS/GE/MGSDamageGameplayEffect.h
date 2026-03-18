@@ -12,7 +12,7 @@
 #include "GameplayEffect.h"
 #include "MGSDamageGameplayEffect.generated.h"
 
-// SetByCaller(Data.Damage) 값을 CurrentHp에 Additive로 적용하는 즉시 데미지 GE
+// SetByCaller(Data.Damage) 값을 ExecutionCalculation으로 계산해 IncomingDamage에 반영하는 즉시 데미지 GE
 UCLASS()
 class MGSPROJECT_API UMGSDamageGameplayEffect : public UGameplayEffect
 {

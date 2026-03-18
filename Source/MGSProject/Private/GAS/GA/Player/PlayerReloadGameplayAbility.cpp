@@ -16,7 +16,9 @@
 
 UPlayerReloadGameplayAbility::UPlayerReloadGameplayAbility()
 {
-	AbilityTags.AddTag(MGSGameplayTags::Ability_Player_Reload);
+	FGameplayTagContainer AbilityAssetTags;
+	AbilityAssetTags.AddTag(MGSGameplayTags::Ability_Player_Reload);
+	SetAssetTags(AbilityAssetTags);
 	AbilityActivationPolicy = EBaseAbilityActivationPolicy::OnTriggered;
 	bClearAbilityOnEndWhenGiven = false;
 }

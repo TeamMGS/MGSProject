@@ -14,7 +14,9 @@
 
 UPlayerDeathGameplayAbility::UPlayerDeathGameplayAbility()
 {
-	AbilityTags.AddTag(MGSGameplayTags::Ability_Player_Death);
+	FGameplayTagContainer AbilityAssetTags;
+	AbilityAssetTags.AddTag(MGSGameplayTags::Ability_Player_Death);
+	SetAssetTags(AbilityAssetTags);
 	ActivationBlockedTags.AddTag(MGSGameplayTags::State_Character_Dead);
 }
 

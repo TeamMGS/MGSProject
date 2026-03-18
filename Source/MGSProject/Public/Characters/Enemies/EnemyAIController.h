@@ -3,7 +3,7 @@
  * 생성자 : 김사윤
  * 생성일 : 2026-03-05
  * 수정자 : 김사윤
- * 수정일 : 2026-03-10
+ * 수정일 : 2026-03-16
  */
 #pragma once
 
@@ -34,6 +34,12 @@ public:
 	bool HasLastSeenLocation() const { return bHasLastSeenLocation; }
 
 	UFUNCTION(BlueprintPure, Category = "AI|Detection")
+	FVector GetLastHeardLocation() const { return LastHeardLocation; }
+
+	UFUNCTION(BlueprintPure, Category = "AI|Detection")
+	bool HasLastHeardLocation() const { return bHasLastHeardLocation; }
+
+	UFUNCTION(BlueprintPure, Category = "AI|Detection")
 	AActor* GetCurrentTargetActor() const { return CurrentTargetActor.Get(); }
 
 protected:
@@ -51,6 +57,7 @@ private:
 	void UpdateDetection();
 	float CalculateDetectionGainForTarget(const AActor* Target) const;
 	void UpdateEnemyStateFromDetection();
+	bool IsValidPerceptionTarget(const AActor* Actor) const;
 
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI", meta = (AllowPrivateAccess = true))
@@ -89,6 +96,9 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "AI|Detection|Light", meta = (ClampMin = "0.0"))
 	float LightMultiplierMax = 1.0f;
 
+	UPROPERTY(EditDefaultsOnly, Category = "AI|Detection|Hearing", meta = (ClampMin = "0.0"))
+	float HearingGainMultiplier = 0.6f;
+
 	UPROPERTY(EditDefaultsOnly, Category = "AI|Detection|Distance", meta = (ClampMin = "0.0"))
 	float DistanceNear = 250.0f;
 
@@ -107,11 +117,20 @@ private:
 	UPROPERTY(VisibleInstanceOnly, Category = "AI|Detection")
 	bool bIsTargetSensed = false;
 
+	UPROPERTY(VisibleInstanceOnly, Category = "AI|Detection")
+	bool bIsTargetHeard = false;
+
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "AI|Detection", meta = (AllowPrivateAccess = true))
 	FVector LastSeenLocation = FVector::ZeroVector;
 
 	UPROPERTY(VisibleInstanceOnly, Category = "AI|Detection")
 	bool bHasLastSeenLocation = false;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "AI|Detection", meta = (AllowPrivateAccess = true))
+	FVector LastHeardLocation = FVector::ZeroVector;
+
+	UPROPERTY(VisibleInstanceOnly, Category = "AI|Detection")
+	bool bHasLastHeardLocation = false;
 
 	UPROPERTY(VisibleInstanceOnly, Category = "AI|Detection")
 	bool bDetectionLocked = false;

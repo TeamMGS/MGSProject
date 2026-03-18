@@ -5,13 +5,14 @@
  * 수정자 : 김사윤
  * 수정일 : 2026-03-12
  */
-#include "AI/STTask_SetEnemyStateTag.h"
+#include "AI/STTask_SetEnemyTag.h"
 
 #include "AIController.h"
 #include "Characters/Enemies/EnemyCharacter.h"
+#include "GAS/ASC/MGSAbilitySystemComponent.h"
 #include "StateTreeExecutionContext.h"
 
-EStateTreeRunStatus USTTask_SetEnemyStateTag::EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition)
+EStateTreeRunStatus USTTask_SetEnemyTag::EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition)
 {
 	if (!TargetStateTag.IsValid())
 	{
@@ -38,7 +39,13 @@ EStateTreeRunStatus USTTask_SetEnemyStateTag::EnterState(FStateTreeExecutionCont
 		return EStateTreeRunStatus::Failed;
 	}
 
-	EnemyCharacter->SetEnemyStateTagFromAI(TargetStateTag);
+	UMGSAbilitySystemComponent* ASC = EnemyCharacter->GetMGSAbilitySystemComponent();
+	if (!ASC)
+	{
+		return EStateTreeRunStatus::Failed;
+	}
+
+	ASC->AddLooseGameplayTag(TargetStateTag);
 	return EStateTreeRunStatus::Succeeded;
 }
 

@@ -3,7 +3,7 @@
  * 생성자 : 김사윤
  * 생성일 : 2026-03-05
  * 수정자 : 김사윤
- * 수정일 : 2026-03-10
+ * 수정일 : 2026-03-16
  */
 
 
@@ -15,6 +15,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AIPerceptionSystem.h"
+#include "Perception/AISense_Hearing.h"
 #include "Perception/AISense_Sight.h"
 #include "TimerManager.h"
 #include "GameplayStateTreeModule/Public/Components/StateTreeAIComponent.h"
@@ -39,9 +40,12 @@ void AEnemyAIController::OnPossess(APawn* InPawn)
 
 	DetectionValue = 0.0f;
 	bIsTargetSensed = false;
+	bIsTargetHeard = false;
 	bDetectionLocked = false;
 	bHasLastSeenLocation = false;
 	LastSeenLocation = FVector::ZeroVector;
+	bHasLastHeardLocation = false;
+	LastHeardLocation = FVector::ZeroVector;
 	CurrentTargetActor.Reset();
 
 	if (UWorld* World = GetWorld())
@@ -89,18 +93,34 @@ void AEnemyAIController::HandleTargetPerceptionUpdated(AActor* Actor, FAIStimulu
 		return;
 	}
 
-	const UClass* SenseClass = UAIPerceptionSystem::GetSenseClassForStimulus(this, Stimulus);
-	if (SenseClass != UAISense_Sight::StaticClass())
+	if (!IsValidPerceptionTarget(Actor))
 	{
 		return;
 	}
 
-	CurrentTargetActor = Actor;
-	bIsTargetSensed = Stimulus.WasSuccessfullySensed();
-	if (bIsTargetSensed)
+	const UClass* SenseClass = UAIPerceptionSystem::GetSenseClassForStimulus(this, Stimulus);
+	if (SenseClass == UAISense_Sight::StaticClass())
 	{
-		LastSeenLocation = Stimulus.StimulusLocation;
-		bHasLastSeenLocation = true;
+		CurrentTargetActor = Actor;
+		bIsTargetSensed = Stimulus.WasSuccessfullySensed();
+		if (bIsTargetSensed)
+		{
+			LastSeenLocation = Stimulus.StimulusLocation;
+			bHasLastSeenLocation = true;
+		}
+		return;
+	}
+
+	if (SenseClass == UAISense_Hearing::StaticClass())
+	{
+		CurrentTargetActor = Actor;
+		bIsTargetHeard = Stimulus.WasSuccessfullySensed();
+		if (bIsTargetHeard)
+		{
+			LastHeardLocation = Stimulus.StimulusLocation;
+			bHasLastHeardLocation = true;
+		}
+		return;
 	}
 }
 
@@ -112,6 +132,13 @@ float AEnemyAIController::GetTargetLightMultiplier_Implementation(const AActor* 
 void AEnemyAIController::UpdateDetection()
 {
 	const float DeltaSeconds = DetectionTickInterval;
+	if (CurrentTargetActor.IsValid() && !IsValidPerceptionTarget(CurrentTargetActor.Get()))
+	{
+		CurrentTargetActor.Reset();
+		bIsTargetSensed = false;
+		bIsTargetHeard = false;
+		bHasLastHeardLocation = false;
+	}
 	if (bDetectionLocked)
 	{
 		DetectionValue = DetectionMaxValue;
@@ -121,9 +148,13 @@ void AEnemyAIController::UpdateDetection()
 
 	float NextDetectionValue = DetectionValue;
 
-	if (bIsTargetSensed && CurrentTargetActor.IsValid())
+	if ((bIsTargetSensed || bIsTargetHeard) && CurrentTargetActor.IsValid())
 	{
-		const float GainPerSecond = CalculateDetectionGainForTarget(CurrentTargetActor.Get());
+		float GainPerSecond = CalculateDetectionGainForTarget(CurrentTargetActor.Get());
+		if (!bIsTargetSensed && bIsTargetHeard)
+		{
+			GainPerSecond *= HearingGainMultiplier;
+		}
 		NextDetectionValue = DetectionValue + (GainPerSecond * DeltaSeconds);
 	}
 	else
@@ -196,5 +227,11 @@ void AEnemyAIController::UpdateEnemyStateFromDetection()
 	}
 
 	EnemyCharacter->SetEnemyStateTagFromAI(NewStateTag);
+}
+
+bool AEnemyAIController::IsValidPerceptionTarget(const AActor* Actor) const
+{
+	const APawn* PawnTarget = Cast<APawn>(Actor);
+	return PawnTarget && PawnTarget->IsPlayerControlled();
 }
 

@@ -16,7 +16,9 @@
 
 UPlayerEquipPrimaryWeaponGameplayAbility::UPlayerEquipPrimaryWeaponGameplayAbility()
 {
-	AbilityTags.AddTag(MGSGameplayTags::Ability_Player_Equip_Primary);
+	FGameplayTagContainer AbilityAssetTags;
+	AbilityAssetTags.AddTag(MGSGameplayTags::Ability_Player_Equip_Primary);
+	SetAssetTags(AbilityAssetTags);
 	AbilityActivationPolicy = EBaseAbilityActivationPolicy::OnTriggered;
 	bClearAbilityOnEndWhenGiven = false;
 }

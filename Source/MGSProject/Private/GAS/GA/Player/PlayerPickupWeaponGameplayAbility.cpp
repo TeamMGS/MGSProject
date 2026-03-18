@@ -17,7 +17,9 @@
 
 UPlayerPickupWeaponGameplayAbility::UPlayerPickupWeaponGameplayAbility()
 {
-	AbilityTags.AddTag(MGSGameplayTags::Ability_Player_PickupWeapon);
+	FGameplayTagContainer AbilityAssetTags;
+	AbilityAssetTags.AddTag(MGSGameplayTags::Ability_Player_PickupWeapon);
+	SetAssetTags(AbilityAssetTags);
 	AbilityActivationPolicy = EBaseAbilityActivationPolicy::OnTriggered;
 	bClearAbilityOnEndWhenGiven = false;
 }

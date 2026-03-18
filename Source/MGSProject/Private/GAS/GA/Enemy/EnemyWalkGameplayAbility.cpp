@@ -14,7 +14,9 @@
 
 UEnemyWalkGameplayAbility::UEnemyWalkGameplayAbility()
 {
-	AbilityTags.AddTag(MGSGameplayTags::Ability_Enemy_Walk);
+	FGameplayTagContainer AbilityAssetTags;
+	AbilityAssetTags.AddTag(MGSGameplayTags::Ability_Enemy_Walk);
+	SetAssetTags(AbilityAssetTags);
 	AbilityActivationPolicy = EBaseAbilityActivationPolicy::OnTriggered;
 	bClearAbilityOnEndWhenGiven = false;
 

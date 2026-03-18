@@ -14,6 +14,7 @@
 
 class UCameraShakeBase;
 class ABaseProjectile;
+class UGameplayEffect;
 
 UCLASS(BlueprintType)
 class MGSPROJECT_API UDA_WeaponDefinition : public UPrimaryDataAsset
@@ -21,6 +22,8 @@ class MGSPROJECT_API UDA_WeaponDefinition : public UPrimaryDataAsset
 	GENERATED_BODY()
 
 public:
+	UDA_WeaponDefinition();
+
 	// 최대 탄약 수
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|Ammo", meta = (ClampMin = "1"))
 	int32 MaxMagazineAmmo = 30;
@@ -44,6 +47,10 @@ public:
 	// 기본 데미지
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|Fire", meta = (ClampMin = "0.0"))
 	float BaseDamage = 20.0f;
+
+	// 발사 시 적용할 기본 데미지 GameplayEffect
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|Fire")
+	TSubclassOf<UGameplayEffect> DamageGameplayEffectClass;
 
 	// 연사 간격(초)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|Fire", meta = (ClampMin = "0.01"))

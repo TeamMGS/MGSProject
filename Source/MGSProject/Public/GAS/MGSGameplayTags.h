@@ -29,6 +29,7 @@ namespace MGSGameplayTags
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Weapon_Secondary)
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Weapon_Throwable)
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Weapon_Unequip)
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Map)
 
 	// Ability tags: identify gameplay abilities
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Player_Jump)
@@ -127,4 +128,5 @@ namespace MGSGameplayTags
 	
 	// SetByCaller data tags
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Damage)
+	
 }

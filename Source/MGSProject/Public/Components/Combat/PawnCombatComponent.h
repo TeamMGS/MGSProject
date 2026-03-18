@@ -15,6 +15,7 @@
 #include "PawnCombatComponent.generated.h"
 
 class ABaseWeapon;
+
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnEquippedWeaponChangedSignature, FGameplayTag /*PreviousWeaponTag*/, FGameplayTag /*CurrentWeaponTag*/);
 
 UCLASS()
@@ -23,54 +24,64 @@ class MGSPROJECT_API UPawnCombatComponent : public UPawnExtensionComponent
 	GENERATED_BODY()
 
 public:
-	// 생성한 무기를 캐릭터 소유 목록에 등록합니다.
+	FOnEquippedWeaponChangedSignature& GetOnEquippedWeaponChangedDelegate() { return OnEquippedWeaponChanged; }
+	
+	// 게임 시작 시 최초 무기 등록 (BP권장)
 	UFUNCTION(BlueprintCallable, Category = "Player")
-	void RegisterSpawnedWeapon(FGameplayTag WeaponTag, ABaseWeapon* Weapon, bool bRegisterAsEquippedWeapon = false);
+	void RegisterSpawnedWeapon(FGameplayTag WeaponTag, ABaseWeapon* Weapon, const bool bRegisterAsEquippedWeapon = false);
 
-	// 전달한 태그로 소유 중인 무기를 조회합니다.
+	// 태그(Key)로 소유중인 무기 조회
 	UFUNCTION(BlueprintCallable, Category = "Player")
-	ABaseWeapon* GetCharacterCarriedWeaponByTag(FGameplayTag WeaponTag) const;
-
-	// 현재 장착 중인 무기 태그
-	UPROPERTY(BlueprintReadWrite, Category = "Player")
-	FGameplayTag CurrentEquippedWeaponTag;
+	ABaseWeapon* GetCharacterCarriedWeaponByTag(const FGameplayTag& WeaponTag) const;
 
 	// 현재 장착 무기 조회
 	UFUNCTION(BlueprintCallable, Category = "Player")
 	ABaseWeapon* GetCharacterCurrentEquippedWeapon() const;
 
-	FOnEquippedWeaponChangedSignature& GetOnEquippedWeaponChangedDelegate() { return OnEquippedWeaponChanged; }
-
-	// 태그로 들고 있는 장비 조회
+	// 태그(주무기, 보조무기)에 해당하는 무기 장착
 	UFUNCTION(BlueprintCallable, Category = "Combat")
-	ABaseWeapon* GetPlayerCarriedWeaponByTag(FGameplayTag Tag) const;
+	bool EquipWeaponByTag(const FGameplayTag& WeaponTag);
 
-	// 전달받은 태그의 무기를 장착합니다.
-	UFUNCTION(BlueprintCallable, Category = "Combat")
-	bool EquipWeaponByTag(FGameplayTag WeaponTag);
-
-	// 현재 장착 무기를 해제(홀스터 이동/어빌리티 제거)합니다.
+	// 현재 장착 무기 장비 해제 (소켓 홀스터로 이동 및 어빌리티, 입력 제거)
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	bool UnequipCurrentWeapon();
 
 	// 월드에 떨어진 무기를 지정 슬롯 태그로 줍고, 기존 슬롯 무기와 교체합니다.
 	UFUNCTION(BlueprintCallable, Category = "Combat")
-	bool PickupDroppedWeaponByTag(FGameplayTag WeaponTag, ABaseWeapon* DroppedWeapon);
+	bool PickupDroppedWeaponByTag(const FGameplayTag& WeaponTag, ABaseWeapon* DroppedWeapon);
 
-private:
-	bool AttachWeaponToSocket(ABaseWeapon* Weapon, FName SocketName) const; // 소켓에 무기 장착
-	void AddWeaponInputMappingContext(ABaseWeapon* Weapon) const; // 무기 입력 매핑
-	void RemoveWeaponInputMappingContext(ABaseWeapon* Weapon) const; // 무기 입력 매핑 제거
-	void ApplyWeaponAbilities(ABaseWeapon* Weapon) const; // 무기 능력 제거
-	void RemoveWeaponAbilities(ABaseWeapon* Weapon) const; // 무기 능력 추가
-	void SaveCurrentWeaponRuntimeState(); // 무기 런타임 탄약값 저장
-	void ApplyWeaponRuntimeState(FGameplayTag WeaponTag, ABaseWeapon* Weapon); // 무기 런타임 탄약값 적용
-
+protected:
+	// 런타임 무기 정보 적용
+	void ApplyWeaponRuntimeState(const FGameplayTag& WeaponTag, ABaseWeapon* Weapon);
+	// 무기가 갖고 있는 Ability 부여
+	void ApplyWeaponAbilities(ABaseWeapon* Weapon) const;
+	// 무기가 갖고 있는 IMC 맵핑
+	void AddWeaponInputMappingContext(const ABaseWeapon* Weapon) const;
+	// 소켓에 무기 적재
+	bool AttachWeaponToSocket(ABaseWeapon* Weapon, const FName& SocketName) const;
+	
+	// 런타임 무기 정보 저장
+	void SaveCurrentWeaponRuntimeState();
+	// 무기가 갖고 있는 Ability 제거
+	void RemoveWeaponAbilities(ABaseWeapon* Weapon) const;
+	// 무기가 갖고 있는 IMC 제거
+	void RemoveWeaponInputMappingContext(const ABaseWeapon* Weapon) const;
+	
+	// 무기 줍기 시 가지고 있던 무기를 떨어뜨릴 전방 위치 (캐릭터 위치 기준)
 	static constexpr float PickupSwapDropForwardOffset = 70.0f;
+	// 무기 줍기 시 가지고 있던 무기를 떨어뜨릴 높이 (캐릭터 위치 기준)
 	static constexpr float PickupSwapDropHeightOffset = 90.0f;
 
-	TMap<FGameplayTag, ABaseWeapon*> CharacterCarriedWeaponMap; // 소유 무기 맵
-	TMap<FGameplayTag, FWeaponRuntimeState> CharacterCarriedWeaponRuntimeStateMap; // 무기별 런타임 탄약 상태 맵 
-	FOnEquippedWeaponChangedSignature OnEquippedWeaponChanged; // 장착 변경 델리게이트
+	// 현재 장착 중인 무기 태그
+	UPROPERTY(BlueprintReadWrite, Category = "Player")
+	FGameplayTag CurrentEquippedWeaponTag;
+	
+	// 소유 무기 (Key: Tag, Value: Class)
+	UPROPERTY()
+	TMap<FGameplayTag, TObjectPtr<ABaseWeapon>> CharacterCarriedWeaponMap;
+	// 소유 무기 런타임 정보(탄약, 탄창) (Key: Tag, Value: Struct)
+	TMap<FGameplayTag, FWeaponRuntimeState> CharacterCarriedWeaponRuntimeStateMap;
+	// 장착 무기 변경 이벤트
+	FOnEquippedWeaponChangedSignature OnEquippedWeaponChanged;
 	
 };
