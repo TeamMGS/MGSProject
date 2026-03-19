@@ -34,6 +34,7 @@
 #include "Components/TraversalComponent/MGSTraversalComponent.h"
 #include "PaperSpriteComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
+#include "Components/SpotLightComponent.h"
 #include "Paper2D/Classes/PaperSpriteComponent.h"
 
 APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
@@ -54,6 +55,15 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
+	
+	// FlashLight
+	FlashLight = CreateDefaultSubobject<USpotLightComponent>(TEXT("FlashLight"));
+	FlashLight->SetupAttachment(FollowCamera);
+	FlashLight->SetRelativeLocation(FVector(400.0f, -55.0f, -50.0f));
+	FlashLight->SetIntensity(0.0f);
+	FlashLight->SetAttenuationRadius(5000.0f);
+	FlashLight->SetOuterConeAngle(20.0f);
+	bOnFlashLight = false;
 	
 	// Minimap
 	MinimapSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("MinimapSpringArm"));
@@ -169,6 +179,25 @@ void APlayerCharacter::GetAimObstructionActorsToIgnore(TArray<AActor*>& OutActor
 		}
 
 		OutActors.AddUnique(HiddenActor);
+	}
+}
+
+void APlayerCharacter::OnFlash()
+{
+	if (!FlashLight)
+	{
+		return;
+	}
+	
+	if (bOnFlashLight)
+	{
+		FlashLight->SetIntensity(0.0f);
+		bOnFlashLight = false;
+	}
+	else
+	{
+		FlashLight->SetIntensity(50000.0f);
+		bOnFlashLight = true;
 	}
 }
 
