@@ -28,6 +28,7 @@ namespace MGSGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_Weapon_Throwable, "InputTag.Weapon.Throwable")
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_Weapon_Unequip, "InputTag.Weapon.Unequip")
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_Map, "InputTag.Map")
+	UE_DEFINE_GAMEPLAY_TAG(InputTag_Flash, "InputTag.Flash")
 
 	// Ability
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Jump, "Ability.Player.Jump")
@@ -44,6 +45,7 @@ namespace MGSGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Equip_Throwable, "Ability.Player.Equip.Throwable")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Death, "Ability.Player.Death")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Traversal, "Ability.Player.Traversal")
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Flash, "Ability.Player.Flash")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Enemy_Equip_Primary, "Ability.Enemy.Equip.Primary")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Enemy_Equip_Secondary, "Ability.Enemy.Equip.Secondary")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Enemy_DefaultMovement, "Ability.Enemy.DefaultMovement")
