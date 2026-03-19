@@ -30,6 +30,7 @@ namespace MGSGameplayTags
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Weapon_Throwable)
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Weapon_Unequip)
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Map)
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Flash)
 
 	// Ability tags: identify gameplay abilities
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Player_Jump)
@@ -46,6 +47,7 @@ namespace MGSGameplayTags
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Player_Equip_Throwable)
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Player_Death)
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Player_Traversal)
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Player_Flash)
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Enemy_Equip_Primary)
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Enemy_Equip_Secondary)
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Enemy_DefaultMovement)
@@ -98,7 +100,6 @@ namespace MGSGameplayTags
 	
 	// (임시) 액션중 다른 태그를 막기 위한 state 태그
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Action_Equipping)
-	
 	
 	// 카메라와의 거리에 따른 태그(플레이어는 Dense)
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Player_LOD_Dense)        

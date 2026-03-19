@@ -13,6 +13,7 @@
 #include "Characters/BaseCharacter.h"
 #include "PlayerCharacter.generated.h"
 
+class USpotLightComponent;
 struct FOnAttributeChangeData;
 struct FInputActionValue;
 class UAIPerceptionStimuliSourceComponent;
@@ -50,6 +51,8 @@ public:
 	void StopAimObstructionTrace();
 	// 현재 조준 중 임시로 숨긴 장애물 액터 목록 수집
 	void GetAimObstructionActorsToIgnore(TArray<AActor*>& OutActors) const;
+	// On/Off FlashLight
+	void OnFlash();
 	
 protected:
 	virtual void BeginPlay() override;
@@ -78,6 +81,10 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCameraComponent> FollowCamera;
 	
+	// Flash SpotLight
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Flash", meta = (AllowPrivateAccess = "ture"))
+	TObjectPtr<USpotLightComponent> FlashLight;
+	
 	// Minimap Sprint Arm
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Minimap", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USpringArmComponent> MinimapSpringArm;
@@ -93,7 +100,7 @@ private:
 	// Combat Component
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UPlayerCombatComponent> PlayerCombatComponent;
-	
+		
 	// 파쿠르 위치 보정용 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MotionWarping", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UMotionWarpingComponent> MotionWarpingComponent;
@@ -188,5 +195,7 @@ private:
 	TMap<TWeakObjectPtr<UPrimitiveComponent>, bool> HiddenAimObstructionComponents;
 	FDelegateHandle CurrentHpChangedDelegateHandle;
 	bool bHasBoundHpChangedDelegate = false;
+	// FlashLight On/Off Flag
+	bool bOnFlashLight = false;
 	
 };

@@ -10,6 +10,7 @@
 #include "AIController.h"
 #include "BrainComponent.h"
 #include "Characters/Enemies/EnemyCharacter.h"
+#include "Components/Combat/EnemyCombatComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GAS/MGSGameplayTags.h"
@@ -46,6 +47,25 @@ void UEnemyDeathGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandl
 		if (UCapsuleComponent* CapsuleComponent = EnemyCharacter->GetCapsuleComponent())
 		{
 			CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+
+		if (UEnemyCombatComponent* EnemyCombatComponent = GetEnemyCombatComponentFromActorInfo())
+		{
+			const FVector BaseDropLocation =
+				EnemyCharacter->GetActorLocation() +
+				EnemyCharacter->GetActorForwardVector() * 70.0f +
+				FVector(0.0f, 0.0f, 60.0f);
+			const FVector RightVector = EnemyCharacter->GetActorRightVector();
+			const FRotator DropRotation = EnemyCharacter->GetActorRotation();
+
+			EnemyCombatComponent->DropCarriedWeaponByTag(
+				EnemyCombatComponent->GetPrimaryWeaponTag(),
+				BaseDropLocation - RightVector * 30.0f,
+				DropRotation);
+			EnemyCombatComponent->DropCarriedWeaponByTag(
+				EnemyCombatComponent->GetSecondaryWeaponTag(),
+				BaseDropLocation + RightVector * 30.0f,
+				DropRotation);
 		}
 
 		if (AAIController* AIController = Cast<AAIController>(EnemyCharacter->GetController()))

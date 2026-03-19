@@ -50,6 +50,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	bool PickupDroppedWeaponByTag(const FGameplayTag& WeaponTag, ABaseWeapon* DroppedWeapon);
 
+	// 지정 슬롯 무기를 캐릭터 소유에서 해제하고 월드에 드롭합니다.
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	bool DropCarriedWeaponByTag(const FGameplayTag& WeaponTag, const FVector& WorldLocation, const FRotator& WorldRotation);
+
 protected:
 	// 런타임 무기 정보 적용
 	void ApplyWeaponRuntimeState(const FGameplayTag& WeaponTag, ABaseWeapon* Weapon);
