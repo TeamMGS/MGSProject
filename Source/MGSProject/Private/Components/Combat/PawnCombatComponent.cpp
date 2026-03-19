@@ -26,6 +26,14 @@
 void UPawnCombatComponent::RegisterSpawnedWeapon(FGameplayTag WeaponTag, ABaseWeapon* Weapon,
 	const bool bRegisterAsEquippedWeapon)
 {
+	constexpr EObjectFlags TemplateFlags = RF_ClassDefaultObject | RF_ArchetypeObject;
+	if (HasAnyFlags(TemplateFlags) ||
+		(GetOwner() && GetOwner()->HasAnyFlags(TemplateFlags)) ||
+		(Weapon && Weapon->HasAnyFlags(TemplateFlags)))
+	{
+		return;
+	}
+
 	// 이미 주무기, 보조무기가 장착되어 있으면 (=Key(태그)값이 존재하면)
 	if (CharacterCarriedWeaponMap.Contains(WeaponTag))
 	{
@@ -295,6 +303,59 @@ bool UPawnCombatComponent::PickupDroppedWeaponByTag(const FGameplayTag& WeaponTa
 	// 게임에서 숨기기
 	DroppedWeapon->SetActorHiddenInGame(DroppedWeapon->GetHolsterSocketName().IsNone());
 	
+	return true;
+}
+
+bool UPawnCombatComponent::DropCarriedWeaponByTag(const FGameplayTag& WeaponTag, const FVector& WorldLocation, const FRotator& WorldRotation)
+{
+	if (!WeaponTag.IsValid())
+	{
+		return false;
+	}
+
+	ABaseWeapon* WeaponToDrop = GetCharacterCarriedWeaponByTag(WeaponTag);
+	if (!WeaponToDrop)
+	{
+		return false;
+	}
+
+	const bool bWasEquipped = CurrentEquippedWeaponTag.MatchesTagExact(WeaponTag);
+	if (bWasEquipped)
+	{
+		if (ACharacter* OwningChar = Cast<ACharacter>(GetOwningPawn()))
+		{
+			if (UAnimInstance* AnimInst = OwningChar->GetMesh()->GetAnimInstance())
+			{
+				TSubclassOf<UAnimInstance> LayerToUnlink = WeaponToDrop->GetWeaponData().WeaponAnimLayer;
+				if (LayerToUnlink)
+				{
+					AnimInst->UnlinkAnimClassLayers(LayerToUnlink);
+				}
+			}
+		}
+
+		SaveCurrentWeaponRuntimeState();
+		RemoveWeaponAbilities(WeaponToDrop);
+
+		const FGameplayTag PreviousEquippedWeaponTag = CurrentEquippedWeaponTag;
+		CurrentEquippedWeaponTag = FGameplayTag();
+		OnEquippedWeaponChanged.Broadcast(PreviousEquippedWeaponTag, CurrentEquippedWeaponTag);
+	}
+
+	if (const FWeaponRuntimeState* ExistingRuntimeState = CharacterCarriedWeaponRuntimeStateMap.Find(WeaponTag))
+	{
+		WeaponToDrop->SaveDroppedRuntimeState(*ExistingRuntimeState);
+	}
+
+	CharacterCarriedWeaponMap.Remove(WeaponTag);
+	CharacterCarriedWeaponRuntimeStateMap.Remove(WeaponTag);
+
+	WeaponToDrop->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	WeaponToDrop->SetOwner(nullptr);
+	WeaponToDrop->SetActorHiddenInGame(false);
+	WeaponToDrop->SetActorLocationAndRotation(WorldLocation, WorldRotation);
+	WeaponToDrop->SetAsWorldDroppedWeapon();
+
 	return true;
 }
 
