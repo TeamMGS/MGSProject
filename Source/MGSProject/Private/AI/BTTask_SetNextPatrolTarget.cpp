@@ -1,5 +1,6 @@
 #include "AI/BTTask_SetNextPatrolTarget.h"
 
+#include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "UObject/UnrealType.h"
 #include "GameFramework/Actor.h"
