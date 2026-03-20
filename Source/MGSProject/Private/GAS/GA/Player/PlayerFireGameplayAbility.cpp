@@ -21,13 +21,13 @@
 #include "GameFramework/Pawn.h"
 #include "GAS/AttributeSets/WeaponAttributeSet.h"
 #include "GAS/MGSGameplayTags.h"
-#include "DrawDebugHelpers.h"
 #include "MGSDebugHelper.h"
 #include "MGSStructType.h"
 #include "Engine/World.h"
 #include "Projectiles/BaseProjectile.h"
 #include "Subsystems/ProjectilePoolWorldSubsystem.h"
 #include "TimerManager.h"
+#include "Characters/Player/MGSPlayerState.h"
 #include "Weapon/BaseGun.h"
 
 UPlayerFireGameplayAbility::UPlayerFireGameplayAbility()
@@ -262,6 +262,14 @@ bool UPlayerFireGameplayAbility::FireSingleShot()
 		WeaponAttributeSet->SetCurrentSpreadRadius(UpdatedEffectiveSpreadRadius);
 	}
 
+	if (AMGSPlayerState* PlayerState = PlayerController->GetPlayerState<AMGSPlayerState>())
+	{
+		FGameplayCueParameters Parameters;
+		Parameters.Location = EquippedGun->GetMuzzleLocation();
+		Parameters.SourceObject = EquippedGun;
+		PlayerState->GetMGSAbilitySystemComponent()->ExecuteGameplayCue(MGSGameplayTags::GameplayCue_Weapon_Fire, Parameters);
+	}
+
 	return true;
 }
 
@@ -428,7 +436,6 @@ bool UPlayerFireGameplayAbility::SpawnProjectileShot(APlayerCharacter* PlayerCha
 	// 스프레드 반지름/사거리로 반각(theta)을 계산합니다.
 	// tan θ = 높이(스프레드 반지름)/밑변(사거리) <=> atan(높이/밑변) = θ
 	const float SpreadHalfAngleRad = FMath::Atan(SpreadRadius / FMath::Max(1.f, AimReferenceDistance));
-	const float SpreadHalfAngleDeg = FMath::RadiansToDegrees(SpreadHalfAngleRad);
 	FVector MuzzleTraceDirection = AimDirection.GetSafeNormal();
 	if (MuzzleTraceDirection.IsNearlyZero())
 	{
@@ -443,12 +450,6 @@ bool UPlayerFireGameplayAbility::SpawnProjectileShot(APlayerCharacter* PlayerCha
 	// 총구/손 근처 캡슐 내부 스폰을 피하기 위해 전진 오프셋 적용
 	constexpr float ProjectileSpawnForwardOffset = 20.0f;
 	const FVector ProjectileSpawnLocation = MuzzleTraceStart + (MuzzleTraceDirection * ProjectileSpawnForwardOffset);
-
-	if (bEnableFireTraceDebug)
-	{
-		const FVector DebugEnd = MuzzleTraceStart + (MuzzleTraceDirection * AimReferenceDistance);
-		DrawDebugLine(World, MuzzleTraceStart, DebugEnd, FColor::Green, false, DebugTraceDuration, 0, 1.2f);
-	}
 
 	// Owner
 	AActor* DamageCauser = PlayerCharacter;
@@ -485,6 +486,10 @@ bool UPlayerFireGameplayAbility::SpawnProjectileShot(APlayerCharacter* PlayerCha
 			ProjectileSpawnLocation,
 			MuzzleTraceDirection.Rotation(),
 			SpawnParams);
+		if (SpawnedProjectile && ProjectilePoolSubsystem)
+		{
+			SpawnedProjectile->SetProjectilePoolSubsystem(ProjectilePoolSubsystem);
+		}
 	}
 	
 	// 총알 스폰도 실패
@@ -536,16 +541,6 @@ bool UPlayerFireGameplayAbility::SpawnProjectileShot(APlayerCharacter* PlayerCha
 	SpawnedProjectile->SetAttackPayload(AttackPayload);
 	// Projectile 초기화 (속도, 방향, 수명 타이머 등)
 	SpawnedProjectile->InitializeProjectile(MuzzleTraceDirection);
-
-	if (bEnableFireTraceLog)
-	{
-		UE_LOG(LogTemp, Log, TEXT("[FireProjectile][SPAWN] Class=%s SpreadHalfAngleDeg=%.3f MuzzleStart=%s Direction=%s Damage=%.1f"),
-			*GetNameSafe(ProjectileClassToSpawn.Get()),
-			SpreadHalfAngleDeg,
-			*ProjectileSpawnLocation.ToString(),
-			*MuzzleTraceDirection.ToString(),
-			WeaponDamage);
-	}
 
 	return true;
 }

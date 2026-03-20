@@ -7,7 +7,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "TimerManager.h"
 #include "GAS/GA/Enemy/EnemyGameplayAbility.h"
 #include "EnemyFireGameplayAbility.generated.h"
 
@@ -41,7 +40,6 @@ protected:
 		bool bWasCancelled) override;
 
 private:
-	void HandleAutomaticFire();
 	bool FireSingleShot(AEnemyCharacter* EnemyCharacter, ABaseGun* EquippedGun);
 	bool SpawnProjectileShot(AEnemyCharacter* EnemyCharacter, ABaseGun* EquippedGun,
 		float AimReferenceDistance, float SpreadRadius) const;
@@ -63,6 +61,4 @@ private:
 	FName MuzzleSocketName = TEXT("Muzzle");
 
 	float CurrentSpreadRadius = 0.0f;
-	float CurrentFireInterval = 0.12f;
-	FTimerHandle AutoFireTimerHandle;
 };

@@ -74,14 +74,14 @@ private:
 
 	// 최초 예열 기본 수량
 	UPROPERTY(EditDefaultsOnly, Category = "Projectile Pool", meta = (ClampMin = "1"))
-	int32 DefaultPoolSize = 500;
+	int32 DefaultPoolSize = 96;
 
 	// 확장 시 최소 배치 크기
 	UPROPERTY(EditDefaultsOnly, Category = "Projectile Pool", meta = (ClampMin = "1"))
-	int32 MinExpansionBatchSize = 64;
+	int32 MinExpansionBatchSize = 16;
 
 	// 현재 총량 대비 확장 비율
 	UPROPERTY(EditDefaultsOnly, Category = "Projectile Pool", meta = (ClampMin = "0.01"))
-	float ExpansionRatio = 0.25f;
+	float ExpansionRatio = 0.125f;
 	
 };

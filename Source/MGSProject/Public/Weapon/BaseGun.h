@@ -142,6 +142,12 @@ public:
 
 	// DA 기준 기본 런타임 상태를 생성합니다.
 	FWeaponRuntimeState MakeDefaultRuntimeState() const;
+	
+	// Get Muzzle World Location
+	FVector GetMuzzleLocation() const;
+	// Get Fire Sound From DA_WeaponDefinition
+	UFUNCTION(BlueprintCallable)
+	USoundBase* GetFireSound() const;
 
 protected:
 	virtual void BeginPlay() override;

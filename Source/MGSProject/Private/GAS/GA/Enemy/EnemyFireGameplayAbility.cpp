@@ -32,7 +32,6 @@ UEnemyFireGameplayAbility::UEnemyFireGameplayAbility()
 	bClearAbilityOnEndWhenGiven = false;
 	InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 	CurrentSpreadRadius = 0.0f;
-	CurrentFireInterval = 0.12f;
 }
 
 bool UEnemyFireGameplayAbility::CanActivateAbility(const FGameplayAbilitySpecHandle Handle,
@@ -91,20 +90,13 @@ void UEnemyFireGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle
 
 	if (UWeaponAttributeSet* WeaponAttributeSet = EnemyCharacter->GetWeaponAttributeSet())
 	{
-		CurrentSpreadRadius = FMath::Clamp(
-			FMath::Max(WeaponAttributeSet->GetCurrentSpreadRadius(), EquippedGun->GetBaseSpreadRadius()),
-			0.f,
-			EquippedGun->GetMaxSpreadRadius());
+		CurrentSpreadRadius = EquippedGun->GetMaxSpreadRadius();
+		WeaponAttributeSet->SetCurrentSpreadRadius(CurrentSpreadRadius);
 	}
 	else
 	{
-		CurrentSpreadRadius = FMath::Clamp(
-			EquippedGun->GetBaseSpreadRadius(),
-			0.f,
-			EquippedGun->GetMaxSpreadRadius());
+		CurrentSpreadRadius = EquippedGun->GetMaxSpreadRadius();
 	}
-
-	CurrentFireInterval = FMath::Max(0.01f, EquippedGun->GetFireInterval());
 
 	if (!FireSingleShot(EnemyCharacter, EquippedGun))
 	{
@@ -112,15 +104,7 @@ void UEnemyFireGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle
 		return;
 	}
 
-	if (UWorld* World = EnemyCharacter->GetWorld())
-	{
-		World->GetTimerManager().SetTimer(
-			AutoFireTimerHandle,
-			this,
-			&ThisClass::HandleAutomaticFire,
-			CurrentFireInterval,
-			true);
-	}
+	EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
 }
 
 void UEnemyFireGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,
@@ -129,38 +113,13 @@ void UEnemyFireGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Hand
 	bool bReplicateEndAbility,
 	bool bWasCancelled)
 {
-	if (const AActor* AvatarActor = GetAvatarActorFromActorInfo())
-	{
-		if (UWorld* World = AvatarActor->GetWorld())
-		{
-			World->GetTimerManager().ClearTimer(AutoFireTimerHandle);
-		}
-	}
-
 	if (AEnemyCharacter* EnemyCharacter = GetEnemyCharacterFromActorInfo())
 	{
 		EnemyCharacter->RequestSpreadRefreshNextTick();
 	}
 
 	CurrentSpreadRadius = 0.0f;
-	CurrentFireInterval = 0.12f;
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
-}
-
-void UEnemyFireGameplayAbility::HandleAutomaticFire()
-{
-	if (!CurrentActorInfo || !CurrentSpecHandle.IsValid())
-	{
-		return;
-	}
-
-	AEnemyCharacter* EnemyCharacter = GetEnemyCharacterFromActorInfo();
-	UEnemyCombatComponent* EnemyCombatComponent = GetEnemyCombatComponentFromActorInfo();
-	ABaseGun* EquippedGun = EnemyCombatComponent ? Cast<ABaseGun>(EnemyCombatComponent->GetCharacterCurrentEquippedWeapon()) : nullptr;
-	if (!EnemyCharacter || !EquippedGun || !FireSingleShot(EnemyCharacter, EquippedGun))
-	{
-		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
-	}
 }
 
 bool UEnemyFireGameplayAbility::FireSingleShot(AEnemyCharacter* EnemyCharacter, ABaseGun* EquippedGun)
@@ -181,10 +140,8 @@ bool UEnemyFireGameplayAbility::FireSingleShot(AEnemyCharacter* EnemyCharacter, 
 		EnemyCharacter->PlayAnimMontage(MontageToPlay);
 	}
 
-	CurrentSpreadRadius = FMath::Clamp(
-		FMath::Max(CurrentSpreadRadius, WeaponAttributeSet->GetCurrentSpreadRadius()),
-		0.f,
-		EquippedGun->GetMaxSpreadRadius());
+	CurrentSpreadRadius = EquippedGun->GetMaxSpreadRadius();
+	WeaponAttributeSet->SetCurrentSpreadRadius(CurrentSpreadRadius);
 	const float AimReferenceDistance = EquippedGun->GetAimReferenceDistance();
 
 	if (!EquippedGun->ConsumeAmmo(1))
@@ -216,9 +173,7 @@ bool UEnemyFireGameplayAbility::FireSingleShot(AEnemyCharacter* EnemyCharacter, 
 		return false;
 	}
 
-	CurrentSpreadRadius = FMath::Min(
-		CurrentSpreadRadius + EquippedGun->GetSpreadRadiusIncreasePerShot(),
-		EquippedGun->GetMaxSpreadRadius());
+	CurrentSpreadRadius = EquippedGun->GetMaxSpreadRadius();
 	WeaponAttributeSet->SetCurrentSpreadRadius(CurrentSpreadRadius);
 
 	if (bEnableAmmoLog)
@@ -344,6 +299,10 @@ bool UEnemyFireGameplayAbility::SpawnProjectileShot(AEnemyCharacter* EnemyCharac
 			ProjectileSpawnLocation,
 			MuzzleTraceDirection.Rotation(),
 			SpawnParams);
+		if (SpawnedProjectile && ProjectilePoolSubsystem)
+		{
+			SpawnedProjectile->SetProjectilePoolSubsystem(ProjectilePoolSubsystem);
+		}
 	}
 
 	if (!SpawnedProjectile)

@@ -18,6 +18,7 @@
 #include "Subsystems/ProjectilePoolWorldSubsystem.h"
 #include "TimerManager.h"
 #include "UObject/ConstructorHelpers.h"
+#include "NiagaraComponent.h"
 
 ABaseProjectile::ABaseProjectile()
 {
@@ -31,11 +32,11 @@ ABaseProjectile::ABaseProjectile()
 	CollisionComponent->SetCollisionObjectType(ECC_WorldDynamic);
 	CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	CollisionComponent->SetCollisionResponseToAllChannels(ECR_Ignore);
-	CollisionComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+	CollisionComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
 	CollisionComponent->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
 	CollisionComponent->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Block);
 	CollisionComponent->SetCollisionResponseToChannel(ECC_PhysicsBody, ECR_Block);
-	CollisionComponent->SetGenerateOverlapEvents(true);
+	CollisionComponent->SetGenerateOverlapEvents(false);
 	CollisionComponent->SetNotifyRigidBodyCollision(false);
 	CollisionComponent->SetCanEverAffectNavigation(false);
 
@@ -94,15 +95,12 @@ void ABaseProjectile::BeginPlay()
 	{
 		CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 		CollisionComponent->SetSimulatePhysics(false);
-		CollisionComponent->SetGenerateOverlapEvents(true);
+		CollisionComponent->SetGenerateOverlapEvents(false);
 		CollisionComponent->SetCollisionResponseToAllChannels(ECR_Ignore);
-		CollisionComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+		CollisionComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
 		CollisionComponent->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
 		CollisionComponent->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Block);
 		CollisionComponent->SetCollisionResponseToChannel(ECC_PhysicsBody, ECR_Block);
-
-		// Overlap 이벤트 바인딩
-		CollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::HandleProjectileOverlap);
 
 		// 피격 시 Owner/Instigator 무시
 		if (bShouldIgnoreOwnerOnHit)
@@ -141,7 +139,19 @@ void ABaseProjectile::ActivateFromPool(const FTransform& SpawnTransform, AActor*
 	// Owner, Instigator, 위치 설정
 	SetOwner(IsValid(NewOwner) ? NewOwner : nullptr);
 	SetInstigator(IsValid(NewInstigator) ? NewInstigator : nullptr);
-	SetActorTransform(SpawnTransform, false, nullptr, ETeleportType::TeleportPhysics);
+	if (CollisionComponent)
+	{
+		CollisionComponent->SetWorldLocationAndRotation(
+			SpawnTransform.GetLocation(),
+			SpawnTransform.Rotator(),
+			false,
+			nullptr,
+			ETeleportType::TeleportPhysics);
+	}
+	else
+	{
+		SetActorTransform(SpawnTransform, false, nullptr, ETeleportType::TeleportPhysics);
+	}
 
 	// 이번 발사에서 충돌 했는지 플래그 초기화
 	bHasProcessedImpact = false;
@@ -153,7 +163,7 @@ void ABaseProjectile::ActivateFromPool(const FTransform& SpawnTransform, AActor*
 	{
 		CollisionComponent->ClearMoveIgnoreActors();
 		CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-		CollisionComponent->SetGenerateOverlapEvents(true);
+		CollisionComponent->SetGenerateOverlapEvents(false);
 	}
 
 	// 무브먼트 설정
@@ -168,8 +178,6 @@ void ABaseProjectile::ActivateFromPool(const FTransform& SpawnTransform, AActor*
 
 	// 게임에서 숨김
 	SetActorHiddenInGame(false);
-	// 콜리전 활성화
-	SetActorEnableCollision(true);
 }
 
 void ABaseProjectile::DeactivateToPool()
@@ -197,12 +205,9 @@ void ABaseProjectile::DeactivateToPool()
 	if (CollisionComponent)
 	{
 		CollisionComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		CollisionComponent->SetGenerateOverlapEvents(false);
 		CollisionComponent->ClearMoveIgnoreActors();
 	}
 
-	// Collision 비활성화
-	SetActorEnableCollision(false);
 	// 게임에서 숨기기
 	SetActorHiddenInGame(true);
 	// Owner/Instigator clear
@@ -253,23 +258,6 @@ void ABaseProjectile::HandleProjectileStop(const FHitResult& ImpactResult)
 
 	// Projectile 충돌 처리
 	ProcessProjectileImpact(ImpactResult.GetActor(), ImpactResult);
-}
-
-void ABaseProjectile::HandleProjectileOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	(void)OverlappedComponent;
-	(void)OtherComp;
-	(void)OtherBodyIndex;
-
-	if (!bIsActiveInPool)
-	{
-		return;
-	}
-
-	// Projectile 충돌 처리
-	const FHitResult EffectiveHit = bFromSweep ? SweepResult : FHitResult();
-	ProcessProjectileImpact(OtherActor, EffectiveHit);
 }
 
 void ABaseProjectile::ProcessProjectileImpact(AActor* HitActor, const FHitResult& Hit)

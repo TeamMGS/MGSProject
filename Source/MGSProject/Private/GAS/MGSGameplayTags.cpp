@@ -118,4 +118,7 @@ namespace MGSGameplayTags
 	
 	// SetByCaller data
 	UE_DEFINE_GAMEPLAY_TAG(Data_Damage, "Data.Damage")
+	
+	// GE
+	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Weapon_Fire, "GameplayCue.Weapon.Fire")
 }

@@ -72,12 +72,12 @@ private:
 	FTimerHandle AutoFireTimerHandle;
 	
 	// Debug
-	// 라인트레이스 디버그 시각화 활성화
 	UPROPERTY(EditDefaultsOnly, Category = "Debug")
 	bool bEnableFireTraceDebug = true;
-	// 디버그 라인 출력 지속 시간(초)
+
 	UPROPERTY(EditDefaultsOnly, Category = "Debug", meta = (ClampMin = "0.0"))
 	float DebugTraceDuration = 1.0f;
+
 	// 히트/미스 충돌 로그 출력 활성화
 	UPROPERTY(EditDefaultsOnly, Category = "Debug")
 	bool bEnableFireTraceLog = true;

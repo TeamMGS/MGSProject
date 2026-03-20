@@ -28,7 +28,8 @@ public class MGSProject : ModuleRules
 			"MotionWarping",
 			"AnimGraphRuntime",
 			"BlendStack",
-			"Paper2D"
+			"Paper2D",
+			"Niagara"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });

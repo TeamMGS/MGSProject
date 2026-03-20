@@ -55,6 +55,8 @@ public:
 	bool DropCarriedWeaponByTag(const FGameplayTag& WeaponTag, const FVector& WorldLocation, const FRotator& WorldRotation);
 
 protected:
+	// 무기 등록/획득/장착 시 발사체 풀을 미리 예열합니다.
+	void PrewarmProjectilePoolForWeapon(ABaseWeapon* Weapon) const;
 	// 런타임 무기 정보 적용
 	void ApplyWeaponRuntimeState(const FGameplayTag& WeaponTag, ABaseWeapon* Weapon);
 	// 무기가 갖고 있는 Ability 부여

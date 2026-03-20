@@ -23,6 +23,29 @@
 #include "Weapon/BaseGun.h"
 #include "Weapon/BaseWeapon.h"
 
+void UPawnCombatComponent::PrewarmProjectilePoolForWeapon(ABaseWeapon* Weapon) const
+{
+	const ABaseGun* Gun = Cast<ABaseGun>(Weapon);
+	if (!Gun)
+	{
+		return;
+	}
+
+	const UWorld* World = Gun->GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	UMGSProjectilePoolWorldSubsystem* ProjectilePoolSubsystem = World->GetSubsystem<UMGSProjectilePoolWorldSubsystem>();
+	if (!ProjectilePoolSubsystem)
+	{
+		return;
+	}
+
+	ProjectilePoolSubsystem->PrewarmProjectileClass(Gun->GetProjectileClass());
+}
+
 void UPawnCombatComponent::RegisterSpawnedWeapon(FGameplayTag WeaponTag, ABaseWeapon* Weapon,
 	const bool bRegisterAsEquippedWeapon)
 {
@@ -58,16 +81,8 @@ void UPawnCombatComponent::RegisterSpawnedWeapon(FGameplayTag WeaponTag, ABaseWe
 	{
 		// 런타임 정보 목록에 추가
 		CharacterCarriedWeaponRuntimeStateMap.FindOrAdd(WeaponTag) = SpawnedGun->MakeDefaultRuntimeState();
-
-		if (const UWorld* World = SpawnedGun->GetWorld())
-		{
-			if (UMGSProjectilePoolWorldSubsystem* ProjectilePoolSubsystem = World->GetSubsystem<UMGSProjectilePoolWorldSubsystem>())
-			{
-				// 무기 등록 시점에 풀링 월드 서브시스템에서 프리웜 진행
-				ProjectilePoolSubsystem->PrewarmProjectileClass(SpawnedGun->GetProjectileClass());
-			}
-		}
 	}
+	PrewarmProjectilePoolForWeapon(Weapon);
 	
 	// 바로 장비시키지 않을 경우 (홀스터 소켓에 장착 후 소유)
 	if (!bRegisterAsEquippedWeapon)
@@ -129,6 +144,8 @@ bool UPawnCombatComponent::EquipWeaponByTag(const FGameplayTag& WeaponTag)
 	UnequipCurrentWeapon();
 	// 장착하려는 무기의 런타임 정보 등록
 	ApplyWeaponRuntimeState(WeaponTag, TargetWeapon);
+	// 발사 전에 풀 예열이 끝나도록 장착 시점에도 보강
+	PrewarmProjectilePoolForWeapon(TargetWeapon);
 	// 장착하려는 무기의 어빌리티 부여 및 무기 입력 추가
 	ApplyWeaponAbilities(TargetWeapon);
 	// 장착하려는 무기를 장착 소켓에 부착
@@ -271,6 +288,8 @@ bool UPawnCombatComponent::PickupDroppedWeaponByTag(const FGameplayTag& WeaponTa
 	DroppedWeapon->SetActorHiddenInGame(false);
 	// 소유 무기에 등록(Key: 태그, Value: Class)
 	CharacterCarriedWeaponMap.Emplace(WeaponTag, DroppedWeapon);
+	// 드랍 무기를 주운 직후 발사체 풀 예열
+	PrewarmProjectilePoolForWeapon(DroppedWeapon);
 
 	if (const ABaseGun* PickedGun = Cast<ABaseGun>(DroppedWeapon))
 	{

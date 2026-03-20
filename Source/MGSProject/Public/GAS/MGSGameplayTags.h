@@ -130,4 +130,7 @@ namespace MGSGameplayTags
 	// SetByCaller data tags
 	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Damage)
 	
+	// GE
+	MGSPROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Weapon_Fire)
+	
 }
