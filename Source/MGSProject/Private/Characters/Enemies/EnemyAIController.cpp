@@ -93,6 +93,13 @@ void AEnemyAIController::SetSuspendDetectionDecrease(bool bSuspend)
 	bSuspendDetectionDecrease = bSuspend;
 }
 
+void AEnemyAIController::SetDetectionToMax()
+{
+	DetectionValue = DetectionMaxValue;
+	bDetectionLocked = true; // 값이 최대로 도달했으므로 상태를 잠금 처리
+	UpdateEnemyStateFromDetection();
+}
+
 void AEnemyAIController::HandleTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
 {
 	if (!Actor)

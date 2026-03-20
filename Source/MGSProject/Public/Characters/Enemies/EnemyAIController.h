@@ -49,6 +49,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "AI|Detection")
 	void SetSuspendDetectionDecrease(bool bSuspend);
 
+	/** 의심치를 즉시 최대치로 설정하고 상태를 갱신합니다. */
+	UFUNCTION(BlueprintCallable, Category = "AI|Detection")
+	void SetDetectionToMax();
+
 protected:
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void OnUnPossess() override;
