@@ -17,6 +17,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GAS/MGSGameplayTags.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
+#include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 
 UEnemyDeathGameplayAbility::UEnemyDeathGameplayAbility()
 {
@@ -87,20 +88,17 @@ void UEnemyDeathGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandl
 		UAbilityTask_PlayMontageAndWait* PlayMontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
 			this, NAME_None, DeathMontage);
 
-		PlayMontageTask->OnCompleted.AddDynamic(this, &UEnemyDeathGameplayAbility::OnDeathMontageFinished);
-		PlayMontageTask->OnBlendOut.AddDynamic(this, &UEnemyDeathGameplayAbility::OnDeathMontageFinished);
-		PlayMontageTask->OnInterrupted.AddDynamic(this, &UEnemyDeathGameplayAbility::OnDeathMontageFinished);
-		PlayMontageTask->OnCancelled.AddDynamic(this, &UEnemyDeathGameplayAbility::OnDeathMontageFinished);
-
 		PlayMontageTask->ReadyForActivation();
-	}
-	else
-	{
-		OnDeathMontageFinished();
+		
+		UAbilityTask_WaitGameplayEvent* WaitEventTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(
+	this, FGameplayTag::RequestGameplayTag(TEXT("Event.Character.DeathFreeze")));
+
+		WaitEventTask->EventReceived.AddDynamic(this, &UEnemyDeathGameplayAbility::OnFreezeEventReceived);
+		WaitEventTask->ReadyForActivation();
 	}
 }
 
-void UEnemyDeathGameplayAbility::OnDeathMontageFinished()
+void UEnemyDeathGameplayAbility::OnFreezeEventReceived(FGameplayEventData Payload)
 {
 	if (AEnemyCharacter* EnemyCharacter = GetEnemyCharacterFromActorInfo())
 	{
@@ -108,6 +106,11 @@ void UEnemyDeathGameplayAbility::OnDeathMontageFinished()
 		{
 			// 마지막 프레임 고정
 			Mesh->bPauseAnims = true;
+			// 재생 속도를 0으로 만들어 몽타주가 끝나지 않게 원천 봉쇄
+			if (UAnimInstance* AnimInstance = Mesh->GetAnimInstance())
+			{
+				AnimInstance->Montage_SetPlayRate(DeathMontage, 0.0f);
+			}
 		}
 	}
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);

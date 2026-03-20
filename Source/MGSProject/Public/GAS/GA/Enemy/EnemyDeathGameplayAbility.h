@@ -30,7 +30,7 @@ protected:
 	
 	// 몽타쥬 종료시 호출함수
 	UFUNCTION()
-	void OnDeathMontageFinished();
+	void OnFreezeEventReceived(FGameplayEventData Payload);
 
 	// 에디터에서 설정할 죽음 몽타쥬 
 	UPROPERTY(EditDefaultsOnly, Category = "Death")
