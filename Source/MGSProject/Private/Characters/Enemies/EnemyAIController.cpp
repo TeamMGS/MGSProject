@@ -19,6 +19,7 @@
 #include "Perception/AISense_Sight.h"
 #include "TimerManager.h"
 #include "GameplayStateTreeModule/Public/Components/StateTreeAIComponent.h"
+#include "DrawDebugHelpers.h"
 
 AEnemyAIController::AEnemyAIController()
 {
@@ -42,6 +43,7 @@ void AEnemyAIController::OnPossess(APawn* InPawn)
 	bIsTargetSensed = false;
 	bIsTargetHeard = false;
 	bDetectionLocked = false;
+	bSuspendDetectionDecrease = false;
 	bHasLastSeenLocation = false;
 	LastSeenLocation = FVector::ZeroVector;
 	bHasLastHeardLocation = false;
@@ -84,6 +86,18 @@ void AEnemyAIController::OnUnPossess()
 	}
 
 	Super::OnUnPossess();
+}
+
+void AEnemyAIController::SetSuspendDetectionDecrease(bool bSuspend)
+{
+	bSuspendDetectionDecrease = bSuspend;
+}
+
+void AEnemyAIController::SetDetectionToMax()
+{
+	DetectionValue = DetectionMaxValue;
+	bDetectionLocked = true; // 값이 최대로 도달했으므로 상태를 잠금 처리
+	UpdateEnemyStateFromDetection();
 }
 
 void AEnemyAIController::HandleTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
@@ -157,7 +171,7 @@ void AEnemyAIController::UpdateDetection()
 		}
 		NextDetectionValue = DetectionValue + (GainPerSecond * DeltaSeconds);
 	}
-	else
+	else if (!bSuspendDetectionDecrease)
 	{
 		NextDetectionValue = DetectionValue - (DetectionDecreaseRate * DeltaSeconds);
 	}
@@ -169,6 +183,15 @@ void AEnemyAIController::UpdateDetection()
 		bDetectionLocked = true;
 	}
 	UpdateEnemyStateFromDetection();
+
+#if ENABLE_DRAW_DEBUG
+	if (bShowDebugDetectionValue && GetPawn())
+	{
+		FVector TextLocation = GetPawn()->GetActorLocation() + FVector(0.f, 0.f, 100.f);
+		FString DebugStr = FString::Printf(TEXT("Detection: %.1f"), DetectionValue);
+		DrawDebugString(GetWorld(), TextLocation, DebugStr, nullptr, FColor::Yellow, DetectionTickInterval, true);
+	}
+#endif
 }
 
 float AEnemyAIController::CalculateDetectionGainForTarget(const AActor* Target) const

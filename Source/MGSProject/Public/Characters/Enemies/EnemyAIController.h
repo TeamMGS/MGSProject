@@ -42,6 +42,17 @@ public:
 	UFUNCTION(BlueprintPure, Category = "AI|Detection")
 	AActor* GetCurrentTargetActor() const { return CurrentTargetActor.Get(); }
 
+	UFUNCTION(BlueprintPure, Category = "AI|Detection")
+	float GetDetectionValue() const { return DetectionValue; }
+
+	/** Task 등에서 마지막 위치로 이동할 때 의심치 감소를 멈추기 위해 호출합니다. */
+	UFUNCTION(BlueprintCallable, Category = "AI|Detection")
+	void SetSuspendDetectionDecrease(bool bSuspend);
+
+	/** 의심치를 즉시 최대치로 설정하고 상태를 갱신합니다. */
+	UFUNCTION(BlueprintCallable, Category = "AI|Detection")
+	void SetDetectionToMax();
+
 protected:
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void OnUnPossess() override;
@@ -111,7 +122,10 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "AI|Detection|Distance", meta = (ClampMin = "0.0"))
 	float DistanceFarMultiplier = 0.4f;
 
-	UPROPERTY(VisibleInstanceOnly, Category = "AI|Detection")
+	UPROPERTY(EditAnywhere, Category = "AI|Detection|Debug")
+	bool bShowDebugDetectionValue = true;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "AI|Detection", meta = (AllowPrivateAccess = true))
 	float DetectionValue = 0.0f;
 
 	UPROPERTY(VisibleInstanceOnly, Category = "AI|Detection")
@@ -134,6 +148,9 @@ private:
 
 	UPROPERTY(VisibleInstanceOnly, Category = "AI|Detection")
 	bool bDetectionLocked = false;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "AI|Detection", meta = (AllowPrivateAccess = true))
+	bool bSuspendDetectionDecrease = false;
 
 	TWeakObjectPtr<AActor> CurrentTargetActor;
 
