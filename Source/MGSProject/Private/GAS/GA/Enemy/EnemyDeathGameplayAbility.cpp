@@ -2,6 +2,8 @@
  * 파일명 : EnemyDeathGameplayAbility.cpp
  * 생성자 : Codex
  * 생성일 : 2026-03-13
+ * 수정자 : 김동석
+ * 수정일 : 2026-03-20
  */
 
 #include "GAS/GA/Enemy/EnemyDeathGameplayAbility.h"
@@ -14,6 +16,8 @@
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GAS/MGSGameplayTags.h"
+#include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
+#include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 
 UEnemyDeathGameplayAbility::UEnemyDeathGameplayAbility()
 {
@@ -79,5 +83,35 @@ void UEnemyDeathGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandl
 		}
 	}
 
-	EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
+	if (DeathMontage)
+	{
+		UAbilityTask_PlayMontageAndWait* PlayMontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
+			this, NAME_None, DeathMontage);
+
+		PlayMontageTask->ReadyForActivation();
+		
+		UAbilityTask_WaitGameplayEvent* WaitEventTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(
+	this, FGameplayTag::RequestGameplayTag(TEXT("Event.Character.DeathFreeze")));
+
+		WaitEventTask->EventReceived.AddDynamic(this, &UEnemyDeathGameplayAbility::OnFreezeEventReceived);
+		WaitEventTask->ReadyForActivation();
+	}
+}
+
+void UEnemyDeathGameplayAbility::OnFreezeEventReceived(FGameplayEventData Payload)
+{
+	if (AEnemyCharacter* EnemyCharacter = GetEnemyCharacterFromActorInfo())
+	{
+		if (USkeletalMeshComponent* Mesh = EnemyCharacter->GetMesh())
+		{
+			// 마지막 프레임 고정
+			Mesh->bPauseAnims = true;
+			// 재생 속도를 0으로 만들어 몽타주가 끝나지 않게 원천 봉쇄
+			if (UAnimInstance* AnimInstance = Mesh->GetAnimInstance())
+			{
+				AnimInstance->Montage_SetPlayRate(DeathMontage, 0.0f);
+			}
+		}
+	}
+	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
