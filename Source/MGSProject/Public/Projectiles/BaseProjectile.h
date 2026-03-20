@@ -13,6 +13,7 @@
 #include "MGSStructType.h"
 #include "BaseProjectile.generated.h"
 
+class UNiagaraComponent;
 struct FHitResult;
 struct FTimerHandle;
 class APawn;
@@ -66,15 +67,6 @@ protected:
 	// ProjectileMovement 정지 핸들러 (Block 충돌 시)
 	UFUNCTION()
 	virtual void HandleProjectileStop(const FHitResult& ImpactResult);
-	// Overlap 이벤트 핸들러
-	UFUNCTION()
-	virtual void HandleProjectileOverlap(
-		UPrimitiveComponent* OverlappedComponent,
-		AActor* OtherActor,
-		UPrimitiveComponent* OtherComp,
-		int32 OtherBodyIndex,
-		bool bFromSweep,
-		const FHitResult& SweepResult);
 	
 	// Projectile 충돌 처리
 	void ProcessProjectileImpact(AActor* HitActor, const FHitResult& Hit);

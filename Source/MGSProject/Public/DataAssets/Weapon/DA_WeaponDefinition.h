@@ -104,4 +104,8 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|Recoil", meta = (ClampMin = "0.0"))
 	float FireCameraShakeScale = 1.0f;
 	
+	// Fire sound effect
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sound")
+	USoundBase* FireSound;
+	
 };

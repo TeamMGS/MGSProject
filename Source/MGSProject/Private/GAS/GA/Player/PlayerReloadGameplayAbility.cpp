@@ -100,13 +100,5 @@ void UPlayerReloadGameplayAbility::OnAmmoRefillEventReceived(FGameplayEventData 
 	ABaseGun* EquippedGun = Cast<ABaseGun>(CombatComp->GetCharacterCurrentEquippedWeapon());
 	
 	// 장전
-	const int32 ReloadedAmmo = EquippedGun->ReloadAmmo();
-	if (bEnableReloadLog)
-	{
-		UE_LOG(LogTemp, Log, TEXT("[Reload] Reloaded=%d Current=%d/%d Carried=%d"),
-			ReloadedAmmo,
-			EquippedGun->GetCurrentMagazineAmmo(),
-			EquippedGun->GetMaxMagazineAmmo(),
-			EquippedGun->GetCarriedAmmo());
-	}
+	EquippedGun->ReloadAmmo();
 }

@@ -382,6 +382,16 @@ FWeaponRuntimeState ABaseGun::MakeDefaultRuntimeState() const
 	return RuntimeState;
 }
 
+FVector ABaseGun::GetMuzzleLocation() const
+{
+	return WeaponMesh->GetSocketLocation(TEXT("Muzzle"));
+}
+
+USoundBase* ABaseGun::GetFireSound() const
+{
+	return WeaponDefinition->FireSound;
+}
+
 const UWeaponAttributeSet* ABaseGun::GetWeaponAttributeSet() const
 {
 	const ABaseCharacter* OwnerCharacter = Cast<ABaseCharacter>(GetOwner());

@@ -68,14 +68,6 @@ void UEnemyReloadGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHand
 	if (!MontageToPlay)
 	{
 		const int32 ReloadedAmmo = EquippedGun->ReloadAmmo();
-		if (bEnableReloadLog)
-		{
-			UE_LOG(LogTemp, Log, TEXT("[EnemyReload] Reloaded=%d Current=%d/%d Carried=%d"),
-				ReloadedAmmo,
-				EquippedGun->GetCurrentMagazineAmmo(),
-				EquippedGun->GetMaxMagazineAmmo(),
-				EquippedGun->GetCarriedAmmo());
-		}
 
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, ReloadedAmmo <= 0);
 		return;
@@ -108,13 +100,5 @@ void UEnemyReloadGameplayAbility::OnAmmoRefillEventReceived(FGameplayEventData P
 		return;
 	}
 
-	const int32 ReloadedAmmo = EquippedGun->ReloadAmmo();
-	if (bEnableReloadLog)
-	{
-		UE_LOG(LogTemp, Log, TEXT("[EnemyReload] Reloaded=%d Current=%d/%d Carried=%d"),
-			ReloadedAmmo,
-			EquippedGun->GetCurrentMagazineAmmo(),
-			EquippedGun->GetMaxMagazineAmmo(),
-			EquippedGun->GetCarriedAmmo());
-	}
+	EquippedGun->ReloadAmmo();
 }
