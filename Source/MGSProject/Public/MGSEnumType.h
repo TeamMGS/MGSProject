@@ -52,3 +52,18 @@ enum class EMGSTraversalActionType : uint8
 	Vault,   // 중간 장애물
 	Mantle   // 높은 장애물
 };
+
+/**
+ * 나레이션 상황 정의
+ */
+UENUM(BlueprintType)
+enum class ENarrationSituation : uint8
+{
+	None,
+	GameStart,           // 게임 시작 안내
+	MissionSuccess,      // 미션 목표 달성
+	ExtractionReady,     // 탈출지 활성화
+	ExtractionSuccess,   // 탈출 성공 (게임 클리어)
+	CombatStarted,       // 교전 발생
+	LowHealth            // 체력 부족 경고
+};

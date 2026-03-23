@@ -20,10 +20,11 @@
 #include "GAS/ASC/MGSAbilitySystemComponent.h"
 #include "GAS/MGSGameplayTags.h"
 #include "InputActionValue.h"
+#include "UI/MGSPlayerStatusWidget.h"
 
 AMGSPlayerController::AMGSPlayerController()
 {
-	PlayerHUDPresenterComponent = CreateDefaultSubobject<UPlayerHUDPresenterComponent>(TEXT("PlayerHUDPresenterComponent"));
+	PlayerHUDPresenter = CreateDefaultSubobject<UPlayerHUDPresenterComponent>(TEXT("MGS_HUD_Presenter"));
 }
 
 void AMGSPlayerController::ActivateEnemyAbility(const FString& AbilityTagString)
@@ -44,12 +45,22 @@ void AMGSPlayerController::BeginPlay()
 	
 	// IMC Setting
 	SetupInputMappingContext();
-
+	
 	// HUD 노출
-	if (PlayerHUDPresenterComponent)
+	if (PlayerHUDPresenter)
 	{
-		PlayerHUDPresenterComponent->SetPlayerStatusWidgetClass(PlayerStatusWidgetClass);
-		PlayerHUDPresenterComponent->RefreshHUDDataBindings();
+		PlayerHUDPresenter->SetPlayerStatusWidgetClass(PlayerStatusWidgetClass);
+		PlayerHUDPresenter->RefreshHUDDataBindings();
+	}
+	
+	if (PlayerHUDPresenter)
+	{
+		// 2초 뒤에 테스트 나레이션 실행 (HUD가 완전히 로드된 후 안전하게 보기 위함)
+		FTimerHandle TestTimer;
+		GetWorldTimerManager().SetTimer(TestTimer, [this]()
+		{
+			PlayerHUDPresenter->PlayNarration(ENarrationSituation::GameStart);
+		}, 2.0f, false);
 	}
 }
 
@@ -58,18 +69,20 @@ void AMGSPlayerController::AcknowledgePossession(APawn* InPawn)
 	Super::AcknowledgePossession(InPawn);
 
 	// HUD 생성
-	if (PlayerHUDPresenterComponent)
+	if (PlayerHUDPresenter)
 	{
-		PlayerHUDPresenterComponent->RefreshHUDDataBindings();
+		// BeginPlay와 마찬가지로 클래스를 먼저 넘겨줍니다.
+		PlayerHUDPresenter->SetPlayerStatusWidgetClass(PlayerStatusWidgetClass);
+		PlayerHUDPresenter->RefreshHUDDataBindings();
 	}
 }
 
 void AMGSPlayerController::OnUnPossess()
 {
 	// HUD 정리
-	if (PlayerHUDPresenterComponent)
+	if (PlayerHUDPresenter)
 	{
-		PlayerHUDPresenterComponent->ClearHUDDataBindings();
+		PlayerHUDPresenter->ClearHUDDataBindings();
 	}
 
 	Super::OnUnPossess();
@@ -78,9 +91,9 @@ void AMGSPlayerController::OnUnPossess()
 void AMGSPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	// HUD 정리
-	if (PlayerHUDPresenterComponent)
+	if (PlayerHUDPresenter)
 	{
-		PlayerHUDPresenterComponent->ClearHUDDataBindings();
+		PlayerHUDPresenter->ClearHUDDataBindings();
 	}
 
 	Super::EndPlay(EndPlayReason);
@@ -159,9 +172,9 @@ void AMGSPlayerController::Input_UnequipWeapons()
 
 void AMGSPlayerController::Input_Map()
 {
-	if (PlayerHUDPresenterComponent)
+	if (PlayerHUDPresenter)
 	{
-		PlayerHUDPresenterComponent->VisibleMap();
+		PlayerHUDPresenter->VisibleMap();
 	}
 }
 

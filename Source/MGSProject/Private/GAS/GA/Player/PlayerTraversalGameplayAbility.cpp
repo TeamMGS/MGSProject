@@ -97,7 +97,7 @@ void UPlayerTraversalGameplayAbility::ActivateAbility(const FGameplayAbilitySpec
 				// (이 수치들은 사용하시는 몽타주의 실제 '걷기' 길이에 맞춰 조절하세요)
 				StartTime = FMath::GetMappedRangeValueClamped(
 					FVector2D(50.0f, 225.0f), // 입력 범위 (최소거리, 최대거리)
-					FVector2D(0.5f, 0.0f), // 출력 범위 (최대스킵시간, 최소스킵시간)
+					FVector2D(0.1f, 0.0f), // 출력 범위 (최대스킵시간, 최소스킵시간)
 					Inputs.DistanceToLedge // 현재 장애물과의 수평 거리
 				);
 			}
@@ -153,7 +153,7 @@ void UPlayerTraversalGameplayAbility::SetMotionWarpingTargets(const FMGSTraversa
 	FRotator LedgeRotation = Character->GetActorRotation();
 	
 	float HeightCorrection = -Inputs.ObstacleHeight;
-	FVector AdjustedFrontLedge = Inputs.FrontLedgeLocation + FVector(0, 0, 40.0f + HeightCorrection);
+	FVector AdjustedFrontLedge = Inputs.FrontLedgeLocation + FVector(-40.0f, 0.f, 40.0f + HeightCorrection);
 	FVector AdjustedBackLedge = Inputs.BackLedgeLocation + FVector(0, 0, 40.0f + HeightCorrection);
 	
 	// 1. FrontLedge (모든 파쿠르 동작 공통: 손을 짚거나 딛을 앞 모서리)

@@ -17,6 +17,9 @@
 #include "GAS/AttributeSets/WeaponAttributeSet.h"
 #include "UI/MGSPlayerStatusWidget.h"
 #include "Weapon/BaseWeapon.h"
+#include "Kismet/GameplayStatics.h"
+#include "Interfaces/MGSNarrationInterface.h"
+#include "DataAssets/DA_NarrationConfig.h"
 
 UPlayerHUDPresenterComponent::UPlayerHUDPresenterComponent()
 {
@@ -36,7 +39,7 @@ void UPlayerHUDPresenterComponent::RefreshHUDDataBindings()
 	{
 		return;
 	}
-
+	
 	// Create and Add widget
 	CreatePlayerStatusWidget();
 	// Clear data
@@ -96,19 +99,46 @@ void UPlayerHUDPresenterComponent::RefreshHUDDataBindings()
 
 void UPlayerHUDPresenterComponent::CreatePlayerStatusWidget()
 {
+	// AMGSPlayerController* PlayerController = Cast<AMGSPlayerController>(GetOwner());
+	// if (!PlayerController || !PlayerController->IsLocalPlayerController() || PlayerStatusWidget || !PlayerStatusWidgetClass)
+	// {
+	// 	return;
+	// }
+	//
+	// PlayerStatusWidget = CreateWidget<UMGSPlayerStatusWidget>(PlayerController, PlayerStatusWidgetClass);
+	// if (!PlayerStatusWidget)
+	// {
+	// 	return;
+	// }
+	//
+	// PlayerStatusWidget->AddToPlayerScreen(1);
+	
 	AMGSPlayerController* PlayerController = Cast<AMGSPlayerController>(GetOwner());
-	if (!PlayerController || !PlayerController->IsLocalPlayerController() || PlayerStatusWidget || !PlayerStatusWidgetClass)
-	{
+
+	if (!PlayerController) {
+		UE_LOG(LogTemp, Error, TEXT("HUD Debug: No Controller"));
+		return;
+	}
+
+	if (PlayerStatusWidget) {
+		UE_LOG(LogTemp, Warning, TEXT("HUD Debug: Widget Already Exists"));
+		return;
+	}
+
+	if (!PlayerStatusWidgetClass) {
+		UE_LOG(LogTemp, Error, TEXT("HUD Debug: Widget Class is MISSING (None)"));
 		return;
 	}
 
 	PlayerStatusWidget = CreateWidget<UMGSPlayerStatusWidget>(PlayerController, PlayerStatusWidgetClass);
-	if (!PlayerStatusWidget)
-	{
+
+	if (!PlayerStatusWidget) {
+		UE_LOG(LogTemp, Error, TEXT("HUD Debug: CreateWidget FAILED (Check BindWidget/NamedSlot)"));
 		return;
 	}
 
-	PlayerStatusWidget->AddToPlayerScreen(1);
+	PlayerStatusWidget->AddToViewport(100);
+	UE_LOG(LogTemp, Warning, TEXT("HUD Debug: Widget Successfully Added to Viewport"));
 }
 
 void UPlayerHUDPresenterComponent::ClearHUDDataBindings()
@@ -147,6 +177,55 @@ void UPlayerHUDPresenterComponent::VisibleMap()
 	if (PlayerStatusWidget)
 	{
 		PlayerStatusWidget->UpdateMap();
+	}
+}
+
+void UPlayerHUDPresenterComponent::PlayNarration(ENarrationSituation Situation)
+{
+	if (!PlayerStatusWidget)
+	{
+		return;
+	}
+
+	if (!NarrationConfig)
+	{
+		return;
+	}
+
+	if (!NarrationWidgetClass)
+	{
+		return;
+	}
+	
+	if (!NarrationConfig->NarrationMap.Contains(Situation))
+	{
+		return;
+	}
+
+	const FNarrationInfo& Info = NarrationConfig->NarrationMap[Situation];
+
+	// 나레이션 위젯 생성
+	UUserWidget* NarrationWidget = CreateWidget<UUserWidget>(GetWorld(), NarrationWidgetClass);
+	if (NarrationWidget)
+	{
+		// 인터페이스 확인 로그
+		if (NarrationWidget->GetClass()->ImplementsInterface(UMGSNarrationInterface::StaticClass()))
+		{
+			IMGSNarrationInterface::Execute_UpdateNarrationText(NarrationWidget, Info.NarrationText);
+		}
+
+		PlayerStatusWidget->SetNarrationContent(NarrationWidget);
+
+		if (Info.NarrationSound)
+		{
+			UGameplayStatics::PlaySound2D(this, Info.NarrationSound);
+		}
+
+		// 타이머 설정 로그
+		GetWorld()->GetTimerManager().ClearTimer(NarrationTimerHandle);
+		GetWorld()->GetTimerManager().SetTimer(NarrationTimerHandle, this,
+		                                       &UPlayerHUDPresenterComponent::ClearNarrationSlot, Info.DisplayDuration,
+		                                       false);
 	}
 }
 
@@ -338,4 +417,13 @@ void UPlayerHUDPresenterComponent::HandleEquippedWeaponChanged(FGameplayTag /*Pr
 void UPlayerHUDPresenterComponent::HandleNearbyDroppedWeaponChanged(const ABaseWeapon* NearbyDroppedWeapon)
 {
 	UpdatePickupWeaponPrompt(NearbyDroppedWeapon);
+}
+
+void UPlayerHUDPresenterComponent::ClearNarrationSlot()
+{
+	if (PlayerStatusWidget)
+	{
+		// 슬롯을 비움
+		PlayerStatusWidget->SetNarrationContent(nullptr);
+	}
 }

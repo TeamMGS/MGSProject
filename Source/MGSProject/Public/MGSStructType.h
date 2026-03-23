@@ -82,6 +82,10 @@ struct FPlayerWeaponData
 	// 오른손 기준 왼손이 잡아야 할 위치
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IK")
 	FVector LeftHandIKOffset;
+	
+	// 무기 장착 시 소켓 대비 상대적 위치/회전 오프셋
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
+	FTransform WeaponMeshOffset = FTransform::Identity;
 };
 
 // 런타임 중 무기 탄약/탄창 데이터
@@ -145,4 +149,25 @@ struct MGSPROJECT_API FMGSProjectileAttackPayload
 		return BaseDamage > 0.0f;
 	}
 	
+};
+
+/**
+ * 나레이션 정보 구조체
+ */
+USTRUCT(BlueprintType)
+struct FNarrationInfo
+{
+	GENERATED_BODY()
+
+	// 화면에 표시될 나레이션 자막 텍스트
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FText NarrationText;
+
+	// 함께 재생할 오디오 (선택 사항)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TObjectPtr<USoundBase> NarrationSound;
+
+	// 대사가 표시되는 시간 (초)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float DisplayDuration = 3.0f;
 };
