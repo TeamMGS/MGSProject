@@ -196,7 +196,7 @@ void APlayerCharacter::OnFlash()
 	}
 	else
 	{
-		FlashLight->SetIntensity(50000.0f);
+		FlashLight->SetIntensity(FlashLightIntensity);
 		bOnFlashLight = true;
 	}
 }
