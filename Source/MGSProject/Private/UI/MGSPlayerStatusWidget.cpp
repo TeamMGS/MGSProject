@@ -9,6 +9,7 @@
 #include "UI/MGSPlayerStatusWidget.h"
 
 #include "Components/SizeBox.h"
+#include "Components/NamedSlot.h"
 
 void UMGSPlayerStatusWidget::UpdateHealth(float InCurrentHp, float InMaxHp)
 {
@@ -101,4 +102,12 @@ UTexture2D* UMGSPlayerStatusWidget::GetPickupWeaponPromptImage() const
 void UMGSPlayerStatusWidget::SetWeaponInfoVisible(bool bInVisible)
 {
 	UpdateWeaponInfo(bInVisible, CurrentWeaponInfoImage.Get());
+}
+
+void UMGSPlayerStatusWidget::SetNarrationContent(UUserWidget* InContent)
+{
+	if (NarrationSlot)
+	{
+		NarrationSlot->SetContent(InContent);
+	}
 }

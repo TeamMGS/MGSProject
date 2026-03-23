@@ -14,6 +14,7 @@
 
 class USizeBox;
 class UTexture2D;
+class UNamedSlot;
 
 UCLASS(Abstract, BlueprintType)
 class MGSPROJECT_API UMGSPlayerStatusWidget : public UUserWidget
@@ -61,6 +62,10 @@ public:
 	// Weapon
 	UFUNCTION(BlueprintCallable, Category = "HUD")
 	void SetWeaponInfoVisible(bool bInVisible);
+
+	// Narration Slot Content Set
+	UFUNCTION(BlueprintCallable, Category = "HUD")
+	void SetNarrationContent(UUserWidget* InContent);
 
 protected:
 	// BP
@@ -120,5 +125,9 @@ private:
 	// Map Size Box
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<USizeBox> MapSizeBox;
+
+	// 나레이션용 명명 슬롯 (NarrationSlot)
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UNamedSlot> NarrationSlot;
 	
 };
