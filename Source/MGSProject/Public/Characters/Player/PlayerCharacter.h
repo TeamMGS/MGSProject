@@ -168,6 +168,10 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spread", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UDA_SpreadSettings> SpreadSettingsData;
 	
+	// Flash Intensity
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Flash", meta = (AllowPrivateAccess = "true"))
+	float FlashLightIntensity = 20000.0f;
+	
 	// 서있을 때 카메라 Z 오프셋
 	static constexpr float CrouchCameraStandingOffsetZ = 0.0f;
 	// 웅크릴 때 카메라 Z 오프셋
