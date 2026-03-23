@@ -43,15 +43,14 @@ FGameplayTag UMGSCharacterMovementComponent::GetDesiredGait() const
 	UMGSAbilitySystemComponent* ASC = BaseChar->GetMGSAbilitySystemComponent();
 	if (!ASC) return MGSGameplayTags::State_Player_Gait_Run;
 
-	// 우선순위에 따른 태그 판정
 	// 질주 태그가 있는가?
-	if (ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Movement_Sprint))
+	if (ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Movement_Sprint) || ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Enemy_Movement_Sprint))
 	{
 		return MGSGameplayTags::State_Player_Gait_Sprint;
 	}
 
 	// 걷기 태그가 있는가? 
-	if (ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Movement_Walk))
+	if (ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Movement_Walk) || ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Enemy_Movement_Walk))
 	{
 		return MGSGameplayTags::State_Player_Gait_Walk;
 	}
@@ -103,13 +102,14 @@ float UMGSCharacterMovementComponent::CalculateMaxAcceleration() const
 	if (ASC)
 	{
 		// Sprint 상태일 때: 매핑된 가변 가속도 반환
-		if (ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Gait_Sprint))
+		if (ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Gait_Sprint) || ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Enemy_Movement_Sprint))
 		{
 			return MappedAcceleration;
 		}
 		// Walk나 Run 상태일 때: 고정 가속도 800 반환 (GASP 기본값)
 		else if (ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Gait_Walk) ||
-				 ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Gait_Run))
+				 ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Gait_Run) ||
+				 ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Enemy_Movement_Walk))
 		{
 			return 800.f;
 		}
@@ -153,7 +153,7 @@ float UMGSCharacterMovementComponent::CalculateGroundFriction() const
 	if (ASC)
 	{
 		// [Sprint 상태일 때] 속도에 따라 마찰력을 5.0 -> 3.0으로 줄임
-		if (ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Gait_Sprint))
+		if (ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Gait_Sprint) || ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Enemy_Movement_Sprint))
 		{
 			return FMath::GetMappedRangeValueClamped(
 				FVector2D(0.f, 500.f),   // In Range (속도)
@@ -163,7 +163,8 @@ float UMGSCharacterMovementComponent::CalculateGroundFriction() const
 		}
 		// [Walk 또는 Run 상태일 때] 고정 마찰력 5.0
 		else if (ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Gait_Walk) ||
-				 ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Gait_Run))
+				 ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Gait_Run) ||
+				 ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Enemy_Movement_Walk))
 		{
 			return 5.0f;
 		}
@@ -184,8 +185,8 @@ float UMGSCharacterMovementComponent::CalculateMaxSpeed() const
 
 	if (ASC)
 	{
-		if (ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Gait_Sprint)) TargetSpeedVector = SprintSpeeds;
-		else if (ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Gait_Walk)) TargetSpeedVector = WalkSpeeds;
+		if (ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Gait_Sprint) || ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Enemy_Movement_Sprint)) TargetSpeedVector = SprintSpeeds;
+		else if (ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Player_Gait_Walk) || ASC->HasMatchingGameplayTag(MGSGameplayTags::State_Enemy_Movement_Walk)) TargetSpeedVector = WalkSpeeds;
 		else TargetSpeedVector = RunSpeeds;
 	}
 
