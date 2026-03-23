@@ -10,6 +10,9 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "MGSEnumType.h"
+#include "MGSStructType.h"
+#include "DataAssets/DA_NarrationConfig.h"
 #include "PlayerHUDPresenterComponent.generated.h"
 
 struct FGameplayAttribute;
@@ -38,7 +41,9 @@ public:
 	void ClearHUDDataBindings();
 	// Visible Map
 	void VisibleMap();
-
+	// 상황별 나레이션 블루프린트 추가 함수
+	UFUNCTION(BlueprintCallable, Category = "HUD")
+	void PlayNarration(ENarrationSituation Situation);
 private:
 	using FAttributeChangedHandler = void (UPlayerHUDPresenterComponent::*)(const FOnAttributeChangeData&);
 
@@ -78,7 +83,8 @@ private:
 	void HandleEquippedWeaponChanged(FGameplayTag PreviousWeaponTag, FGameplayTag CurrentWeaponTag);
 	// Drop
 	void HandleNearbyDroppedWeaponChanged(const ABaseWeapon* NearbyDroppedWeapon);
-
+	// 슬롯비우기
+	void ClearNarrationSlot();
 private:
 	// Delegate Handle
 	// Character
@@ -127,4 +133,14 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<UPlayerCombatComponent> CachedPlayerCombatComponent;
 	
+	// 나레이션 설정 데이터 에셋
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Narration", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UDA_NarrationConfig> NarrationConfig;
+
+	// 대사 위젯 클래스 (WBP_Dialogue)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Narration", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UUserWidget> NarrationWidgetClass;
+
+	// 대사를 자동으로 지우기 위한 타이머 핸들
+	FTimerHandle NarrationTimerHandle;
 };

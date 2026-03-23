@@ -483,6 +483,10 @@ bool UPawnCombatComponent::AttachWeaponToSocket(ABaseWeapon* Weapon, const FName
 	// 무기를 소켓에 적재 
 	Weapon->AttachToComponent(CharacterMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, SocketName);
 	
+	// 무기 데이터에 정의된 오프셋 적용
+	const FTransform& Offset = Weapon->GetWeaponData().WeaponMeshOffset;
+	Weapon->SetActorRelativeTransform(Offset);
+	
 	return true;
 }
 
