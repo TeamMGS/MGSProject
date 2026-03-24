@@ -61,6 +61,7 @@ enum class ENarrationSituation : uint8
 {
 	None,
 	GameStart,           // 게임 시작 안내
+	//MissionInfo,         // 미션 목표 설명
 	MissionSuccess,      // 미션 목표 달성
 	ExtractionReady,     // 탈출지 활성화
 	ExtractionSuccess,   // 탈출 성공 (게임 클리어)
