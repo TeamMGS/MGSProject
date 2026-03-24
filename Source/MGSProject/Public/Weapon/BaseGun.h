@@ -148,6 +148,12 @@ public:
 	// Get Fire Sound From DA_WeaponDefinition
 	UFUNCTION(BlueprintCallable)
 	USoundBase* GetFireSound() const;
+	// Get Rack Sound From DA_WeaponDefinition
+	UFUNCTION(BlueprintCallable)
+	USoundBase* GetRackSound() const;
+	// Get Reload Sound From DA_WeaponDefinition
+	UFUNCTION(BlueprintCallable)
+	USoundBase* GetReloadSound() const;
 
 protected:
 	virtual void BeginPlay() override;

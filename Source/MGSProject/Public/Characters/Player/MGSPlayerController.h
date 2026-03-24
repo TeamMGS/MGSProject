@@ -43,6 +43,10 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Audio")
 	void ChangeBGM(class USoundCue* NewBGMCue);
+	
+	UFUNCTION(Exec)
+	void SetPlayerHp(float NewCurrentHp);
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void AcknowledgePossession(APawn* InPawn) override;

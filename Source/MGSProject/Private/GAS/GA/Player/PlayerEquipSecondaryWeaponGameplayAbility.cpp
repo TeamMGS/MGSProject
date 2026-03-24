@@ -10,8 +10,13 @@
 
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
+#include "Characters/Player/MGSPlayerController.h"
+#include "Characters/Player/MGSPlayerState.h"
+#include "Characters/Player/PlayerCharacter.h"
 #include "Components/Combat/PlayerCombatComponent.h"
 #include "GAS/MGSGameplayTags.h"
+#include "GAS/ASC/MGSAbilitySystemComponent.h"
+#include "Weapon/BaseGun.h"
 #include "Weapon/BaseWeapon.h"
 
 UPlayerEquipSecondaryWeaponGameplayAbility::UPlayerEquipSecondaryWeaponGameplayAbility()
@@ -93,6 +98,23 @@ void UPlayerEquipSecondaryWeaponGameplayAbility::ActivateAbility(const FGameplay
 	
 	EventTask->EventReceived.AddDynamic(this, &UPlayerEquipSecondaryWeaponGameplayAbility::OnEventReceived);
 	EventTask->ReadyForActivation();
+	
+	const ABaseGun* CueGun = Cast<ABaseGun>(TargetWeapon);
+	const APlayerCharacter* PlayerCharacter = ActorInfo ? Cast<APlayerCharacter>(ActorInfo->AvatarActor.Get()) : nullptr;
+	const AMGSPlayerController* PlayerController = PlayerCharacter ? PlayerCharacter->GetController<AMGSPlayerController>() : nullptr;
+	if (PlayerCharacter && PlayerController)
+	{
+		if (const AMGSPlayerState* PlayerState = PlayerController->GetPlayerState<AMGSPlayerState>())
+		{
+			if (UMGSAbilitySystemComponent* AbilitySystemComponent = PlayerState->GetMGSAbilitySystemComponent())
+			{
+				FGameplayCueParameters Parameters;
+				Parameters.Location = CueGun ? CueGun->GetActorLocation() : PlayerCharacter->GetActorLocation();
+				Parameters.SourceObject = CueGun;
+				AbilitySystemComponent->ExecuteGameplayCue(MGSGameplayTags::GameplayCue_Weapon_Rack, Parameters);
+			}
+		}
+	}
 }
 
 void UPlayerEquipSecondaryWeaponGameplayAbility::OnEventReceived(FGameplayEventData Payload)

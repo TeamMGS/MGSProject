@@ -13,6 +13,10 @@
 #include "Weapon/BaseGun.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
+#include "Characters/Player/MGSPlayerController.h"
+#include "Characters/Player/MGSPlayerState.h"
+#include "Characters/Player/PlayerCharacter.h"
+#include "GAS/ASC/MGSAbilitySystemComponent.h"
 
 UPlayerReloadGameplayAbility::UPlayerReloadGameplayAbility()
 {
@@ -92,6 +96,22 @@ void UPlayerReloadGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHan
 	// 태스크 활성화
 	PlayMontageTask->ReadyForActivation();
 	WaitEventTask->ReadyForActivation();
+	
+	const APlayerCharacter* PlayerCharacter = ActorInfo ? Cast<APlayerCharacter>(ActorInfo->AvatarActor.Get()) : nullptr;
+	const AMGSPlayerController* PlayerController = PlayerCharacter ? PlayerCharacter->GetController<AMGSPlayerController>() : nullptr;
+	if (PlayerCharacter && PlayerController)
+	{
+		if (const AMGSPlayerState* PlayerState = PlayerController->GetPlayerState<AMGSPlayerState>())
+		{
+			if (UMGSAbilitySystemComponent* AbilitySystemComponent = PlayerState->GetMGSAbilitySystemComponent())
+			{
+				FGameplayCueParameters Parameters;
+				Parameters.Location = EquippedGun->GetActorLocation();
+				Parameters.SourceObject = EquippedGun;
+				AbilitySystemComponent->ExecuteGameplayCue(MGSGameplayTags::GameplayCue_Weapon_Reload, Parameters);
+			}
+		}
+	}
 }
 
 void UPlayerReloadGameplayAbility::OnAmmoRefillEventReceived(FGameplayEventData Payload)

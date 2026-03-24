@@ -9,5 +9,4 @@ class MGSPROJECT_API UFireGameplayCue : public UGameplayCueNotify_Static
 {
 	GENERATED_BODY()
 	
-
 };
