@@ -22,7 +22,10 @@
 #include "GAS/AttributeSets/CharacterAttributeSet.h"
 #include "GAS/MGSGameplayTags.h"
 #include "InputActionValue.h"
+#include "Components/AudioComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "UI/MGSPlayerStatusWidget.h"
+#include "Sound/SoundCue.h"
 
 AMGSPlayerController::AMGSPlayerController()
 {
@@ -37,6 +40,26 @@ void AMGSPlayerController::ActivateEnemyAbility(const FString& AbilityTagString)
 void AMGSPlayerController::ActivateEnemyAbilityOn(const FString& EnemyName, const FString& AbilityTagString)
 {
 	ExecuteEnemyAbilityCommand(FindEnemyCharacterByName(EnemyName), AbilityTagString);
+}
+
+void AMGSPlayerController::ChangeBGM(USoundCue* NewBGMCue)
+{
+	// 기존에 재생 중인 BGM이 있는지 확인하고 정지
+	if (CurrentBGMComponent != nullptr && CurrentBGMComponent->IsPlaying())
+	{
+		CurrentBGMComponent->FadeOut(1.5f, 0.0f);
+	}
+
+	// 새로운 BGM이 전달되었다면 재생
+	if (NewBGMCue != nullptr)
+	{
+		CurrentBGMComponent = UGameplayStatics::SpawnSound2D(this, NewBGMCue);
+
+		if (CurrentBGMComponent != nullptr)
+		{
+			CurrentBGMComponent->FadeIn(0.5f, 1.0f);
+		}
+	}
 }
 
 void AMGSPlayerController::SetPlayerHp(float NewCurrentHp)
@@ -72,6 +95,8 @@ void AMGSPlayerController::BeginPlay()
 	
 	// IMC Setting
 	SetupInputMappingContext();
+	
+	ChangeBGM(BeginPlayBGM);
 	
 	// HUD 노출
 	if (PlayerHUDPresenter)
@@ -320,4 +345,12 @@ void AMGSPlayerController::ExecuteEnemyAbilityCommand(AEnemyCharacter* TargetEne
 		*TargetEnemy->GetName(),
 		*AbilityTag.ToString(),
 		bActivated ? TEXT("success") : TEXT("failed")));
+}
+
+void AMGSPlayerController::StopStartupSound()
+{
+	if (StartupAudioComponent && StartupAudioComponent->IsPlaying())
+	{
+		StartupAudioComponent->FadeOut(1.0f, 0.0f);
+	}
 }
