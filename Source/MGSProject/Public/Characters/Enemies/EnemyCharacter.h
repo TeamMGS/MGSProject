@@ -11,9 +11,9 @@
 #include "AbilitySystemInterface.h"
 #include "Characters/BaseCharacter.h"
 #include "CoreMinimal.h"
-#include "EnemyCharacter.generated.h"
 #include "GAS/AttributeSets/CharacterAttributeSet.h"
 #include "GameplayTagContainer.h"
+#include "EnemyCharacter.generated.h"
 
 
 class UPaperSpriteComponent;

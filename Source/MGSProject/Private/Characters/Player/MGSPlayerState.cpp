@@ -29,6 +29,19 @@ void AMGSPlayerState::InitASC(AActor* Avatar)
 	MGSAbilitySystemComponent->InitAbilityActorInfo(this, Avatar);
 }
 
+bool AMGSPlayerState::SetCurrentHpForDebug(float NewCurrentHp)
+{
+	if (!MGSAbilitySystemComponent || !CharacterAttributeSet)
+	{
+		return false;
+	}
+
+	const float MaxHp = FMath::Max(1.0f, CharacterAttributeSet->GetMaxHp());
+	const float ClampedHp = FMath::Clamp(NewCurrentHp, 0.0f, MaxHp);
+	MGSAbilitySystemComponent->SetNumericAttributeBase(UCharacterAttributeSet::GetCurrentHpAttribute(), ClampedHp);
+	return true;
+}
+
 UAbilitySystemComponent* AMGSPlayerState::GetAbilitySystemComponent() const
 {
 	return GetMGSAbilitySystemComponent();

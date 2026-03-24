@@ -9,9 +9,9 @@
 
 #include "AI/Core/AICoreAIController.h"
 #include "CoreMinimal.h"
-#include "EnemyAIController.generated.h"
 #include "Perception/AIPerceptionTypes.h"
 #include "TimerManager.h"
+#include "EnemyAIController.generated.h"
 
 
 class UStateTreeAIComponent;

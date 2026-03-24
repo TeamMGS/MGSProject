@@ -326,7 +326,7 @@ bool UEnemyFireGameplayAbility::SpawnProjectileShot(AEnemyCharacter* EnemyCharac
 	AttackPayload.DamageGameplayEffectClass = EquippedGun->GetDamageGameplayEffectClass();
 	AttackPayload.BaseDamage = FMath::Max(0.f, EquippedGun->GetBaseDamage());
 	SpawnedProjectile->SetAttackPayload(AttackPayload);
-	SpawnedProjectile->InitializeProjectile(MuzzleTraceDirection);
+	SpawnedProjectile->InitializeProjectile(EquippedGun->GetMuzzleLocation(), MuzzleTraceDirection);
 
 	if (bEnableFireTraceLog)
 	{

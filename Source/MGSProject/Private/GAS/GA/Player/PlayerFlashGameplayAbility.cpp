@@ -8,8 +8,11 @@
 
 #include "GAS/GA/Player/PlayerFlashGameplayAbility.h"
 
+#include "Characters/Player/MGSPlayerController.h"
+#include "Characters/Player/MGSPlayerState.h"
 #include "Characters/Player/PlayerCharacter.h"
 #include "GAS/MGSGameplayTags.h"
+#include "GAS/ASC/MGSAbilitySystemComponent.h"
 
 UPlayerFlashGameplayAbility::UPlayerFlashGameplayAbility()
 {
@@ -34,6 +37,14 @@ void UPlayerFlashGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHand
 	
 	APlayerCharacter* PlayerCharacter = GetPlayerCharacterFromActorInfo();
 	PlayerCharacter->OnFlash();
+	const AMGSPlayerController* PlayerController = PlayerCharacter->GetController<AMGSPlayerController>();
+	if (const AMGSPlayerState* PlayerState = PlayerController->GetPlayerState<AMGSPlayerState>())
+	{
+		FGameplayCueParameters Parameters;
+		Parameters.Location = PlayerCharacter->GetActorLocation();
+		Parameters.SourceObject = PlayerCharacter;
+		PlayerState->GetMGSAbilitySystemComponent()->ExecuteGameplayCue(MGSGameplayTags::GameplayCue_Player_Flash, Parameters);
+	}
 	
 	EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 }

@@ -10,6 +10,7 @@
 
 #include "Characters/Enemies/EnemyCharacter.h"
 #include "Characters/Player/PlayerCharacter.h"
+#include "Characters/Player/MGSPlayerState.h"
 #include "Components/Combat/PlayerCombatComponent.h"
 #include "Components/Input/MGSInputComponent.h"
 #include "Components/UI/PlayerHUDPresenterComponent.h"
@@ -18,6 +19,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "Engine/LocalPlayer.h"
 #include "GAS/ASC/MGSAbilitySystemComponent.h"
+#include "GAS/AttributeSets/CharacterAttributeSet.h"
 #include "GAS/MGSGameplayTags.h"
 #include "InputActionValue.h"
 #include "UI/MGSPlayerStatusWidget.h"
@@ -35,6 +37,31 @@ void AMGSPlayerController::ActivateEnemyAbility(const FString& AbilityTagString)
 void AMGSPlayerController::ActivateEnemyAbilityOn(const FString& EnemyName, const FString& AbilityTagString)
 {
 	ExecuteEnemyAbilityCommand(FindEnemyCharacterByName(EnemyName), AbilityTagString);
+}
+
+void AMGSPlayerController::SetPlayerHp(float NewCurrentHp)
+{
+	AMGSPlayerState* MGSPlayerState = GetPlayerState<AMGSPlayerState>();
+	if (!MGSPlayerState)
+	{
+		ClientMessage(TEXT("SetPlayerHp failed: player state not found."));
+		return;
+	}
+
+	if (!MGSPlayerState->SetCurrentHpForDebug(NewCurrentHp))
+	{
+		ClientMessage(TEXT("SetPlayerHp failed: CharacterAttributeSet or ASC not found."));
+		return;
+	}
+
+	const UCharacterAttributeSet* CharacterAttributeSet = MGSPlayerState->GetCharacterAttributeSet();
+	const float CurrentHp = CharacterAttributeSet ? CharacterAttributeSet->GetCurrentHp() : 0.0f;
+	const float MaxHp = CharacterAttributeSet ? CharacterAttributeSet->GetMaxHp() : 0.0f;
+	ClientMessage(FString::Printf(
+		TEXT("SetPlayerHp applied: HP=%.1f / %.1f (requested %.1f)"),
+		CurrentHp,
+		MaxHp,
+		NewCurrentHp));
 }
 
 void AMGSPlayerController::BeginPlay()
