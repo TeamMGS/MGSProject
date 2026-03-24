@@ -53,6 +53,10 @@ public:
   UFUNCTION(BlueprintCallable, Category = "AI|Detection")
   void SetDetectionToMax();
 
+  /** 교전 상태(의심치 최대 상태)의 잠금을 활성화/비활성화 합니다. */
+  UFUNCTION(BlueprintCallable, Category = "AI|Detection")
+  void SetDetectionLocked(bool bLocked);
+
 protected:
   virtual void OnPossess(APawn *InPawn) override;
   virtual void OnUnPossess() override;
@@ -174,13 +178,6 @@ private:
   UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "AI|Detection",
             meta = (AllowPrivateAccess = true))
   bool bSuspendDetectionDecrease = false;
-
-  UPROPERTY(EditDefaultsOnly, Category = "AI|Detection",
-            meta = (ClampMin = "0.0"))
-  float MaxCombatDuration = 10.0f;
-
-  UPROPERTY(VisibleInstanceOnly, Category = "AI|Detection")
-  float CurrentCombatTimer = 0.0f;
 
   TWeakObjectPtr<AActor> CurrentTargetActor;
 
