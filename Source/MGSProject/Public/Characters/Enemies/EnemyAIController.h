@@ -13,7 +13,6 @@
 #include "TimerManager.h"
 #include "EnemyAIController.generated.h"
 
-
 class UStateTreeAIComponent;
 class AActor;
 

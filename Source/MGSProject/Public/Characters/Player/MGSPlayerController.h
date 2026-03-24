@@ -18,6 +18,8 @@ class UDA_InputConfig;
 class UMGSPlayerStatusWidget;
 class UPlayerHUDPresenterComponent;
 class AEnemyCharacter;
+class USoundCue;
+class UAudioComponent;
 
 UCLASS()
 class MGSPROJECT_API AMGSPlayerController : public APlayerController
@@ -32,7 +34,16 @@ public:
 
 	UFUNCTION(Exec)
 	void ActivateEnemyAbilityOn(const FString& EnemyName, const FString& AbilityTagString);
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	USoundCue* BeginPlayBGM;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	USoundCue* ContainedBGM;
+	
+	UFUNCTION(BlueprintCallable, Category = "Audio")
+	void ChangeBGM(class USoundCue* NewBGMCue);
+	
 	UFUNCTION(Exec)
 	void SetPlayerHp(float NewCurrentHp);
 
@@ -82,4 +93,17 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "HUD", meta = (AllowPrivateAccess = true))
 	TSubclassOf<UMGSPlayerStatusWidget> PlayerStatusWidgetClass;
 	
+	// 재생 중인 사운드를 제어하기 위한 컴포넌트
+	UPROPERTY()
+	UAudioComponent* StartupAudioComponent;
+	
+	UPROPERTY()
+	UAudioComponent* CurrentBGMComponent;
+
+	// 사운드를 정지시킬 함수 (타이머에서 호출해야 하므로 UFUNCTION 필요)
+	UFUNCTION()
+	void StopStartupSound();
+
+	// 타이머 핸들
+	FTimerHandle SoundStopTimerHandle;
 };
