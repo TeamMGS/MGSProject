@@ -1,4 +1,4 @@
-﻿/*
+/*
  * 파일명 : EnemyCharacter.cpp
  * 생성자 : 장대한
  * 생성일 : 2026-03-02
@@ -147,6 +147,30 @@ float AEnemyCharacter::GetDamageMultiplierForHit(const FHitResult& Hit) const
 	}
 
 	return Super::GetDamageMultiplierForHit(Hit);
+}
+
+void AEnemyCharacter::GetActorEyesViewPoint(FVector& OutLocation, FRotator& OutRotation) const
+{
+	if (USkeletalMeshComponent* MeshComp = GetMesh())
+	{
+		// "head" 본의 위치를 중심으로 하고, 해당 본의 Y축을 시야의 정면(X축)으로 재구성하여 사용합니다.
+		if (MeshComp->DoesSocketExist(TEXT("head")))
+		{
+			OutLocation = MeshComp->GetSocketLocation(TEXT("head"));
+
+			FTransform HeadTransform = MeshComp->GetSocketTransform(TEXT("head"));
+			FVector HeadForwardAxis = HeadTransform.GetRotation().GetAxisY(); 
+			
+			OutRotation = HeadForwardAxis.Rotation();
+			
+			// 시야가 살짝 아래를 향한다면 여기서 Pitch(크기)를 양수로 더해 위로 조정할 수 있습니다.
+			// 수치를 바꿔가며 알맞은 각도로 조절하세요 (예: 15.0f 도)
+			OutRotation.Pitch += 15.0f; 
+			return;
+		}
+	}
+
+	Super::GetActorEyesViewPoint(OutLocation, OutRotation);
 }
 
 void AEnemyCharacter::BeginPlay()

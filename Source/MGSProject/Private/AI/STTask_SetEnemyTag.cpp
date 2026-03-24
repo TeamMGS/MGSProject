@@ -9,6 +9,7 @@
 
 #include "AIController.h"
 #include "Characters/Enemies/EnemyCharacter.h"
+#include "Engine/Engine.h"
 #include "GAS/ASC/MGSAbilitySystemComponent.h"
 #include "StateTreeExecutionContext.h"
 
@@ -39,13 +40,30 @@ EStateTreeRunStatus USTTask_SetEnemyTag::EnterState(FStateTreeExecutionContext& 
 		return EStateTreeRunStatus::Failed;
 	}
 
-	UMGSAbilitySystemComponent* ASC = EnemyCharacter->GetMGSAbilitySystemComponent();
-	if (!ASC)
+	const FString TagString = TargetStateTag.ToString();
+	if (TagString.StartsWith(TEXT("Ability")))
 	{
-		return EStateTreeRunStatus::Failed;
+		// 어빌리티 실행 (성공 여부에 관계없이 State Tree를 멈추지 않도록 무조건 Succeeded 반환)
+		bool bSuccess = EnemyCharacter->ActivateEnemyAbilityByTag(TargetStateTag);
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 3.0f, bSuccess ? FColor::Green : FColor::Red, FString::Printf(TEXT("STTask_SetEnemyTag: %s -> %s"), *TagString, bSuccess ? TEXT("SUCCESS") : TEXT("FAILED")));
+		}
+	}
+	else if (TagString.StartsWith(TEXT("State")))
+	{
+		// C++ State 설정 함수 호출
+		EnemyCharacter->SetEnemyStateTagFromAI(TargetStateTag);
+	}
+	else
+	{
+		// 기타 태그는 기존 방식대로 유지
+		if (UMGSAbilitySystemComponent* ASC = EnemyCharacter->GetMGSAbilitySystemComponent())
+		{
+			ASC->AddLooseGameplayTag(TargetStateTag);
+		}
 	}
 
-	ASC->AddLooseGameplayTag(TargetStateTag);
 	return EStateTreeRunStatus::Succeeded;
 }
 
