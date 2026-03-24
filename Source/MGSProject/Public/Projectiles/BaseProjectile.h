@@ -14,6 +14,7 @@
 #include "BaseProjectile.generated.h"
 
 class UNiagaraComponent;
+class UNiagaraSystem;
 struct FHitResult;
 struct FTimerHandle;
 class APawn;
@@ -21,8 +22,36 @@ class UDA_ProjectileDefinition;
 class UMGSProjectilePoolWorldSubsystem;
 class UPrimitiveComponent;
 class UProjectileMovementComponent;
+class USceneComponent;
 class USphereComponent;
 class UStaticMeshComponent;
+
+USTRUCT()
+struct FManagedProjectileNiagaraEntry
+{
+	GENERATED_BODY()
+
+	UPROPERTY(Transient)
+	TWeakObjectPtr<UNiagaraComponent> Component;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UNiagaraSystem> SystemAsset;
+
+	UPROPERTY(Transient)
+	TWeakObjectPtr<USceneComponent> AttachParent;
+
+	UPROPERTY(Transient)
+	FName AttachPointName = NAME_None;
+
+	UPROPERTY(Transient)
+	FVector RelativeLocation = FVector::ZeroVector;
+
+	UPROPERTY(Transient)
+	FRotator RelativeRotation = FRotator::ZeroRotator;
+
+	UPROPERTY(Transient)
+	FVector RelativeScale = FVector::OneVector;
+};
 
 UCLASS()
 class MGSPROJECT_API ABaseProjectile : public AActor
@@ -45,6 +74,12 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Projectile|Data")
 	const UDA_ProjectileDefinition* GetProjectileDefinition() const { return ProjectileDefinition; }
 
+	UFUNCTION(BlueprintCallable, Category = "Projectile|FX")
+	void RegisterManagedNiagaraComponent(UNiagaraComponent* NiagaraComponent);
+
+	UFUNCTION(BlueprintCallable, Category = "Projectile|FX")
+	void ClearManagedNiagaraComponents();
+
 	// Setter
 	// Pooling world subsystem 적재
 	void SetProjectilePoolSubsystem(UMGSProjectilePoolWorldSubsystem* InProjectilePoolSubsystem);
@@ -59,7 +94,7 @@ public:
 	
 	// 프로젝타일 초기 설정 (DA 적용, Velocity 및 각도 설정)
 	UFUNCTION(BlueprintCallable, Category = "Projectile")
-	virtual void InitializeProjectile(const FVector& ShootDirection);
+	virtual void InitializeProjectile(const FVector& ShootLocation, const FVector& ShootDirection);
 	
 protected:
 	virtual void BeginPlay() override;
@@ -72,6 +107,10 @@ protected:
 	void ProcessProjectileImpact(AActor* HitActor, const FHitResult& Hit);
 	// 데미지 적용
 	virtual void ApplyHitDamage(AActor* DirectHitActor, const FHitResult& Hit);
+	// BP에 붙은 Niagara trail을 충돌/풀링 시 정리
+	void DeactivateProjectileNiagaraComponents();
+	// 풀에서 다시 꺼낼 때 Niagara 상태 초기화
+	void ResetProjectileNiagaraComponents();
 	// 
 	void ReleaseToPoolOrDestroy();
 	// 
@@ -123,5 +162,9 @@ protected:
 
 	// Life span timer
 	FTimerHandle ProjectileLifeSpanTimerHandle;
+
+	// BP에서 SpawnSystemAttached로 만든 Niagara trail을 명시적으로 관리
+	UPROPERTY(Transient)
+	TArray<FManagedProjectileNiagaraEntry> ManagedNiagaraComponents;
 	
 };

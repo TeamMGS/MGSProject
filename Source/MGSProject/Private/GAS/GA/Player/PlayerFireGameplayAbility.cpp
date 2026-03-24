@@ -67,6 +67,17 @@ bool UPlayerFireGameplayAbility::CanActivateAbility(const FGameplayAbilitySpecHa
 
 	// 장착한 총기가 발사 가능한 상태인지 확인
 	const bool bCanFire = EquippedGun->CanFire();
+	if (!bCanFire)
+	{
+		const AMGSPlayerController* PlayerController = PlayerCharacter->GetController<AMGSPlayerController>();
+		if (const AMGSPlayerState* PlayerState = PlayerController->GetPlayerState<AMGSPlayerState>())
+		{
+			FGameplayCueParameters Parameters;
+			Parameters.Location = EquippedGun->GetMuzzleLocation();
+			Parameters.SourceObject = EquippedGun;
+			PlayerState->GetMGSAbilitySystemComponent()->ExecuteGameplayCue(MGSGameplayTags::GameplayCue_Weapon_Empty, Parameters);
+		}
+	}
 	
 	return bCanFire;
 }
@@ -262,7 +273,7 @@ bool UPlayerFireGameplayAbility::FireSingleShot()
 		WeaponAttributeSet->SetCurrentSpreadRadius(UpdatedEffectiveSpreadRadius);
 	}
 
-	if (AMGSPlayerState* PlayerState = PlayerController->GetPlayerState<AMGSPlayerState>())
+	if (const AMGSPlayerState* PlayerState = PlayerController->GetPlayerState<AMGSPlayerState>())
 	{
 		FGameplayCueParameters Parameters;
 		Parameters.Location = EquippedGun->GetMuzzleLocation();
@@ -540,7 +551,7 @@ bool UPlayerFireGameplayAbility::SpawnProjectileShot(APlayerCharacter* PlayerCha
 	// Projectile에 Payload 정보 저장
 	SpawnedProjectile->SetAttackPayload(AttackPayload);
 	// Projectile 초기화 (속도, 방향, 수명 타이머 등)
-	SpawnedProjectile->InitializeProjectile(MuzzleTraceDirection);
+	SpawnedProjectile->InitializeProjectile(EquippedGun->GetMuzzleLocation(), MuzzleTraceDirection);
 
 	return true;
 }

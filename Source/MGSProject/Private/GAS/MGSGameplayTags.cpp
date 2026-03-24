@@ -123,6 +123,10 @@ namespace MGSGameplayTags
 	
 	// GE
 	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Weapon_Fire, "GameplayCue.Weapon.Fire")
+	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Weapon_Empty, "GameplayCue.Weapon.Empty")
+	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Weapon_Rack, "GameplayCue.Weapon.Rack")
+	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Weapon_Reload, "GameplayCue.Weapon.Reload")
+	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Player_Flash, "GameplayCue.Player.Flash")
 	
 	// temp
 	UE_DEFINE_GAMEPLAY_TAG(Foley_Event_Land, "Foley.Event.Land")
