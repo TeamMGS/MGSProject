@@ -73,7 +73,7 @@ private:
 
 	// Player HUD component
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "HUD", meta = (AllowPrivateAccess = true))
-	TObjectPtr<UPlayerHUDPresenterComponent> PlayerHUDPresenterComponent;
+	TObjectPtr<UPlayerHUDPresenterComponent> PlayerHUDPresenter;
 
 	// Player HUD widget class
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "HUD", meta = (AllowPrivateAccess = true))

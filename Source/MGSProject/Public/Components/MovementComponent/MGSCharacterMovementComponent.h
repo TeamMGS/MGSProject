@@ -54,10 +54,10 @@ protected:
 	FVector WalkSpeeds = FVector(325.f, 310.f, 300.f);
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MGS|Movement")
-	FVector RunSpeeds = FVector(525.f, 460.f, 500.f);
+	FVector RunSpeeds = FVector(525.f, 460.f, 400.f);
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MGS|Movement")
-	FVector SprintSpeeds = FVector(700.f, 700.f, 700.f);
+	FVector SprintSpeeds = FVector(700.f, 550.f, 400.f);
 	
 	// 앉은 상태의 방향별 속도 설정 (X: 정면, Y: 측면, Z: 후면)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MGS|Movement")
