@@ -392,6 +392,16 @@ USoundBase* ABaseGun::GetFireSound() const
 	return WeaponDefinition->FireSound;
 }
 
+USoundBase* ABaseGun::GetRackSound() const
+{
+	return WeaponDefinition->RackSound;
+}
+
+USoundBase* ABaseGun::GetReloadSound() const
+{
+	return WeaponDefinition->ReloadSound;
+}
+
 const UWeaponAttributeSet* ABaseGun::GetWeaponAttributeSet() const
 {
 	const ABaseCharacter* OwnerCharacter = Cast<ABaseCharacter>(GetOwner());

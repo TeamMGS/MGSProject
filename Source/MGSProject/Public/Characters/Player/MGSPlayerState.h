@@ -27,6 +27,7 @@ public:
 	
 	// ASC 초기화
 	void InitASC(AActor* Avatar);
+	bool SetCurrentHpForDebug(float NewCurrentHp);
 	
 	// Getter
 	FORCEINLINE UMGSAbilitySystemComponent* GetMGSAbilitySystemComponent() const { return MGSAbilitySystemComponent; }

@@ -15,6 +15,7 @@
 #include "GAS/Statics/MGSDamageStatics.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/ProjectileMovementComponent.h"
+#include "NiagaraFunctionLibrary.h"
 #include "Subsystems/ProjectilePoolWorldSubsystem.h"
 #include "TimerManager.h"
 #include "UObject/ConstructorHelpers.h"
@@ -134,6 +135,39 @@ void ABaseProjectile::SetAttackPayload(const FMGSProjectileAttackPayload& InAtta
 	AttackPayload = InAttackPayload;
 }
 
+void ABaseProjectile::RegisterManagedNiagaraComponent(UNiagaraComponent* NiagaraComponent)
+{
+	if (!IsValid(NiagaraComponent))
+	{
+		return;
+	}
+
+	FManagedProjectileNiagaraEntry Entry;
+	Entry.Component = NiagaraComponent;
+	Entry.SystemAsset = NiagaraComponent->GetAsset();
+	Entry.AttachParent = NiagaraComponent->GetAttachParent();
+	Entry.AttachPointName = NiagaraComponent->GetAttachSocketName();
+	Entry.RelativeLocation = NiagaraComponent->GetRelativeLocation();
+	Entry.RelativeRotation = NiagaraComponent->GetRelativeRotation();
+	Entry.RelativeScale = NiagaraComponent->GetRelativeScale3D();
+
+	for (FManagedProjectileNiagaraEntry& ExistingEntry : ManagedNiagaraComponents)
+	{
+		if (ExistingEntry.Component == NiagaraComponent)
+		{
+			ExistingEntry = Entry;
+			return;
+		}
+	}
+
+	ManagedNiagaraComponents.Add(MoveTemp(Entry));
+}
+
+void ABaseProjectile::ClearManagedNiagaraComponents()
+{
+	ManagedNiagaraComponents.Reset();
+}
+
 void ABaseProjectile::ActivateFromPool(const FTransform& SpawnTransform, AActor* NewOwner, APawn* NewInstigator)
 {
 	// Owner, Instigator, 위치 설정
@@ -201,6 +235,9 @@ void ABaseProjectile::DeactivateToPool()
 		ProjectileMovementComponent->Deactivate();
 	}
 
+	// 풀로 돌아갈 때 trail을 즉시 끊어 다음 발사 transform으로 이어지지 않게 함
+	DeactivateProjectileNiagaraComponents();
+
 	// 충돌 비활성화 및 무기 목록 제거
 	if (CollisionComponent)
 	{
@@ -215,7 +252,7 @@ void ABaseProjectile::DeactivateToPool()
 	SetInstigator(nullptr);
 }
 
-void ABaseProjectile::InitializeProjectile(const FVector& ShootDirection)
+void ABaseProjectile::InitializeProjectile(const FVector& ShootLocation, const FVector& ShootDirection)
 {
 	if (!bHasAppliedDefinition)
 	{
@@ -241,8 +278,12 @@ void ABaseProjectile::InitializeProjectile(const FVector& ShootDirection)
 	// Velocity 설정
 	ProjectileMovementComponent->Velocity = SafeDirection * ProjectileMovementComponent->InitialSpeed;
 	ProjectileMovementComponent->UpdateComponentVelocity();
+	// Location 설정
+	SetActorLocation(ShootLocation);
 	// Rotation 설정
 	SetActorRotation(SafeDirection.Rotation());
+	// 발사 직전 위치/회전 기준으로 trail을 새로 시작
+	ResetProjectileNiagaraComponents();
 	// 총알 활동 플래그 참으로 설정
 	bIsActiveInPool = true;
 	// 수명 타이머 시작
@@ -293,6 +334,8 @@ void ABaseProjectile::ProcessProjectileImpact(AActor* HitActor, const FHitResult
 
 	if (bShouldDestroyOnHit)
 	{
+		// 충돌 지점에서 trail을 먼저 끊고 풀 반환/파괴
+		DeactivateProjectileNiagaraComponents();
 		ReleaseToPoolOrDestroy();
 	}
 }
@@ -307,6 +350,96 @@ void ABaseProjectile::ApplyHitDamage(AActor* DirectHitActor, const FHitResult& H
 
 	// 실제 데미지 치러
 	FMGSDamageStatics::ApplyProjectileDamage(AttackPayload, this, GetInstigator(), HitActor, Hit);
+}
+
+void ABaseProjectile::DeactivateProjectileNiagaraComponents()
+{
+	TInlineComponentArray<UNiagaraComponent*> NiagaraComponents(this);
+	for (UNiagaraComponent* NiagaraComponent : NiagaraComponents)
+	{
+		if (!IsValid(NiagaraComponent))
+		{
+			continue;
+		}
+
+		NiagaraComponent->DeactivateImmediate();
+		NiagaraComponent->SetRenderingEnabled(false);
+	}
+
+	for (auto It = ManagedNiagaraComponents.CreateIterator(); It; ++It)
+	{
+		FManagedProjectileNiagaraEntry& Entry = *It;
+		UNiagaraComponent* NiagaraComponent = Entry.Component.Get();
+		if (!IsValid(NiagaraComponent))
+		{
+			continue;
+		}
+
+		NiagaraComponent->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+		NiagaraComponent->DeactivateImmediate();
+		NiagaraComponent->SetRenderingEnabled(false);
+		NiagaraComponent->DestroyComponent();
+		Entry.Component.Reset();
+	}
+}
+
+void ABaseProjectile::ResetProjectileNiagaraComponents()
+{
+	TInlineComponentArray<UNiagaraComponent*> NiagaraComponents(this);
+	for (UNiagaraComponent* NiagaraComponent : NiagaraComponents)
+	{
+		if (!IsValid(NiagaraComponent))
+		{
+			continue;
+		}
+
+		NiagaraComponent->SetRenderingEnabled(true);
+		NiagaraComponent->ReinitializeSystem();
+		NiagaraComponent->Activate(true);
+	}
+
+	for (auto It = ManagedNiagaraComponents.CreateIterator(); It; ++It)
+	{
+		FManagedProjectileNiagaraEntry& Entry = *It;
+		UNiagaraComponent* NiagaraComponent = Entry.Component.Get();
+		if (IsValid(NiagaraComponent))
+		{
+			NiagaraComponent->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+			NiagaraComponent->DeactivateImmediate();
+			NiagaraComponent->DestroyComponent();
+			Entry.Component.Reset();
+			NiagaraComponent = nullptr;
+		}
+
+		if (!Entry.SystemAsset || !Entry.AttachParent.IsValid())
+		{
+			It.RemoveCurrent();
+			continue;
+		}
+
+		NiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+			Entry.SystemAsset,
+			Entry.AttachParent.Get(),
+			Entry.AttachPointName,
+			Entry.RelativeLocation,
+			Entry.RelativeRotation,
+			Entry.RelativeScale,
+			EAttachLocation::KeepRelativeOffset,
+			false,
+			ENCPoolMethod::None,
+			true,
+			false);
+		Entry.Component = NiagaraComponent;
+
+		if (!IsValid(NiagaraComponent))
+		{
+			continue;
+		}
+
+		NiagaraComponent->SetRenderingEnabled(true);
+		NiagaraComponent->ReinitializeSystem();
+		NiagaraComponent->Activate(true);
+	}
 }
 
 void ABaseProjectile::StartProjectileLifeSpanTimer()

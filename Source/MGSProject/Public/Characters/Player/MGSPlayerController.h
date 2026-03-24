@@ -33,6 +33,9 @@ public:
 	UFUNCTION(Exec)
 	void ActivateEnemyAbilityOn(const FString& EnemyName, const FString& AbilityTagString);
 
+	UFUNCTION(Exec)
+	void SetPlayerHp(float NewCurrentHp);
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void AcknowledgePossession(APawn* InPawn) override;
