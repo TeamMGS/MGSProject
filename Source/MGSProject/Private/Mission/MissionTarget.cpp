@@ -3,6 +3,7 @@
  */
 #include "Mission/MissionTarget.h"
 
+#include "MGSEnumType.h"
 #include "Kismet/GameplayStatics.h"
 #include "Mission/ExtractionPoint.h"
 #include "Components/SphereComponent.h"
@@ -11,6 +12,7 @@
 #include "Characters/Player/PlayerCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "Characters/Player/MGSPlayerController.h"
+#include "Components/UI/PlayerHUDPresenterComponent.h"
 #include "Sound/SoundCue.h"
 
 AMissionTarget::AMissionTarget()
@@ -162,6 +164,11 @@ void AMissionTarget::OnInteractionSucceeded(AActor* Interactor)
 		// 4. 플레이어 컨트롤러에 만들어둔 ChangeBGM 함수 호출!
 		// (주의: 탈출지 헤더(.h)에 재생할 BGM 변수(ExtractionBGM 등)를 미리 선언하고 에디터에서 할당해둬야 합니다)
 		MyPC->ChangeBGM(MyPC->ContainedBGM); 
+		
+		if (UPlayerHUDPresenterComponent* HUDPresenter = MyPC->FindComponentByClass<UPlayerHUDPresenterComponent>())
+		{
+			HUDPresenter->PlayNarration(ENarrationSituation::ExtractionReady);
+		}
 	}
 	
 	Destroy();

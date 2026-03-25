@@ -10,6 +10,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "MGSEnumType.h"
 #include "MGSPlayerController.generated.h"
 
 struct FGameplayTag;
@@ -46,6 +47,9 @@ public:
 	
 	UFUNCTION(Exec)
 	void SetPlayerHp(float NewCurrentHp);
+	
+	UFUNCTION()
+	void HandleNarrationFinished(ENarrationSituation FinishedSituation);
 
 protected:
 	virtual void BeginPlay() override;

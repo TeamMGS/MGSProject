@@ -203,30 +203,21 @@ void UPlayerHUDPresenterComponent::PlayNarration(ENarrationSituation Situation)
 	}
 
 	const FNarrationInfo& Info = NarrationConfig->NarrationMap[Situation];
+	if (Info.NarrationSteps.Num() == 0) return;
+	
+	// 1. 진행 데이터 초기화
+	CurrentNarrationSteps = Info.NarrationSteps;
+	CurrentStepIndex = 0;
+	CurrentSituation = Situation;
 
-	// 나레이션 위젯 생성
-	UUserWidget* NarrationWidget = CreateWidget<UUserWidget>(GetWorld(), NarrationWidgetClass);
-	if (NarrationWidget)
+	// 2. 사운드 재생 (처음 한 번만)
+	if (Info.NarrationSound)
 	{
-		// 인터페이스 확인 로그
-		if (NarrationWidget->GetClass()->ImplementsInterface(UMGSNarrationInterface::StaticClass()))
-		{
-			IMGSNarrationInterface::Execute_UpdateNarrationText(NarrationWidget, Info.NarrationText);
-		}
-
-		PlayerStatusWidget->SetNarrationContent(NarrationWidget);
-
-		if (Info.NarrationSound)
-		{
-			UGameplayStatics::PlaySound2D(this, Info.NarrationSound);
-		}
-
-		// 타이머 설정 로그
-		GetWorld()->GetTimerManager().ClearTimer(NarrationTimerHandle);
-		GetWorld()->GetTimerManager().SetTimer(NarrationTimerHandle, this,
-		                                       &UPlayerHUDPresenterComponent::ClearNarrationSlot, Info.DisplayDuration,
-		                                       false);
+		UGameplayStatics::PlaySound2D(this, Info.NarrationSound);
 	}
+
+	// 3. 첫 번째 단계 시작
+	PlayNextNarrationStep();
 }
 
 void UPlayerHUDPresenterComponent::PushInitialHUDValues() const
@@ -425,5 +416,39 @@ void UPlayerHUDPresenterComponent::ClearNarrationSlot()
 	{
 		// 슬롯을 비움
 		PlayerStatusWidget->SetNarrationContent(nullptr);
+	}
+}
+
+void UPlayerHUDPresenterComponent::PlayNextNarrationStep()
+{// 더 이상 표시할 대사가 없는 경우
+	if (CurrentStepIndex >= CurrentNarrationSteps.Num())
+	{
+		ClearNarrationSlot();
+		// 대사가 모두 끝났으므로 알림을 보냄!
+		if (OnNarrationFinished.IsBound())
+		{
+			OnNarrationFinished.Broadcast(CurrentSituation);
+		}
+		return;
+	}
+
+	const FNarrationStepInfo& CurrentStep = CurrentNarrationSteps[CurrentStepIndex];
+
+	// 나레이션 위젯 생성 및 텍스트 설정
+	UUserWidget* NarrationWidget = CreateWidget<UUserWidget>(GetWorld(), NarrationWidgetClass);
+	if (NarrationWidget)
+	{
+		if (NarrationWidget->GetClass()->ImplementsInterface(UMGSNarrationInterface::StaticClass()))
+		{
+			IMGSNarrationInterface::Execute_UpdateNarrationText(NarrationWidget, CurrentStep.StepText);
+		}
+
+		PlayerStatusWidget->SetNarrationContent(NarrationWidget);
+
+		// 다음 단계로 넘어가기 위한 타이머 설정
+		CurrentStepIndex++;
+		GetWorld()->GetTimerManager().ClearTimer(NarrationTimerHandle);
+		GetWorld()->GetTimerManager().SetTimer(NarrationTimerHandle, this,
+			&UPlayerHUDPresenterComponent::PlayNextNarrationStep, CurrentStep.StepDuration, false);
 	}
 }

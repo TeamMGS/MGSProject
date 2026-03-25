@@ -87,6 +87,22 @@ void AMGSPlayerController::SetPlayerHp(float NewCurrentHp)
 		NewCurrentHp));
 }
 
+void AMGSPlayerController::HandleNarrationFinished(ENarrationSituation FinishedSituation)
+{
+	// GameStart가 끝났다면 MissionInfo를 바로 이어서 재생
+	if (FinishedSituation == ENarrationSituation::GameStart)
+	{
+		FTimerHandle TransitionTimer;
+		GetWorldTimerManager().SetTimer(TransitionTimer, [this]()
+		{
+			if (PlayerHUDPresenter)
+			{
+				PlayerHUDPresenter->PlayNarration(ENarrationSituation::MissionInfo);
+			}
+		}, 1.5f, false); // 1.5초 대기 
+	}
+}
+
 void AMGSPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
@@ -107,6 +123,7 @@ void AMGSPlayerController::BeginPlay()
 	
 	if (PlayerHUDPresenter)
 	{
+		PlayerHUDPresenter->OnNarrationFinished.AddDynamic(this, &ThisClass::HandleNarrationFinished);
 		// 2초 뒤에 테스트 나레이션 실행 (HUD가 완전히 로드된 후 안전하게 보기 위함)
 		FTimerHandle TestTimer;
 		GetWorldTimerManager().SetTimer(TestTimer, [this]()
