@@ -12,6 +12,7 @@
 #include "Characters/Player/MGSPlayerState.h"
 #include "Characters/Player/PlayerCharacter.h"
 #include "Kismet/GameplayStatics.h"
+#include "Mission/MissionTarget.h"
 #include "UI/MapCaptureActor.h"
 
 AMGSGameMode::AMGSGameMode()
@@ -27,11 +28,19 @@ void AMGSGameMode::BeginPlay()
 	
 	// Set MapCapture from the current level
 	MapCaptureActor = Cast<AMapCaptureActor>(UGameplayStatics::GetActorOfClass(this, AMapCaptureActor::StaticClass()));
+	InitLevelTargetCount();
+}
+
+void AMGSGameMode::InitLevelTargetCount()
+{
+	TArray<AActor*> Targets;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AMissionTarget::StaticClass(), Targets);
+	LevelTargetCount = Targets.Num();
 }
 
 void AMGSGameMode::MissionComplete() const
 {
-	const AMGSPlayerController* PlayerController = Cast<AMGSPlayerController>(PlayerControllerClass);
+	const AMGSPlayerController* PlayerController = Cast<AMGSPlayerController>(GetWorld()->GetFirstPlayerController());
 	if (!PlayerController)
 	{
 		return;

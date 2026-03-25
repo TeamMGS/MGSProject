@@ -14,6 +14,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
+#include "Components/TextBlock.h"
 #include "UI/MapCaptureActor.h"
 
 void UMGSPlayerStatusWidget::NativeDestruct()
@@ -167,8 +168,10 @@ void UMGSPlayerStatusWidget::SetNarrationContent(UUserWidget* InContent)
 	}
 }
 
-void UMGSPlayerStatusWidget::ShowGameOver(const FString& Text)
+void UMGSPlayerStatusWidget::ShowGameOver(const FString& Text) const
 {
+	GameOverTextBlock->SetText(FText::FromString(Text));
+	GameOverSizeBox->SetVisibility(ESlateVisibility::Visible);
 }
 
 void UMGSPlayerStatusWidget::StartMapMarkerRefresh()
