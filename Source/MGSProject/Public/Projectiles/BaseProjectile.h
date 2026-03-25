@@ -23,6 +23,7 @@ class UMGSProjectilePoolWorldSubsystem;
 class UPrimitiveComponent;
 class UProjectileMovementComponent;
 class USceneComponent;
+class USoundBase;
 class USphereComponent;
 class UStaticMeshComponent;
 
@@ -107,6 +108,8 @@ protected:
 	void ProcessProjectileImpact(AActor* HitActor, const FHitResult& Hit);
 	// 데미지 적용
 	virtual void ApplyHitDamage(AActor* DirectHitActor, const FHitResult& Hit);
+	// 플레이어/적 명중 시 사운드 재생
+	void PlayCharacterHitSound(AActor* HitActor, const FHitResult& Hit) const;
 	// BP에 붙은 Niagara trail을 충돌/풀링 시 정리
 	void DeactivateProjectileNiagaraComponents();
 	// 풀에서 다시 꺼낼 때 Niagara 상태 초기화

@@ -14,6 +14,7 @@
 
 class UEnemyCombatComponent;
 class AEnemyCharacter;
+struct FGameplayTag;
 
 UCLASS()
 class MGSPROJECT_API UEnemyGameplayAbility : public UBaseGameplayAbility
@@ -28,6 +29,9 @@ public:
 	// ActorInfo로 적 컴뱃 컴포넌트 가져오기
 	UFUNCTION(BlueprintPure, Category = "Ability")
 	UEnemyCombatComponent* GetEnemyCombatComponentFromActorInfo();
+
+protected:
+	void ExecuteEnemyGameplayCue(const FGameplayTag& CueTag, const FVector& CueLocation, UObject* SourceObject = nullptr);
 	
 private:
 	TWeakObjectPtr<AEnemyCharacter> CachedEnemyCharacter; // 적 캐릭터 캐싱

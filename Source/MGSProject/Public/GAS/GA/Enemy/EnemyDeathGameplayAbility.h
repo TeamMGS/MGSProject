@@ -13,6 +13,7 @@
 #include "EnemyDeathGameplayAbility.generated.h"
 
 class UAnimMontage;
+class USoundBase;
 
 UCLASS()
 class MGSPROJECT_API UEnemyDeathGameplayAbility : public UEnemyGameplayAbility
@@ -35,4 +36,7 @@ protected:
 	// 에디터에서 설정할 죽음 몽타쥬 
 	UPROPERTY(EditDefaultsOnly, Category = "Death")
 	TObjectPtr<UAnimMontage> DeathMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Death")
+	TObjectPtr<USoundBase> DeathSound;
 };

@@ -12,9 +12,9 @@
 #include "Components/Combat/EnemyCombatComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/SphereComponent.h"
-#include "DrawDebugHelpers.h"
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
+#include "GAS/ASC/MGSAbilitySystemComponent.h"
 #include "GAS/AttributeSets/WeaponAttributeSet.h"
 #include "GAS/MGSGameplayTags.h"
 #include "MGSStructType.h"
@@ -61,6 +61,17 @@ bool UEnemyFireGameplayAbility::CanActivateAbility(const FGameplayAbilitySpecHan
 			EquippedGun->GetCurrentMagazineAmmo(),
 			EquippedGun->GetMaxMagazineAmmo(),
 			EquippedGun->GetCarriedAmmo());
+	}
+
+	if (!bCanFire)
+	{
+		if (UMGSAbilitySystemComponent* AbilitySystemComponent = EnemyCharacter ? EnemyCharacter->GetMGSAbilitySystemComponent() : nullptr)
+		{
+			FGameplayCueParameters Parameters;
+			Parameters.Location = EquippedGun->GetMuzzleLocation();
+			Parameters.SourceObject = EquippedGun;
+			AbilitySystemComponent->ExecuteGameplayCue(MGSGameplayTags::GameplayCue_Weapon_Empty, Parameters);
+		}
 	}
 
 	return bCanFire;
@@ -186,6 +197,8 @@ bool UEnemyFireGameplayAbility::FireSingleShot(AEnemyCharacter* EnemyCharacter, 
 			CurrentSpreadRadius);
 	}
 
+	ExecuteEnemyGameplayCue(MGSGameplayTags::GameplayCue_Weapon_Fire, EquippedGun->GetMuzzleLocation(), EquippedGun);
+
 	return true;
 }
 
@@ -269,12 +282,6 @@ bool UEnemyFireGameplayAbility::SpawnProjectileShot(AEnemyCharacter* EnemyCharac
 
 	constexpr float ProjectileSpawnForwardOffset = 20.f;
 	const FVector ProjectileSpawnLocation = MuzzleTraceStart + (MuzzleTraceDirection * ProjectileSpawnForwardOffset);
-
-	if (bEnableFireTraceDebug)
-	{
-		const FVector DebugEnd = MuzzleTraceStart + (MuzzleTraceDirection * AimReferenceDistance);
-		DrawDebugLine(World, MuzzleTraceStart, DebugEnd, FColor::Red, false, DebugTraceDuration, 0, 1.2f);
-	}
 
 	AActor* DamageCauser = EnemyCharacter;
 	APawn* InstigatorPawn = EnemyCharacter;

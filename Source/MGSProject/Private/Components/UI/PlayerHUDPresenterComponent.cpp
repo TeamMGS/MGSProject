@@ -20,6 +20,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Interfaces/MGSNarrationInterface.h"
 #include "DataAssets/DA_NarrationConfig.h"
+#include "UI/MapCaptureActor.h"
 
 UPlayerHUDPresenterComponent::UPlayerHUDPresenterComponent()
 {
@@ -138,6 +139,7 @@ void UPlayerHUDPresenterComponent::CreatePlayerStatusWidget()
 	}
 
 	PlayerStatusWidget->AddToViewport(100);
+	PlayerStatusWidget->SetMapCaptureActor(Cast<AMapCaptureActor>(UGameplayStatics::GetActorOfClass(GetWorld(), AMapCaptureActor::StaticClass())));
 	UE_LOG(LogTemp, Warning, TEXT("HUD Debug: Widget Successfully Added to Viewport"));
 }
 
@@ -218,6 +220,23 @@ void UPlayerHUDPresenterComponent::PlayNarration(ENarrationSituation Situation)
 
 	// 3. 첫 번째 단계 시작
 	PlayNextNarrationStep();
+}
+
+void UPlayerHUDPresenterComponent::ShowGameOver(const bool bGameClear) const
+{
+	if (!PlayerStatusWidget)
+	{
+		return;
+	}
+	
+	if (bGameClear)
+	{
+		PlayerStatusWidget->ShowGameOver(TEXT("Mission Complete!"));
+	}
+	else
+	{
+		PlayerStatusWidget->ShowGameOver(TEXT("Mission Failed..."));
+	}
 }
 
 void UPlayerHUDPresenterComponent::PushInitialHUDValues() const

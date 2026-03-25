@@ -51,6 +51,10 @@ public:
 	// 외부(PlayerController 등)에서 이 델리게이트에 함수를 묶을 수 있습니다.
 	UPROPERTY(BlueprintAssignable, Category = "Narration")
 	FOnNarrationFinished OnNarrationFinished;
+	// Show the game over UI
+	UFUNCTION(BlueprintCallable, Category = "HUD")
+	void ShowGameOver(const bool bGameClear) const;
+	
 private:
 	using FAttributeChangedHandler = void (UPlayerHUDPresenterComponent::*)(const FOnAttributeChangeData&);
 

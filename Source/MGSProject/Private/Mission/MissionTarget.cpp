@@ -13,7 +13,9 @@
 #include "Kismet/GameplayStatics.h"
 #include "Characters/Player/MGSPlayerController.h"
 #include "Components/UI/PlayerHUDPresenterComponent.h"
+#include "GameFramework/MGSGameMode.h"
 #include "Sound/SoundCue.h"
+#include "UI/MapCaptureActor.h"
 
 AMissionTarget::AMissionTarget()
 {
@@ -169,6 +171,12 @@ void AMissionTarget::OnInteractionSucceeded(AActor* Interactor)
 		{
 			HUDPresenter->PlayNarration(ENarrationSituation::ExtractionReady);
 		}
+	}
+	
+	const AMGSGameMode* GameMode = GetWorld()->GetAuthGameMode<AMGSGameMode>();
+	if (GameMode)
+	{
+		GameMode->GetMapCaptureActor()->ChangeNextTarget();
 	}
 	
 	Destroy();

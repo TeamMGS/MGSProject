@@ -47,7 +47,6 @@ void AEnemyAIController::OnPossess(APawn *InPawn) {
   bIsTargetHeard = false;
   bDetectionLocked = false;
   bSuspendDetectionDecrease = false;
-  CurrentCombatTimer = 0.0f;
   bHasLastSeenLocation = false;
   LastSeenLocation = FVector::ZeroVector;
   bHasLastHeardLocation = false;
@@ -92,6 +91,14 @@ void AEnemyAIController::SetSuspendDetectionDecrease(bool bSuspend) {
 void AEnemyAIController::SetDetectionToMax() {
   DetectionValue = DetectionMaxValue;
   bDetectionLocked = true; // 값이 최대로 도달했으므로 상태를 잠금 처리
+  UpdateEnemyStateFromDetection();
+}
+
+void AEnemyAIController::SetDetectionLocked(bool bLocked) {
+  bDetectionLocked = bLocked;
+  if (bLocked) {
+    DetectionValue = DetectionMaxValue;
+  }
   UpdateEnemyStateFromDetection();
 }
 
@@ -178,26 +185,6 @@ void AEnemyAIController::UpdateDetection() {
   }
   if (bDetectionLocked) {
     DetectionValue = DetectionMaxValue;
-    
-    // 교전 중 시야 확인 타이머 갱신
-    bool bDetectFix = false;
-    if (UBlackboardComponent* BlackboardComp = GetBlackboardComponent()) {
-      bDetectFix = BlackboardComp->GetValueAsBool(FName("S_DetectFix"));
-    }
-
-    if (bIsTargetSensed || bDetectFix) {
-      CurrentCombatTimer = 0.0f; // 시야에 보이면(또는 시체를 인지 중이면) 타이머 초기화
-    } else {
-      CurrentCombatTimer += DeltaSeconds; // 시야에서 사라지면 타이머 증가
-    }
-
-    // 교전 유지 시간이 끝나면 교전 종료
-    if (CurrentCombatTimer >= MaxCombatDuration) {
-      bDetectionLocked = false;
-      CurrentCombatTimer = 0.0f;
-      DetectionValue = DetectionSuspiciousThreshold + 10.0f; // 의심 상태 수치로 강등시켜 수색 유도
-    }
-
     UpdateEnemyStateFromDetection();
     return;
   }

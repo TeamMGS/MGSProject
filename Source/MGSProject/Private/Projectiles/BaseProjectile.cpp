@@ -8,6 +8,8 @@
 
 #include "Projectiles/BaseProjectile.h"
 
+#include "Characters/Enemies/EnemyCharacter.h"
+#include "Characters/Player/PlayerCharacter.h"
 #include "Components/PrimitiveComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -16,6 +18,7 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "NiagaraFunctionLibrary.h"
+#include "Kismet/GameplayStatics.h"
 #include "Subsystems/ProjectilePoolWorldSubsystem.h"
 #include "TimerManager.h"
 #include "UObject/ConstructorHelpers.h"
@@ -331,6 +334,7 @@ void ABaseProjectile::ProcessProjectileImpact(AActor* HitActor, const FHitResult
 
 	// 피격 데미지 적용
 	ApplyHitDamage(EffectiveHitActor, Hit);
+	PlayCharacterHitSound(EffectiveHitActor, Hit);
 
 	if (bShouldDestroyOnHit)
 	{
@@ -350,6 +354,31 @@ void ABaseProjectile::ApplyHitDamage(AActor* DirectHitActor, const FHitResult& H
 
 	// 실제 데미지 치러
 	FMGSDamageStatics::ApplyProjectileDamage(AttackPayload, this, GetInstigator(), HitActor, Hit);
+}
+
+void ABaseProjectile::PlayCharacterHitSound(AActor* HitActor, const FHitResult& Hit) const
+{
+	if (!HitActor || !ProjectileDefinition)
+	{
+		return;
+	}
+
+	const bool bHitSupportedCharacter = HitActor->IsA<APlayerCharacter>() || HitActor->IsA<AEnemyCharacter>();
+	if (!bHitSupportedCharacter || !ProjectileDefinition->CharacterHitSound)
+	{
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	const FVector SoundLocation = Hit.ImpactPoint.IsNearlyZero()
+		? HitActor->GetActorLocation()
+		: FVector(Hit.ImpactPoint);
+	UGameplayStatics::PlaySoundAtLocation(World, ProjectileDefinition->CharacterHitSound, SoundLocation);
 }
 
 void ABaseProjectile::DeactivateProjectileNiagaraComponents()
