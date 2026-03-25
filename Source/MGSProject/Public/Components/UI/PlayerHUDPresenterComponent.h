@@ -25,6 +25,9 @@ class UMGSPlayerStatusWidget;
 class UPlayerCombatComponent;
 class UWeaponAttributeSet;
 
+// 나레이션 종료 알림을 위한 델리게이트 선언
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnNarrationFinished, ENarrationSituation, FinishedSituation);
+
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class MGSPROJECT_API UPlayerHUDPresenterComponent : public UActorComponent
 {
@@ -44,6 +47,10 @@ public:
 	// 상황별 나레이션 블루프린트 추가 함수
 	UFUNCTION(BlueprintCallable, Category = "HUD")
 	void PlayNarration(ENarrationSituation Situation);
+	
+	// 외부(PlayerController 등)에서 이 델리게이트에 함수를 묶을 수 있습니다.
+	UPROPERTY(BlueprintAssignable, Category = "Narration")
+	FOnNarrationFinished OnNarrationFinished;
 	// Show the game over UI
 	UFUNCTION(BlueprintCallable, Category = "HUD")
 	void ShowGameOver(const bool bGameClear) const;
@@ -144,7 +151,19 @@ private:
 	// 대사 위젯 클래스 (WBP_Dialogue)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Narration", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<UUserWidget> NarrationWidgetClass;
+	
+	// 다음 단계의 대사를 재생하는 함수
+	void PlayNextNarrationStep();
 
+	// 현재 진행 중인 나레이션 단계들 저장
+	TArray<FNarrationStepInfo> CurrentNarrationSteps;
+
+	// 현재 몇 번째 단계를 재생 중인지 인덱스
+	int32 CurrentStepIndex;
+
+	// 현재 어떤 상황의 대사가 나오고 있는지 저장
+	ENarrationSituation CurrentSituation;
+	
 	// 대사를 자동으로 지우기 위한 타이머 핸들
 	FTimerHandle NarrationTimerHandle;
 };

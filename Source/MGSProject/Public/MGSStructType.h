@@ -152,6 +152,23 @@ struct MGSPROJECT_API FMGSProjectileAttackPayload
 };
 
 /**
+ * 개별 나레이션 단계 정보
+ */
+USTRUCT(BlueprintType)
+struct FNarrationStepInfo
+{
+	GENERATED_BODY()
+
+	// 해당 단계에서 표시될 텍스트
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FText StepText;
+
+	// 해당 단계가 표시되는 시간 (초)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float StepDuration = 3.0f;
+};
+
+/**
  * 나레이션 정보 구조체
  */
 USTRUCT(BlueprintType)
@@ -159,15 +176,11 @@ struct FNarrationInfo
 {
 	GENERATED_BODY()
 
-	// 화면에 표시될 나레이션 자막 텍스트
+	// 순차적으로 표시될 나레이션 단계들
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FText NarrationText;
+	TArray<FNarrationStepInfo> NarrationSteps;
 
 	// 함께 재생할 오디오 (선택 사항)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TObjectPtr<USoundBase> NarrationSound;
-
-	// 대사가 표시되는 시간 (초)
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float DisplayDuration = 3.0f;
 };
