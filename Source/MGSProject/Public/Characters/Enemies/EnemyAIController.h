@@ -146,7 +146,7 @@ private:
   float DistanceFarMultiplier = 0.4f;
 
   UPROPERTY(EditAnywhere, Category = "AI|Detection|Debug")
-  bool bShowDebugDetectionValue = true;
+  bool bShowDebugDetectionValue = false;
 
   UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "AI|Detection",
             meta = (AllowPrivateAccess = true))
