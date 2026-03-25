@@ -9,6 +9,8 @@
 #include "GAS/GA/Enemy/EnemyGameplayAbility.h"
 
 #include "Characters/Enemies/EnemyCharacter.h"
+#include "GAS/ASC/MGSAbilitySystemComponent.h"
+#include "GameplayEffectTypes.h"
 
 AEnemyCharacter* UEnemyGameplayAbility::GetEnemyCharacterFromActorInfo()
 {
@@ -33,4 +35,24 @@ UEnemyCombatComponent* UEnemyGameplayAbility::GetEnemyCombatComponentFromActorIn
 	}
 
 	return nullptr;
+}
+
+void UEnemyGameplayAbility::ExecuteEnemyGameplayCue(const FGameplayTag& CueTag, const FVector& CueLocation, UObject* SourceObject)
+{
+	if (!CueTag.IsValid())
+	{
+		return;
+	}
+
+	AEnemyCharacter* EnemyCharacter = GetEnemyCharacterFromActorInfo();
+	UMGSAbilitySystemComponent* AbilitySystemComponent = EnemyCharacter ? EnemyCharacter->GetMGSAbilitySystemComponent() : nullptr;
+	if (!AbilitySystemComponent)
+	{
+		return;
+	}
+
+	FGameplayCueParameters Parameters;
+	Parameters.Location = CueLocation;
+	Parameters.SourceObject = SourceObject;
+	AbilitySystemComponent->ExecuteGameplayCue(CueTag, Parameters);
 }

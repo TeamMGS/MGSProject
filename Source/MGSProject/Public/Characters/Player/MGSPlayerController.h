@@ -3,7 +3,7 @@
  * 생성자 : 장대한
  * 생성일 : 2026-03-01
  * 수정자 : 장대한
- * 수정일 : 2026-03-17
+ * 수정일 : 2026-03-25
  */
 
 #pragma once
@@ -46,6 +46,10 @@ public:
 	
 	UFUNCTION(Exec)
 	void SetPlayerHp(float NewCurrentHp);
+	
+	// Request game over UI
+	UFUNCTION(BlueprintCallable, Category = "UI")
+	void RequestShowGameOverUI(const bool bGameClear) const;
 
 protected:
 	virtual void BeginPlay() override;

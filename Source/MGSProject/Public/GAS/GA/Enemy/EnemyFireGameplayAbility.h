@@ -46,12 +46,6 @@ private:
 
 private:
 	UPROPERTY(EditDefaultsOnly, Category = "Debug")
-	bool bEnableFireTraceDebug = true;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Debug", meta = (ClampMin = "0.0"))
-	float DebugTraceDuration = 1.0f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Debug")
 	bool bEnableFireTraceLog = true;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Debug")

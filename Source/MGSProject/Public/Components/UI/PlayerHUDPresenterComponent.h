@@ -44,6 +44,10 @@ public:
 	// 상황별 나레이션 블루프린트 추가 함수
 	UFUNCTION(BlueprintCallable, Category = "HUD")
 	void PlayNarration(ENarrationSituation Situation);
+	// Show the game over UI
+	UFUNCTION(BlueprintCallable, Category = "HUD")
+	void ShowGameOver(const bool bGameClear) const;
+	
 private:
 	using FAttributeChangedHandler = void (UPlayerHUDPresenterComponent::*)(const FOnAttributeChangeData&);
 

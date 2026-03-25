@@ -87,6 +87,16 @@ void AMGSPlayerController::SetPlayerHp(float NewCurrentHp)
 		NewCurrentHp));
 }
 
+void AMGSPlayerController::RequestShowGameOverUI(const bool bGameClear) const
+{
+	if (!PlayerHUDPresenter)
+	{
+		return;
+	}
+	// Show the game over UI from the UPlayerHUDPresenterComponent 
+	PlayerHUDPresenter->ShowGameOver(bGameClear);
+}
+
 void AMGSPlayerController::BeginPlay()
 {
 	Super::BeginPlay();

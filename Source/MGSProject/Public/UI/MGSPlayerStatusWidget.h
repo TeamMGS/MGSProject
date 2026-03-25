@@ -15,6 +15,8 @@
 class USizeBox;
 class UTexture2D;
 class UNamedSlot;
+class UCanvasPanel;
+class AMapCaptureActor;
 
 UCLASS(Abstract, BlueprintType)
 class MGSPROJECT_API UMGSPlayerStatusWidget : public UUserWidget
@@ -22,6 +24,8 @@ class MGSPROJECT_API UMGSPlayerStatusWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
+	virtual void NativeDestruct() override;
+
 	// Update
 	// HP
 	UFUNCTION(BlueprintCallable, Category = "HUD")
@@ -41,6 +45,21 @@ public:
 	// Map
 	UFUNCTION(BlueprintCallable, Category = "HUD")
 	void UpdateMap();
+
+	UFUNCTION(BlueprintCallable, Category = "HUD|Map")
+	void SetMapCaptureActor(AMapCaptureActor* InMapCaptureActor);
+
+	UFUNCTION(BlueprintPure, Category = "HUD|Map")
+	AMapCaptureActor* GetMapCaptureActor() const;
+
+	UFUNCTION(BlueprintPure, Category = "HUD|Map")
+	bool GetPlayerMapMarkerData(const FVector2D& MapPixelSize, FVector2D& OutCanvasPosition, float& OutYawDegrees) const;
+
+	UFUNCTION(BlueprintPure, Category = "HUD|Map")
+	bool GetObjectiveMapMarkerData(const FVector2D& MapPixelSize, FVector2D& OutCanvasPosition) const;
+
+	UFUNCTION(BlueprintPure, Category = "HUD|Map")
+	bool IsMapVisible() const;
 	
 	// Get
 	// Current HP Percent
@@ -66,6 +85,9 @@ public:
 	// Narration Slot Content Set
 	UFUNCTION(BlueprintCallable, Category = "HUD")
 	void SetNarrationContent(UUserWidget* InContent);
+	
+	UFUNCTION(BlueprintCallable, Category = "HUD")
+	void ShowGameOver(const FString& Text);
 
 protected:
 	// BP
@@ -84,6 +106,19 @@ protected:
 	// Update Drop Weapon UI
 	UFUNCTION(BlueprintImplementableEvent, Category = "HUD")
 	void BP_OnPickupWeaponPromptUpdated(bool bInVisible, const FText& InWeaponName, UTexture2D* InWeaponInfoImage);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "HUD|Map")
+	void BP_OnMapMarkerDataUpdated(
+		bool bPlayerVisible,
+		FVector2D PlayerCanvasPosition,
+		float PlayerYawDegrees,
+		bool bObjectiveVisible,
+		FVector2D ObjectiveCanvasPosition);
+
+private:
+	void StartMapMarkerRefresh();
+	void StopMapMarkerRefresh();
+	void RefreshMapMarkerData();
 
 private:
 	// Max HP
@@ -122,12 +157,22 @@ private:
 	// Drop Weapon Image
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "HUD", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UTexture2D> PickupWeaponPromptImage = nullptr;
+	// Map Capture Actor
+	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "HUD|Map", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<AMapCaptureActor> MapCaptureActor = nullptr;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "HUD|Map", meta = (AllowPrivateAccess = "true", ClampMin = "0.01"))
+	float MapMarkerRefreshInterval = 0.05f;
 	// Map Size Box
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<USizeBox> MapSizeBox;
+	// Marker Canvas
+	UPROPERTY(meta = (BindWidgetOptional))
+	TObjectPtr<UCanvasPanel> MapCanvasPanel;
 
 	// 나레이션용 명명 슬롯 (NarrationSlot)
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UNamedSlot> NarrationSlot;
+
+	FTimerHandle MapMarkerRefreshTimerHandle;
 	
 };

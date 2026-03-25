@@ -51,5 +51,9 @@ public:
 	// Owner/Instigator 충돌 판정 무시 플래그
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Projectile")
 	bool bIgnoreOwnerOnHit = true;
+
+	// 플레이어/적 캐릭터 명중 시 재생할 사운드
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Projectile|Audio")
+	TObjectPtr<class USoundBase> CharacterHitSound;
 	
 };
