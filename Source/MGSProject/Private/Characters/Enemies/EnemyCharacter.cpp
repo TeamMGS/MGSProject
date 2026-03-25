@@ -282,7 +282,6 @@ void AEnemyCharacter::SetEnemyStateTag(const FGameplayTag& NewStateTag)
 	// Update current tag 
 	CurrentEnemyStateTag = NewStateTag;
 	
-	ApplyStateMaterial(NewStateTag);
 	DebugPrintOwnedTags();
 }
 
@@ -574,32 +573,6 @@ void AEnemyCharacter::HandleCurrentHpChanged(const FOnAttributeChangeData& Attri
 			AbilityTags.AddTag(MGSGameplayTags::Ability_Enemy_Death);
 			MGSAbilitySystemComponent->TryActivateAbilitiesByTag(AbilityTags, true);
 		}
-	}
-}
-
-void AEnemyCharacter::ApplyStateMaterial(const FGameplayTag& NewStateTag)
-{
-	UMaterialInterface* TargetMaterial = nullptr;
-	if (NewStateTag == MGSGameplayTags::State_Enemy_Clear)
-	{
-		TargetMaterial = ClearStateMaterial;
-	}
-	else if (NewStateTag == MGSGameplayTags::State_Enemy_Suspicious)
-	{
-		TargetMaterial = SuspiciousStateMaterial;
-	}
-	else if (NewStateTag == MGSGameplayTags::State_Enemy_Investigation)
-	{
-		TargetMaterial = InvestigationStateMaterial;
-	}
-	else if (NewStateTag == MGSGameplayTags::State_Enemy_Combat)
-	{
-		TargetMaterial = CombatStateMaterial;
-	}
-
-	if (TargetMaterial && GetMesh())
-	{
-		GetMesh()->SetMaterial(StateMaterialSlotIndex, TargetMaterial);
 	}
 }
 

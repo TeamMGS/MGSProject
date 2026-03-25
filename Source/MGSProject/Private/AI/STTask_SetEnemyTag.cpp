@@ -45,10 +45,6 @@ EStateTreeRunStatus USTTask_SetEnemyTag::EnterState(FStateTreeExecutionContext& 
 	{
 		// 어빌리티 실행 (성공 여부에 관계없이 State Tree를 멈추지 않도록 무조건 Succeeded 반환)
 		bool bSuccess = EnemyCharacter->ActivateEnemyAbilityByTag(TargetStateTag);
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 3.0f, bSuccess ? FColor::Green : FColor::Red, FString::Printf(TEXT("STTask_SetEnemyTag: %s -> %s"), *TagString, bSuccess ? TEXT("SUCCESS") : TEXT("FAILED")));
-		}
 	}
 	else if (TagString.StartsWith(TEXT("State")))
 	{

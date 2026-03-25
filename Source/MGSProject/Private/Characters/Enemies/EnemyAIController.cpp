@@ -21,7 +21,15 @@
 #include "Perception/AISense_Sight.h"
 #include "TimerManager.h"
 #include "GAS/ASC/MGSAbilitySystemComponent.h"
+#include "HAL/IConsoleManager.h"
 
+static TAutoConsoleVariable<int32> CVarShowEnemyDetection(
+	TEXT("mgs.ShowEnemyDetection"),
+	0,
+	TEXT("Show Enemy Detection value over their head.\n")
+	TEXT("0: Disable, 1: Enable"),
+	ECVF_Cheat
+);
 
 AEnemyAIController::AEnemyAIController() {
   StateTreeComponent =
@@ -211,7 +219,8 @@ void AEnemyAIController::UpdateDetection() {
   UpdateEnemyStateFromDetection();
 
 #if ENABLE_DRAW_DEBUG
-  if (bShowDebugDetectionValue && GetPawn()) {
+  bool bShowDebug = bShowDebugDetectionValue || (CVarShowEnemyDetection.GetValueOnGameThread() != 0);
+  if (bShowDebug && GetPawn()) {
     FVector TextLocation =
         GetPawn()->GetActorLocation() + FVector(0.f, 0.f, 100.f);
     FString DebugStr = FString::Printf(TEXT("Detection: %.1f"), DetectionValue);

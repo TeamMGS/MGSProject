@@ -106,8 +106,6 @@ protected:
                                    FGameplayTag CurrentWeaponTag);
   void UpdateCurrentSpreadFromState();
   float CalculateCurrentSpreadStateMultiplier() const;
-  // Material
-  void ApplyStateMaterial(const FGameplayTag &NewStateTag);
   // Log
   void BindDebugStateInputs();
   void DebugSetStateClear();
@@ -213,15 +211,4 @@ protected:
   // HP
   FDelegateHandle CurrentHpChangedDelegateHandle;
   bool bHasBoundHpChangedDelegate = false;
-  // Material
-  UPROPERTY(EditDefaultsOnly, Category = "AI|State", meta = (ClampMin = 0))
-  int32 StateMaterialSlotIndex = 0;
-  UPROPERTY(EditDefaultsOnly, Category = "AI|State")
-  TObjectPtr<UMaterialInterface> ClearStateMaterial;
-  UPROPERTY(EditDefaultsOnly, Category = "AI|State")
-  TObjectPtr<UMaterialInterface> SuspiciousStateMaterial;
-  UPROPERTY(EditDefaultsOnly, Category = "AI|State")
-  TObjectPtr<UMaterialInterface> InvestigationStateMaterial;
-  UPROPERTY(EditDefaultsOnly, Category = "AI|State")
-  TObjectPtr<UMaterialInterface> CombatStateMaterial;
 };
