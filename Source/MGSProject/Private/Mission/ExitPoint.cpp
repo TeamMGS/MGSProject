@@ -13,6 +13,7 @@
 #include "Characters/Player/PlayerCharacter.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/MGSGameMode.h"
+#include "GameFramework/PawnMovementComponent.h"
 
 AExitPoint::AExitPoint()
 {
@@ -36,6 +37,7 @@ void AExitPoint::CollisionBeginOverlap(UPrimitiveComponent* OverlappedComponent,
 	{
 		if (GameMode->AreAllTargetsCollected())
 		{
+			Player->GetMovementComponent()->StopMovementImmediately();
 			GameMode->MissionComplete();
 		}
 		else

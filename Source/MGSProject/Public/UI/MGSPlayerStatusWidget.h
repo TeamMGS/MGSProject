@@ -12,6 +12,7 @@
 #include "Blueprint/UserWidget.h"
 #include "MGSPlayerStatusWidget.generated.h"
 
+class UButton;
 class UTextBlock;
 class USizeBox;
 class UTexture2D;

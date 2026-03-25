@@ -14,6 +14,9 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GAS/MGSGameplayTags.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
+#include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
+#include "Characters/Player/MGSPlayerController.h"
+#include "GAS/GA/Enemy/EnemyDeathGameplayAbility.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
 
@@ -57,6 +60,11 @@ void UPlayerDeathGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHand
 		{
 			CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		}
+		
+		if (AMGSPlayerController* PlayerController = PlayerCharacter->GetController<AMGSPlayerController>())
+		{
+			PlayerController->RequestShowGameOverUI(false);
+		}
 	}
 
 	// 몽타주 재생 태스크 실행
@@ -67,6 +75,9 @@ void UPlayerDeathGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHand
 			NAME_None,
 			DeathMontage
 		);
+		
+		UAbilityTask_WaitGameplayEvent* WaitEventTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(
+	this, FGameplayTag::RequestGameplayTag(TEXT("Event.Character.DeathFreeze")));
 
 		// 완료, 블렌드 아웃, 중단, 취소 시 모두 어빌리티 종료 처리
 		PlayMontageTask->OnCompleted.AddDynamic(this, &UPlayerDeathGameplayAbility::OnDeathMontageFinished);
