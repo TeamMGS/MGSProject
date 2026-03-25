@@ -14,6 +14,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GAS/MGSGameplayTags.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundBase.h"
 
 UPlayerDeathGameplayAbility::UPlayerDeathGameplayAbility()
 {
@@ -38,6 +40,11 @@ void UPlayerDeathGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHand
 
 	if (APlayerCharacter* PlayerCharacter = GetPlayerCharacterFromActorInfo())
 	{
+		if (DeathSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, DeathSound, PlayerCharacter->GetActorLocation());
+		}
+
 		PlayerCharacter->StopAimObstructionTrace();
 
 		if (UCharacterMovementComponent* MovementComponent = PlayerCharacter->GetCharacterMovement())

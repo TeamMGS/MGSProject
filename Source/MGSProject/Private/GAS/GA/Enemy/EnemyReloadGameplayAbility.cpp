@@ -87,6 +87,8 @@ void UEnemyReloadGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHand
 
 	PlayMontageTask->ReadyForActivation();
 	WaitEventTask->ReadyForActivation();
+
+	ExecuteEnemyGameplayCue(MGSGameplayTags::GameplayCue_Weapon_Reload, EquippedGun->GetActorLocation(), EquippedGun);
 }
 
 void UEnemyReloadGameplayAbility::OnAmmoRefillEventReceived(FGameplayEventData Payload)

@@ -47,6 +47,7 @@ namespace MGSGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Traversal, "Ability.Player.Traversal")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Flash, "Ability.Player.Flash")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_MissionInteract, "Ability.Player.MissionInteract")
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Character_HealthRegen, "Ability.Character.HealthRegen")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Enemy_Equip_Primary, "Ability.Enemy.Equip.Primary")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Enemy_Equip_Secondary, "Ability.Enemy.Equip.Secondary")
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Enemy_DefaultMovement, "Ability.Enemy.DefaultMovement")

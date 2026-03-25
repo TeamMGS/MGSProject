@@ -18,6 +18,8 @@
 #include "GAS/MGSGameplayTags.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundBase.h"
 
 UEnemyDeathGameplayAbility::UEnemyDeathGameplayAbility()
 {
@@ -42,6 +44,11 @@ void UEnemyDeathGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandl
 
 	if (AEnemyCharacter* EnemyCharacter = GetEnemyCharacterFromActorInfo())
 	{
+		if (DeathSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, DeathSound, EnemyCharacter->GetActorLocation());
+		}
+
 		if (UCharacterMovementComponent* MovementComponent = EnemyCharacter->GetCharacterMovement())
 		{
 			MovementComponent->StopMovementImmediately();

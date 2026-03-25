@@ -18,7 +18,6 @@
 #include "GAS/AttributeSets/CharacterAttributeSet.h"
 #include "GAS/AttributeSets/WeaponAttributeSet.h"
 #include "GAS/MGSGameplayTags.h"
-#include "MGSDebugHelper.h"
 #include "AbilitySystemComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/InputComponent.h"
@@ -567,14 +566,6 @@ void AEnemyCharacter::HandleCurrentHpChanged(const FOnAttributeChangeData& Attri
 		return;
 	}
 
-	const FString DamageMsg = FString::Printf(TEXT("[EnemyHP][GE] %s HP=%.1f->%.1f / %.1f"),
-		*GetName(),
-		AttributeChangeData.OldValue,
-		AttributeChangeData.NewValue,
-		CharacterAttributeSet->GetCurrentHp());
-	UE_LOG(LogTemp, Log, TEXT("%s"), *DamageMsg);
-	Debug::Print(DamageMsg, FColor::Yellow);
-
 	if (AttributeChangeData.NewValue <= KINDA_SMALL_NUMBER)
 	{
 		if (MGSAbilitySystemComponent && !MGSAbilitySystemComponent->HasMatchingGameplayTag(MGSGameplayTags::State_Character_Dead))
@@ -583,10 +574,6 @@ void AEnemyCharacter::HandleCurrentHpChanged(const FOnAttributeChangeData& Attri
 			AbilityTags.AddTag(MGSGameplayTags::Ability_Enemy_Death);
 			MGSAbilitySystemComponent->TryActivateAbilitiesByTag(AbilityTags, true);
 		}
-
-		const FString DefeatedMsg = FString::Printf(TEXT("[EnemyHP] %s defeated"), *GetName());
-		UE_LOG(LogTemp, Warning, TEXT("%s"), *DefeatedMsg);
-		Debug::Print(DefeatedMsg, FColor::Red);
 	}
 }
 

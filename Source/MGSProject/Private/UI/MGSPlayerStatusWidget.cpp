@@ -8,8 +8,19 @@
 
 #include "UI/MGSPlayerStatusWidget.h"
 
+#include "Components/CanvasPanel.h"
 #include "Components/SizeBox.h"
 #include "Components/NamedSlot.h"
+#include "GameFramework/PlayerController.h"
+#include "Kismet/GameplayStatics.h"
+#include "TimerManager.h"
+#include "UI/MapCaptureActor.h"
+
+void UMGSPlayerStatusWidget::NativeDestruct()
+{
+	StopMapMarkerRefresh();
+	Super::NativeDestruct();
+}
 
 void UMGSPlayerStatusWidget::UpdateHealth(float InCurrentHp, float InMaxHp)
 {
@@ -50,18 +61,62 @@ void UMGSPlayerStatusWidget::UpdatePickupWeaponPrompt(bool bInVisible, const FTe
 
 void UMGSPlayerStatusWidget::UpdateMap()
 {
+	if (!MapSizeBox)
+	{
+		return;
+	}
+
 	// 보이는 상태면
 	if (MapSizeBox->IsVisible())
 	{
 		// 안보이도록 함
 		MapSizeBox->SetVisibility(ESlateVisibility::Hidden);
+		StopMapMarkerRefresh();
 	}
 	// 안보이는 상태면
 	else
 	{
 		// 보이도록 함
 		MapSizeBox->SetVisibility(ESlateVisibility::Visible);
+		StartMapMarkerRefresh();
 	}
+}
+
+void UMGSPlayerStatusWidget::SetMapCaptureActor(AMapCaptureActor* InMapCaptureActor)
+{
+	MapCaptureActor = InMapCaptureActor;
+}
+
+AMapCaptureActor* UMGSPlayerStatusWidget::GetMapCaptureActor() const
+{
+	if (MapCaptureActor)
+	{
+		return MapCaptureActor.Get();
+	}
+
+	return GetWorld() ? Cast<AMapCaptureActor>(UGameplayStatics::GetActorOfClass(GetWorld(), AMapCaptureActor::StaticClass())) : nullptr;
+}
+
+bool UMGSPlayerStatusWidget::GetPlayerMapMarkerData(const FVector2D& MapPixelSize, FVector2D& OutCanvasPosition, float& OutYawDegrees) const
+{
+	APlayerController* PlayerController = GetOwningPlayer();
+	AMapCaptureActor* ResolvedMapCaptureActor = GetMapCaptureActor();
+	return ResolvedMapCaptureActor && PlayerController
+		? ResolvedMapCaptureActor->GetPlayerMarkerData(PlayerController, MapPixelSize, OutCanvasPosition, OutYawDegrees)
+		: false;
+}
+
+bool UMGSPlayerStatusWidget::GetObjectiveMapMarkerData(const FVector2D& MapPixelSize, FVector2D& OutCanvasPosition) const
+{
+	AMapCaptureActor* ResolvedMapCaptureActor = GetMapCaptureActor();
+	return ResolvedMapCaptureActor
+		? ResolvedMapCaptureActor->GetObjectiveMarkerData(MapPixelSize, OutCanvasPosition)
+		: false;
+}
+
+bool UMGSPlayerStatusWidget::IsMapVisible() const
+{
+	return MapSizeBox && MapSizeBox->IsVisible();
 }
 
 float UMGSPlayerStatusWidget::GetHealthPercent() const
@@ -110,4 +165,67 @@ void UMGSPlayerStatusWidget::SetNarrationContent(UUserWidget* InContent)
 	{
 		NarrationSlot->SetContent(InContent);
 	}
+}
+
+void UMGSPlayerStatusWidget::ShowGameOver(const FString& Text)
+{
+}
+
+void UMGSPlayerStatusWidget::StartMapMarkerRefresh()
+{
+	UWorld* World = GetWorld();
+	if (!World || !MapSizeBox)
+	{
+		return;
+	}
+
+	ForceLayoutPrepass();
+	RefreshMapMarkerData();
+
+	World->GetTimerManager().ClearTimer(MapMarkerRefreshTimerHandle);
+	World->GetTimerManager().SetTimer(
+		MapMarkerRefreshTimerHandle,
+		this,
+		&ThisClass::RefreshMapMarkerData,
+		FMath::Max(0.01f, MapMarkerRefreshInterval),
+		true);
+}
+
+void UMGSPlayerStatusWidget::StopMapMarkerRefresh()
+{
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(MapMarkerRefreshTimerHandle);
+	}
+}
+
+void UMGSPlayerStatusWidget::RefreshMapMarkerData()
+{
+	if (!MapSizeBox || !MapSizeBox->IsVisible())
+	{
+		StopMapMarkerRefresh();
+		return;
+	}
+
+	const FVector2D MapPixelSize = MapCanvasPanel
+		? MapCanvasPanel->GetCachedGeometry().GetLocalSize()
+		: MapSizeBox->GetCachedGeometry().GetLocalSize();
+	if (MapPixelSize.X <= KINDA_SMALL_NUMBER || MapPixelSize.Y <= KINDA_SMALL_NUMBER)
+	{
+		return;
+	}
+
+	FVector2D PlayerCanvasPosition = FVector2D::ZeroVector;
+	float PlayerYawDegrees = 0.0f;
+	const bool bPlayerVisible = GetPlayerMapMarkerData(MapPixelSize, PlayerCanvasPosition, PlayerYawDegrees);
+
+	FVector2D ObjectiveCanvasPosition = FVector2D::ZeroVector;
+	const bool bObjectiveVisible = GetObjectiveMapMarkerData(MapPixelSize, ObjectiveCanvasPosition);
+
+	BP_OnMapMarkerDataUpdated(
+		bPlayerVisible,
+		PlayerCanvasPosition,
+		PlayerYawDegrees,
+		bObjectiveVisible,
+		ObjectiveCanvasPosition);
 }
