@@ -6,9 +6,12 @@
  * 수정일 : 2026-03-20
  */
 #include "Mission/ExtractionPoint.h"
-
+#include "MGSEnumType.h"
+#include "Characters/Player/MGSPlayerController.h"
 #include "Characters/Player/PlayerCharacter.h"
+#include "Kismet/GameplayStatics.h"
 #include "Components/SphereComponent.h"
+#include "Components/UI/PlayerHUDPresenterComponent.h"
 
 AExtractionPoint::AExtractionPoint()
 {
@@ -43,11 +46,13 @@ void AExtractionPoint::NotifyActorBeginOverlap(AActor* OtherActor)
 	// 2. 부딪힌 액터가 플레이어인지 클래스로 직접 확인
 	if (APlayerCharacter* Player = Cast<APlayerCharacter>(OtherActor))
 	{
-		// 탈출 성공 로직 실행
-		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Yellow, TEXT("MISSION SUCCESS! YOU ESCAPED!"));
-
-		// 여기서 결과 화면을 띄우거나 다음 레벨로 이동하는 로직을 넣습니다.
-		// UGameplayStatics::OpenLevel(GetWorld(), TEXT("NextLevelName"));
+		if (AMGSPlayerController* MyPC = Cast<AMGSPlayerController>(Player->GetController()))
+		{
+			if (UPlayerHUDPresenterComponent* HUDPresenter = MyPC->FindComponentByClass<UPlayerHUDPresenterComponent>())
+			{
+				HUDPresenter->PlayNarration(ENarrationSituation::ExtractionSuccess);
+			}
+		}
 	}
 }
 

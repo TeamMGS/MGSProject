@@ -47,6 +47,9 @@ public:
 	UFUNCTION(Exec)
 	void SetPlayerHp(float NewCurrentHp);
 	
+	UFUNCTION()
+	void HandleNarrationFinished(ENarrationSituation FinishedSituation);
+	
 	// Request game over UI
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	void RequestShowGameOverUI(const bool bGameClear) const;
