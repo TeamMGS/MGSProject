@@ -39,4 +39,5 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Death")
 	TObjectPtr<USoundBase> DeathSound;
+	
 };

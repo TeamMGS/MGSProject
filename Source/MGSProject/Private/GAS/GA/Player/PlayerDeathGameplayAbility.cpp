@@ -14,8 +14,11 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GAS/MGSGameplayTags.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
+#include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
+
+class UAbilityTask_WaitGameplayEvent;
 
 UPlayerDeathGameplayAbility::UPlayerDeathGameplayAbility()
 {
@@ -68,29 +71,28 @@ void UPlayerDeathGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHand
 			DeathMontage
 		);
 
-		// 완료, 블렌드 아웃, 중단, 취소 시 모두 어빌리티 종료 처리
-		PlayMontageTask->OnCompleted.AddDynamic(this, &UPlayerDeathGameplayAbility::OnDeathMontageFinished);
-		PlayMontageTask->OnBlendOut.AddDynamic(this, &UPlayerDeathGameplayAbility::OnDeathMontageFinished);
-		PlayMontageTask->OnInterrupted.AddDynamic(this, &UPlayerDeathGameplayAbility::OnDeathMontageFinished);
-		PlayMontageTask->OnCancelled.AddDynamic(this, &UPlayerDeathGameplayAbility::OnDeathMontageFinished);
-
 		PlayMontageTask->ReadyForActivation();
-	}
-	else
-	{
-		// 몽타주가 없으면 즉시 종료
-		OnDeathMontageFinished();
+		
+		UAbilityTask_WaitGameplayEvent* WaitEventTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, FGameplayTag::RequestGameplayTag(TEXT("Event.Character.DeathFreeze")));
+
+		WaitEventTask->EventReceived.AddDynamic(this, &UPlayerDeathGameplayAbility::OnDeathMontageFinished);
+		WaitEventTask->ReadyForActivation();
 	}
 }
 
-void UPlayerDeathGameplayAbility::OnDeathMontageFinished()
+void UPlayerDeathGameplayAbility::OnDeathMontageFinished(FGameplayEventData Payload)
 {
 	if (APlayerCharacter* PlayerCharacter = GetPlayerCharacterFromActorInfo())
 	{
-		// 마지막 프레임에서 애니메이션을 일시정지 시킵니다.
 		if (USkeletalMeshComponent* Mesh = PlayerCharacter->GetMesh())
 		{
+			// 마지막 프레임 고정
 			Mesh->bPauseAnims = true;
+			// 재생 속도를 0으로 만들어 몽타주가 끝나지 않게 원천 봉쇄
+			if (UAnimInstance* AnimInstance = Mesh->GetAnimInstance())
+			{
+				AnimInstance->Montage_SetPlayRate(DeathMontage, 0.0f);
+			}
 		}
 	}
 
