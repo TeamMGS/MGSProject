@@ -166,10 +166,11 @@ void AMissionTarget::OnInteractionSucceeded(AActor* Interactor)
 		MyPC->ChangeBGM(MyPC->ContainedBGM); 
 	}
 	
-	const AMGSGameMode* GameMode = GetWorld()->GetAuthGameMode<AMGSGameMode>();
+	AMGSGameMode* GameMode = GetWorld()->GetAuthGameMode<AMGSGameMode>();
 	if (GameMode)
 	{
 		GameMode->GetMapCaptureActor()->ChangeNextTarget();
+		GameMode->AddCollectedTargetCount();
 	}
 	
 	Destroy();

@@ -23,8 +23,17 @@ public:
 	AMGSGameMode();
 	
 	// Getter
-	AMapCaptureActor* GetMapCaptureActor() const { return MapCaptureActor.Get(); }
+	FORCEINLINE AMapCaptureActor* GetMapCaptureActor() const { return MapCaptureActor.Get(); }
+	FORCEINLINE int32 GetLevelTargetCount() const { return LevelTargetCount; }
+	FORCEINLINE int32 GetCollectedTargetCount() const { return CollectedTargetCount; }
+	
+	// Inline function
+	FORCEINLINE void AddCollectedTargetCount() { ++CollectedTargetCount; }
+	FORCEINLINE bool AreAllTargetsCollected() const { return LevelTargetCount == CollectedTargetCount;}
 
+	// Initialize LevelTargetCount
+	void InitLevelTargetCount();
+	
 	// Mission Complete
 	UFUNCTION(BlueprintCallable, Category = "Game")
 	void MissionComplete() const;
@@ -36,5 +45,10 @@ private:
 	// MapCapture
 	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Map", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<AMapCaptureActor> MapCaptureActor;
+	
+	// Current level target count
+	int32 LevelTargetCount;
+	// Collected target count
+	int32 CollectedTargetCount = 0;
 	
 };
