@@ -15,6 +15,7 @@
 #include "GAS/MGSGameplayTags.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
+#include "Characters/Player/MGSPlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
 
@@ -59,6 +60,11 @@ void UPlayerDeathGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHand
 		if (UCapsuleComponent* CapsuleComponent = PlayerCharacter->GetCapsuleComponent())
 		{
 			CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+		
+		if (AMGSPlayerController* PlayerController = PlayerCharacter->GetController<AMGSPlayerController>())
+		{
+			PlayerController->RequestShowGameOverUI(false);
 		}
 	}
 

@@ -14,6 +14,8 @@
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
+#include "Characters/Player/MGSPlayerController.h"
+#include "Components/TextBlock.h"
 #include "UI/MapCaptureActor.h"
 
 void UMGSPlayerStatusWidget::NativeDestruct()
@@ -167,8 +169,16 @@ void UMGSPlayerStatusWidget::SetNarrationContent(UUserWidget* InContent)
 	}
 }
 
-void UMGSPlayerStatusWidget::ShowGameOver(const FString& Text)
+void UMGSPlayerStatusWidget::ShowGameOver(const FString& Text) const
 {
+	GameOverTextBlock->SetText(FText::FromString(Text));
+	GameOverSizeBox->SetVisibility(ESlateVisibility::Visible);
+	if (AMGSPlayerController* PlayerController = Cast<AMGSPlayerController>(GetWorld()->GetFirstPlayerController()))
+	{
+		const FInputModeUIOnly InputModeUIOnly;
+		PlayerController->SetInputMode(InputModeUIOnly);
+		PlayerController->SetShowMouseCursor(true);
+	}
 }
 
 void UMGSPlayerStatusWidget::StartMapMarkerRefresh()

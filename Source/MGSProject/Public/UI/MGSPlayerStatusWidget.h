@@ -12,6 +12,8 @@
 #include "Blueprint/UserWidget.h"
 #include "MGSPlayerStatusWidget.generated.h"
 
+class UButton;
+class UTextBlock;
 class USizeBox;
 class UTexture2D;
 class UNamedSlot;
@@ -87,7 +89,7 @@ public:
 	void SetNarrationContent(UUserWidget* InContent);
 	
 	UFUNCTION(BlueprintCallable, Category = "HUD")
-	void ShowGameOver(const FString& Text);
+	void ShowGameOver(const FString& Text) const;
 
 protected:
 	// BP
@@ -174,5 +176,10 @@ private:
 	TObjectPtr<UNamedSlot> NarrationSlot;
 
 	FTimerHandle MapMarkerRefreshTimerHandle;
+	
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<USizeBox> GameOverSizeBox;
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UTextBlock> GameOverTextBlock;
 	
 };
