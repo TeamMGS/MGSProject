@@ -119,6 +119,10 @@ void AMGSPlayerController::BeginPlay()
 
 	ensureMsgf(InputConfigDataAsset, TEXT("InputConfigDataAsset is not assigned on %s"), *GetName());
 	
+	const FInputModeGameOnly InputModeGameOnly;
+	SetInputMode(InputModeGameOnly);
+	SetShowMouseCursor(false);
+	
 	// IMC Setting
 	SetupInputMappingContext();
 	
