@@ -160,7 +160,7 @@ private:
 	
 	// 디버깅?
 	UPROPERTY(EditAnywhere, Category = "MGS|Traversal|Debug")
-	bool bDrawDebug = true;
+	bool bDrawDebug = false;
 	
 	// front ledge 확인
 	bool FindFrontLedge(const FHitResult& WallHit, const FVector& TraceDirection, FVector& OutLedgeLocation, FVector& OutLedgeNormal);
