@@ -18,6 +18,7 @@
 #include "GAS/MGSGameplayTags.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
+#include "Characters/AnimInstance/BaseAnimInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
 
@@ -89,6 +90,7 @@ void UEnemyDeathGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandl
 			}
 		}
 	}
+	
 
 	if (DeathMontage)
 	{
