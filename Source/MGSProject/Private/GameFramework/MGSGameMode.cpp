@@ -14,6 +14,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Mission/MissionTarget.h"
 #include "UI/MapCaptureActor.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 AMGSGameMode::AMGSGameMode()
 {
@@ -40,10 +42,29 @@ void AMGSGameMode::InitLevelTargetCount()
 
 void AMGSGameMode::MissionComplete() const
 {
-	const AMGSPlayerController* PlayerController = Cast<AMGSPlayerController>(GetWorld()->GetFirstPlayerController());
+	AMGSPlayerController* PlayerController = Cast<AMGSPlayerController>(GetWorld()->GetFirstPlayerController());
 	if (!PlayerController)
 	{
 		return;
+	}
+	
+	PlayerController->SetIgnoreMoveInput(true);
+	PlayerController->SetIgnoreLookInput(true);
+	
+	// 1. Pawn을 Character로 캐스팅하여 CharacterMovementComponent에 접근합니다.
+	if (ACharacter* PlayerCharacter = Cast<ACharacter>(PlayerController->GetPawn()))
+	{
+		if (UCharacterMovementComponent* CharMovement = PlayerCharacter->GetCharacterMovement())
+		{
+			// 3. 기존의 멈춤 함수 호출 (가속도 초기화)
+			CharMovement->StopMovementImmediately(); 
+            
+			// 4. 강제로 속도(Velocity) 벡터를 0으로 덮어씌웁니다.
+			CharMovement->Velocity = FVector::ZeroVector;
+            
+			// 변경된 속도 값을 컴포넌트에 즉각 업데이트하도록 강제합니다.
+			CharMovement->UpdateComponentVelocity();
+		}
 	}
 	// Request the game over UI from the player controller
 	PlayerController->RequestShowGameOverUI(true);

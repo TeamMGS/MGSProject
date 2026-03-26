@@ -86,7 +86,7 @@ private:
 
   UPROPERTY(EditDefaultsOnly, Category = "AI|Detection",
             meta = (ClampMin = "0.0"))
-  float DetectionIncreaseRate = 22.0f;
+  float DetectionIncreaseRate = 60.0f;
 
   UPROPERTY(EditDefaultsOnly, Category = "AI|Detection",
             meta = (ClampMin = "0.0"))
