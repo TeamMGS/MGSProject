@@ -127,7 +127,7 @@ private:
 
   UPROPERTY(EditDefaultsOnly, Category = "AI|Detection|Hearing",
             meta = (ClampMin = "0.0"))
-  float HearingGainMultiplier = 0.6f;
+  float HearingGainMultiplier = 0.4f;
 
   UPROPERTY(EditDefaultsOnly, Category = "AI|Detection|Distance",
             meta = (ClampMin = "0.0"))
